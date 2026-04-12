@@ -53,8 +53,8 @@ Our team brand is based on the shared experience of working through CSE 110 toge
   About: TBD  
 
 - **Owen Atis** – Designer / UI Developer, Documentation Lead, Frontend Developer  
-  GitHub: [TBD](#)  
-  About: TBD  
+  GitHub: [OwenBAtis](https://github.com/OwenBAtis/CSE110Profile/blob/add-read-me/index.md)  
+  About: My name's Owen Atis. I'm a second year at UCSD majoring in Computer Science. In terms of experience I for the most part have participated in club-wide game development projects for the last 2 years. I hope in the future to pursue a career in Game Development or software engineering by the time I graduate. Outside of academics, my main interests have been in relation to video games, reading/watching indie projects, and am way to obsessed with the Transformers Franchise for my own health.  
 
 - **Jacky Yu** – Designer / UI Developer, Frontend Developer  
   GitHub: [TBD](#)  
