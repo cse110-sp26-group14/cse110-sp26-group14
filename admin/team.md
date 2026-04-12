@@ -69,8 +69,8 @@ Our team brand is based on the shared experience of working through CSE 110 toge
   About: TBD  
 
 - **Alexander Perelson** – QA & Testing  
-  GitHub: [aperelson1](#)  
-  About: 3rd year CS student. Like skatbeoarding and Olympic weightlifting.  
+  GitHub: [aperelson1](https://github.com/aperelson1/Pages/blob/41e589118866ad0428b98d2bf71fc4ffcfe92459/index.md)  
+  About: I am a third year computer science student and enjoy skateboarding and weightlifting. My experience is mostly coursework related but I am currently building a video archive website for a friend.   
 
 - **Binteng Tan** – QA & Testing  
   GitHub: [TBD](#)  
