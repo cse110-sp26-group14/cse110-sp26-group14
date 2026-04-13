@@ -8,7 +8,7 @@ We're all in the same CSE 110 boat: crunchy deadlines, surprise bugs, and still 
 
 ### Team logo
 
-![CS Stress 14 — team brand](branding/brand.png)
+<img src="branding/brand.png" alt="CS Stress 14 — team brand" width="360">
 
 |                            |                                                                     |
 | -------------------------- | ------------------------------------------------------------------- |
