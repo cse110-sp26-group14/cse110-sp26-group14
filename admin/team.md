@@ -59,8 +59,8 @@ About: My name is Binteng Tan, and I am currently a junior majoring in Computer 
 GitHub: [TBD](#)  
 About: TBD
 - **Kaitlyn Nguy** — Designer / UI, backend  
-GitHub: [TBD](#)  
-About: TBD
+GitHub: [dlw1rm4.github.io/sp26-cse-110-lab-1](https://dlw1rm4.github.io/sp26-cse-110-lab-1/)  
+About: Hi, my name is Kaitlyn Nguy! I'm a second-year at UC San Diego majoring in Computer Science. I've been coding since my junior year of high school and developing websites for almost 3 years now! I really like getting boba and playing video games!
 - **Allison Lian** — Frontend  
 GitHub: [allisonliann.github.io](https://allisonliann.github.io/allisonlian.github.io/)  
 About: Hi, I'm Allison Lian, a second-year at UC San Diego studying Computer Science. I have some experience in frontend development mostly through projects, but I am striving to expand my skills in the realm of backend dev. I aspire to pursue a career in software engineering following graduation. Beyond academics, I like to go hiking, bake, and play piano.
