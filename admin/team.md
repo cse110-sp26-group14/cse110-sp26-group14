@@ -1,131 +1,88 @@
-# Team CS Stress 14
+# 🫠 CS Stress 14 — team page
 
-## Team Name
-**CS Stress 14**
+Hi hi ~ this is our little living doc for branding, roster, and roles. We'll keep sprinkling in links & intros as the quarter goes. 📁
 
----
+## 🖥️ Branding
 
-## Branding
+We're all in the same CSE 110 boat: crunchy deadlines, surprise bugs, and still shipping something we're kinda proud of. You got this. (We got this.) ⏳
 
-Our team brand is based on the shared experience of working through CSE 110 together: pressure, collaboration, problem-solving, and persistence.
+### Team logo
 
-- **Theme:** Surviving and succeeding under pressure
-- **Tone:** Collaborative, focused, and lighthearted
-- **Primary Color:** TBD
-- **Secondary Color:** TBD
-- **Logo:** TBD
-- **Mascot:** TBD
-- **Slogan:** *“Under pressure, still shipping.”*
+CS Stress 14 — team brand
 
----
 
-## Values
+|                            |                                                                     |
+| -------------------------- | ------------------------------------------------------------------- |
+| **Theme**                  | Surviving and shipping 📦                                           |
+| **Tone**                   | Collaborative, focused, gently unserious when we need a breather ⏸️ |
+| **Slogan**                 | *"Under pressure, still shipping."* ⚡                               |
+| **Colors / logo / mascot** | Logo above · primary/secondary colors & mascot TBD ~ 🧩             |
 
-- Accountability
-- Open communication
-- Respect
-- Integrity
-- Participation
 
----
+## 📋 Values
 
-## Team Members
+Accountability ✅ — open communication 📝 — respect 🤝 — integrity 🔒 — participation 🔌
 
-> ⚠️ Please update your information below:
-> - Replace `TBD` with your GitHub profile link  
-> - Add a short 1-line introduction about yourself (skills, interests, etc.)
+## 🗂️ Team members
 
-### Example Format
-- **Your Name** – Your Role  
-  GitHub: [your-link]  
-  About: A short sentence about your interests or strengths  
+When you have a moment: swap GitHub `TBD` for your **GitHub Pages** site URL, and drop a tiny **About** line. No pressure — perfection not required~ 🔗
 
----
+📝 Example layout (click me)
 
-### Members
+### 💻 Roster
 
-- **Yu Wu** – Project Lead / Manager  
-  GitHub: [TBD](#)  
-  About: TBD  
+- **Yu Wu** — Project lead / manager  
+GitHub: [wuyudaxia.github.io/CSE110_Lab01](https://wuyudaxia.github.io/CSE110_Lab01/)  
+About: Third-year international student from Shanghai, China. I play games to unwind — mostly Minecraft — and I run a small server on the side. 中文/English both fine; if you ever visit China, I can share some Shanghai tips.
+- **Christian Pacheco** — Project lead / manager, documentation lead  
+GitHub: [pacheco101.github.io](https://pacheco101.github.io)  
+About: Hello, I'm Christian Pacheco, a third-year student at UC San Diego majoring in computer science. I have experience in quality and software engineering within the aerospace industry, including work with Northrop Grumman. My interests focus on data analytics and integration, and I aspire to pursue a career as a software engineer after graduation. Outside of academics and work, I enjoy photography, playing video games, and spending time with my local church.
+- **Owen Atis** — Designer / UI, documentation lead, frontend  
+GitHub: [owenbatis.github.io/CSE110Profile](https://owenbatis.github.io/CSE110Profile/)  
+About: My name's Owen Atis. I'm a second year at UCSD majoring in Computer Science. In terms of experience I for the most part have participated in club-wide game development projects for the last 2 years. I hope in the future to pursue a career in Game Development or software engineering by the time I graduate. Outside of academics, my main interests have been in relation to video games, reading/watching indie projects, and am way to obsessed with the Transformers Franchise for my own health.
+- **Jacky Yu** — Designer / UI, frontend  
+GitHub: [andro-source.github.io/SP26-CSE110-Lab-01](https://andro-source.github.io/SP26-CSE110-Lab-01/)  
+About: I enjoy weight lifting. Recently got into golf. From the Bay Area. Likes to play Valorant sometimes.
+- **Adithya Gundlapalli** — Backend  
+GitHub: [TBD](#)  
+About: TBD
+- **Benjamin Scheerger** — QA & testing, backend  
+GitHub: [benscheerger.github.io/Lab1-CSE110](https://benscheerger.github.io/Lab1-CSE110/)  
+About: My name is Benjamin Scheerger. I'm a 4th year at UCSD majoring in Cognitive Science, and I'm taking this class as an elective for a Computer Science minor. Most of my programming experience is in ML focused roles, so I'm excited to expand my horizons through our project. Outside of academics, I enjoy skiing, hiking, camping, and surfing. I'm also a big fan of music festivals, especially EDM centered ones, and have rewatched the Office too many times to count.
+- **Alexander Perelson** — QA & testing  
+GitHub: [aperelson1.github.io/Pages](https://aperelson1.github.io/Pages/)  
+About: I am a third year computer science student and enjoy skateboarding and weightlifting. My experience is mostly coursework related but I am currently building a video archive website for a friend.
+- **Binteng Tan** — QA & testing  
+GitHub: [b7tan-cpu.github.io/cse110-lab1](https://b7tan-cpu.github.io/cse110-lab1/)  
+About: My name is Binteng Tan, and I am currently a junior majoring in Computer Science. I have a strong interest in technology and am continuously working to improve my programming skills. In my free time, I enjoy playing video games, which helps me relax and develop my logical thinking. I am also particularly interested in suspense and thriller movies, as I like analyzing plots and discovering hidden details.
+- **Rena Tokhi** — Lead developer, frontend  
+GitHub: [TBD](#)  
+About: TBD
+- **Kaitlyn Nguy** — Designer / UI, backend  
+GitHub: [TBD](#)  
+About: TBD
+- **Allison Lian** — Frontend  
+GitHub: [allisonliann.github.io](https://allisonliann.github.io/allisonlian.github.io/)  
+About: Hi, I'm Allison Lian, a second-year at UC San Diego studying Computer Science. I have some experience in frontend development mostly through projects, but I am striving to expand my skills in the realm of backend dev. I aspire to pursue a career in software engineering following graduation. Beyond academics, I like to go hiking, bake, and play piano.
 
-- **Christian Pacheco** – Project Lead / Manager, Documentation Lead  
-  GitHub: [TBD](#)  
-  About: TBD  
+## 🔧 Roles & responsibilities
 
-- **Owen Atis** – Designer / UI Developer, Documentation Lead, Frontend Developer  
-  GitHub: [TBD](#)  
-  About: TBD  
+Totally okay if this shifts — we'll nudge roles when the project asks nicely 💻
 
-- **Jacky Yu** – Designer / UI Developer, Frontend Developer  
-  GitHub: [TBD](#)  
-  About: TBD  
 
-- **Adithya Gundlapalli** – Backend Developer  
-  GitHub: [TBD](#)  
-  About: TBD  
+| Area                     | Who                                                   | What                                  |
+| ------------------------ | ----------------------------------------------------- | ------------------------------------- |
+| Project leads / managers | Yu Wu, Christian Pacheco                              | Schedule, logistics, TA comms 📝      |
+| Lead developer           | Rena Tokhi                                            | Technical direction, stack backup 🖥️ |
+| QA & testing             | Alexander Perelson, Binteng Tan, Benjamin Scheerger   | Tests, bugs, quality bar 🐛✅          |
+| Design / UI              | Owen Atis, Jacky Yu, Kaitlyn Nguy                     | UX, visuals, vibes 🎨                 |
+| Documentation            | Christian Pacheco, Owen Atis                          | Written deliverables, docs 📜         |
+| Frontend                 | Jacky Yu, Allison Lian, Rena Tokhi, Owen Atis         | UI and client-side work 💻            |
+| Backend                  | Adithya Gundlapalli, Kaitlyn Nguy, Benjamin Scheerger | APIs, data, server-side ☁️⚙️          |
 
-- **Benjamin Scheerger** – QA & Testing, Backend Developer  
-  GitHub: [TBD](#)  
-  About: TBD  
 
-- **Alexander Perelson** – QA & Testing  
-  GitHub: [TBD](#)  
-  About: TBD  
+*Lots of us wear more than one hat — cozy overlap is normal.* 🖇️
 
-- **Binteng Tan** – QA & Testing  
-  GitHub: [TBD](#)  
-  About: TBD  
+## 📝 Note
 
-- **Rena Tokhi** – Lead Developer, Frontend Developer  
-  GitHub: [TBD](#)  
-  About: TBD  
-
-- **Kaitlyn Nguy** – Designer / UI Developer, Backend Developer  
-  GitHub: [TBD](#)  
-  About: TBD  
-
-- **Allison Lian** – Frontend Developer  
-  GitHub: [TBD](#)  
-  About: TBD  
-
----
-
-## 🔧 Roles & Responsibilities (Detailed)
-
-The following roles define our current team structure. These assignments are flexible and may be adjusted based on project needs and availability.
-
-- **Project Leads / Managers:**  
-  Yu Wu, Christian Pacheco  
-  - Coordinate overall progress, manage logistics, and communicate with the TA
-
-- **Lead Developer (Fullstack / Frontend / Backend):**  
-  Rena Tokhi  
-  - Oversees technical direction and supports implementation across the stack
-
-- **QA & Testing:**  
-  Alexander Perelson, Binteng Tan, Benjamin Scheerger  
-  - Responsible for testing, debugging, and ensuring product quality
-
-- **Design / UI Developers:**  
-  Owen Atis, Jacky Yu, Kaitlyn Nguy  
-  - Handle UI/UX design and visual consistency
-
-- **Documentation Leads:**  
-  Christian Pacheco, Owen Atis  
-  - Maintain project documentation and written deliverables
-
-- **Frontend Developers:**  
-  Jacky Yu, Allison Lian, Rena Tokhi, Owen Atis  
-  - Implement user-facing features and interface
-
-- **Backend Developers:**  
-  Adithya Gundlapalli, Kaitlyn Nguy, Benjamin Scheerger  
-  - Handle server-side logic, data management, and APIs
-
-*Note: Roles may overlap and evolve as the project progresses.*
-
----
-
-## Team Note
-
-This page is a working document. Branding details, GitHub links, and additional member introductions will be updated as the project progresses.
+Branding picks, GitHub URLs, and short member blurbs will keep evolving as we go. Early drafts are friends, not enemies. 🫠🖥️📁
