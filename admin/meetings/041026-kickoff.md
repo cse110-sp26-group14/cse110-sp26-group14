@@ -17,8 +17,7 @@
 
 | Status | Members |
 | :--- | :--- |
-| **Present** | Yu, Christian, Owen, Benjamin, Allison, Alex, Binteng, Jacky, Kaitlyn, Rena |
-| **Absent** | Adithya |
+| **Present** | Yu, Christian, Owen, Benjamin, Allison, Alex, Binteng, Jacky, Kaitlyn, Rena, Adithya |
 
 *(First-name shorthand as originally taken; full names on [team page](../team.md).)*
 

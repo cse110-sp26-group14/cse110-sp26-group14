@@ -38,8 +38,8 @@ Accountability ✅ — open communication 📝 — respect 🤝 — integrity �
   GitHub: [andro-source.github.io/SP26-CSE110-Lab-01](https://andro-source.github.io/SP26-CSE110-Lab-01/)  
   About: I enjoy weight lifting. Recently got into golf. From the Bay Area. Likes to play Valorant sometimes.
 - **Adithya Gundlapalli** — Backend  
-  GitHub: [TBD](#)  
-  About: TBD
+  GitHub: [adithyagundlapalli.github.io](https://adithyagundlapalli.github.io/)  
+  About: Hey, I'm Adithya, a Math-CS student at UC San Diego. I'm really into building things, especially full-stack apps and AI projects that actually solve real problems. I've worked on a mix of backend systems and ML stuff, and I like thinking about how to turn ideas into something real and useful. Outside of tech, I'm big on fitness and sports, so I'm usually either coding, at the gym, or playing something competitive.
 - **Benjamin Scheerger** — QA & testing, backend  
   GitHub: [benscheerger.github.io/Lab1-CSE110](https://benscheerger.github.io/Lab1-CSE110/)  
   About: My name is Benjamin Scheerger. I'm a 4th year at UCSD majoring in Cognitive Science, and I'm taking this class as an elective for a Computer Science minor. Most of my programming experience is in ML focused roles, so I'm excited to expand my horizons through our project. Outside of academics, I enjoy skiing, hiking, camping, and surfing. I'm also a big fan of music festivals, especially EDM centered ones, and have rewatched the Office too many times to count.
