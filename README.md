@@ -5,6 +5,7 @@ Team **14** course repository: planning docs, meeting notes, branding, and (late
 ## Quick links
 
 - [Team page](admin/team.md) — roster, values, branding  
+- [Team intro video](admin/videos/teamintro.mp4) — course deliverable (MP4 in repo)  
 - [Meeting notes](admin/meetings/) — kickoff and ongoing minutes
 
 ## Repo layout
