@@ -56,8 +56,8 @@ About: I am a third year computer science student and enjoy skateboarding and we
 GitHub: [b7tan-cpu.github.io/cse110-lab1](https://b7tan-cpu.github.io/cse110-lab1/)  
 About: My name is Binteng Tan, and I am currently a junior majoring in Computer Science. I have a strong interest in technology and am continuously working to improve my programming skills. In my free time, I enjoy playing video games, which helps me relax and develop my logical thinking. I am also particularly interested in suspense and thriller movies, as I like analyzing plots and discovering hidden details.
 - **Rena Tokhi** — Lead developer, frontend  
-GitHub: [TBD](#)  
-About: TBD
+GitHub: [rena-tokhi.github.io/CSE110-](https://rena-tokhi.github.io/CSE110-/)  
+About: Hi, I'm Rena Tokhi, a third-year Computer Science student at UC San Diego. I'm passionate about web development and currently serving as a lead developer and frontend on this project. My goals include landing a software engineering internship and building a full-stack web app from scratch. Outside of academics, I'm working on learning how to ride a motorbike!
 - **Kaitlyn Nguy** — Designer / UI, backend  
 GitHub: [dlw1rm4.github.io/sp26-cse-110-lab-1](https://dlw1rm4.github.io/sp26-cse-110-lab-1/)  
 About: Hi, my name is Kaitlyn Nguy! I'm a second-year at UC San Diego majoring in Computer Science. I've been coding since my junior year of high school and developing websites for almost 3 years now! I really like getting boba and playing video games!
