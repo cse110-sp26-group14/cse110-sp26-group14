@@ -23,10 +23,6 @@ Accountability ✅ — open communication 📝 — respect 🤝 — integrity �
 
 ## 🗂️ Team members
 
-When you have a moment: swap GitHub `TBD` for your **GitHub Pages** site URL, and drop a tiny **About** line. No pressure — perfection not required~ 🔗
-
-📝 Example layout (click me)
-
 ### 💻 Roster
 
 - **Yu Wu** — Project lead / manager  
