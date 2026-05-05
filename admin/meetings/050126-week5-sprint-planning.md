@@ -33,6 +33,7 @@
 ### Additional planning notes
 
 - Need both research output and a prototype.
+- Store research-related files in `specs/research`.
 
 ---
 
