@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SE SitRep | Agile Operations Center</title>
+    <link rel="stylesheet" href="theme.css">
+    <!-- External Dependencies via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/dist/date-fns.min.js"></script>
+</head>
+<body class="bg-dark text-light">
+    <div id="app-root">
+        <!-- Sidebar Navigation -->
+        <sitrep-sidebar></sitrep-sidebar>
+        
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <div id="view-container">
+                <!-- Views will be rendered here by router.js -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Host -->
+    <checkin-modal id="global-modal"></checkin-modal>
+
+    <!-- Application Logic -->
+    <script type="module" src="main.js"></script>
+</body>
+</html>
