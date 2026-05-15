@@ -3,24 +3,41 @@
  * Zero Dependencies | Vanilla JS ES6+
  */
 
-const GAPI_CLIENT_ID = 'CLIENT_ID';
+const GAPI_CLIENT_ID = 'YOUR_ACTUAL_CLIENT_ID';
 let googleEvents = [];
+let gapiInited = false;
 
-function initGoogleCalendar() {
-    gapi.load('client:auth2', () => {
+// Step 1: Load the calendar API
+function gapiInit() {
+    gapi.load('client', () => {
         gapi.client.init({
-            clientId: GAPI_CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/calendar.readonly',
             discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest']
         }).then(() => {
-            const authInstance = gapi.auth2.getAuthInstance();
-            if (!authInstance.isSignedIn.get()) {
-                authInstance.signIn().then(fetchGoogleEvents);
-            } else {
-                fetchGoogleEvents();
-            }
+            gapiInited = true;
         });
     });
+}
+
+// Step 2: Trigger Google sign-in and fetch events
+function initGoogleCalendar() {
+    if (!gapiInited) {
+        alert('Calendar API not ready yet, try again in a moment.');
+        return;
+    }
+
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GAPI_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/calendar.readonly',
+        callback: (response) => {
+            if (response.error) {
+                console.error('Auth error:', response);
+                return;
+            }
+            fetchGoogleEvents();
+        }
+    });
+
+    tokenClient.requestAccessToken();
 }
 
 function fetchGoogleEvents() {
@@ -33,8 +50,13 @@ function fetchGoogleEvents() {
     }).then(response => {
         googleEvents = response.result.items;
         if (window.location.hash === '#calendar') router.handleRoute();
+    }).catch(err => {
+        console.error('Calendar fetch error:', err);
     });
 }
+
+// Call this on page load
+window.addEventListener('load', gapiInit);
 
 // --- 1. State Management (Pub/Sub Store) ---
 class Store {
@@ -356,7 +378,7 @@ class CalendarView extends BaseView {
                         ${['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(day => `
                             <div style="background: var(--bg-main); padding: 0.75rem; text-align: center; font-size: 0.7rem; font-weight: 600; color: var(--text-light);">${day}</div>
                         `).join('')}
-                        ${[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25].map(d => `
+                        ${[12,13,14,15,16,17,18,19,20,21,22,23,24,25].map(d => `
                             <div class="calendar-day" style="background: white; height: 120px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; ${d === 13 ? 'border: 2px solid var(--primary); z-index: 10;' : ''}">
                                 <div style="font-size: 0.875rem; font-weight: 500; color: ${d < 12 || d > 19 ? 'var(--text-light)' : 'var(--text-main)'}">${d}</div>
                                 ${d === 13 ? '<div style="background: var(--primary-light); color: var(--primary); font-size: 0.6rem; padding: 0.25rem; border-radius: 4px; font-weight: 600;">10:00 Sprint Stan...</div>' : ''}
@@ -379,10 +401,15 @@ class CalendarView extends BaseView {
                     </div>
                     <div style="margin-bottom: 2rem;">
                         <h4 style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-light); margin-bottom: 0.75rem;">Meetings</h4>
-                        <div style="padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);">
-                            <div style="font-weight: 600; font-size: 0.875rem;">Sprint Standup</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">10:00 • online</div>
+                        <div id="gcal-meetings">
+                            <div style="padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);">
+                                <div style="font-weight: 600; font-size: 0.875rem;">Sprint Standup</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">10:00 • online</div>
+                            </div>
                         </div>
+                        <button id="btn-connect-gcal" class="action-btn" style="width: 100%; margin-top: 0.75rem; justify-content: center;">
+                            Sync Google Calendar
+                        </button>
                     </div>
                     <div style="margin-bottom: 2rem;">
                         <h4 style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-light); margin-bottom: 0.75rem;">Tasks Due</h4>
@@ -395,6 +422,27 @@ class CalendarView extends BaseView {
                 </div>
             </div>
         `;
+    }
+
+    mount(container) {
+        const connectBtn = container.querySelector('#btn-connect-gcal');
+        if (connectBtn) {
+            connectBtn.onclick = () => initGoogleCalendar();
+        }
+
+        if (googleEvents.length > 0) {
+            const meetingsList = container.querySelector('#gcal-meetings');
+            if (meetingsList) {
+                meetingsList.innerHTML = googleEvents.map(event => `
+                    <div style="padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
+                        <div style="font-weight: 600; font-size: 0.875rem;">${event.summary}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                            ${new Date(event.start.dateTime || event.start.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
     }
 }
 
