@@ -1,0 +1,14 @@
+{
+  "name": "prototype-02-backlog-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "jest --runInBand"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0",
+    "jsdom": "^22.0.0",
+    "@testing-library/dom": "^8.0.0"
+  }
+}
