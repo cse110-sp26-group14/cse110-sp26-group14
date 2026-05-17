@@ -1,6 +1,6 @@
 /**
- * SE SitRep - Main Application Logic
- * Zero Dependencies | Vanilla JS ES6+
+ * Compatibility entry point.
+ * The application now lives in native ES modules under src/.
  */
 
 // --- 1. State Management (Pub/Sub Store) ---
