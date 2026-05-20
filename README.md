@@ -16,7 +16,10 @@ Team **14** course repository: planning docs, meeting notes, branding, and (late
 | `admin/meetings/` | Markdown meeting minutes (`mmddyy-topic.md`) |
 | `specs/` | Design / requirements (as the course progresses) |
 | `source/` | Application source code |
-| `source/prototype-02/` | **MVP baseline** — app + `npm run ci` (see [prototype-02 README](source/prototype-02/README.md)) |
+| `source/mvp/` | **MVP frontend** — modular ES app + login ([mvp README](source/mvp/README.md)) |
+| `source/backend/` | **MVP API** — Vanilla JS (Node `http`) shared team data ([backend README](source/backend/README.md)) |
+| `source/prototype-02/` | Earlier prototype baseline + CI |
+| `docs/DEPLOY.md` | **GitHub Pages** (frontend) + **Render** (backend) via Actions |
 
 ## Project
 
