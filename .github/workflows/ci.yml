@@ -4,11 +4,15 @@ on:
   push:
     branches: [main, master]
     paths:
+      - "source/mvp/**"
       - "source/prototype-02/**"
+      - "source/backend/**"
       - ".github/workflows/ci.yml"
   pull_request:
     paths:
+      - "source/mvp/**"
       - "source/prototype-02/**"
+      - "source/backend/**"
       - ".github/workflows/ci.yml"
 
 concurrency:
@@ -16,32 +20,63 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Lint, unit tests, E2E placeholder
+  backend:
+    name: Backend — unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: source/backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: source/backend/package-lock.json
+
+      - run: npm ci
+      - run: npm test
+
+  mvp:
+    name: MVP — lint, unit, E2E placeholder
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: source/mvp
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: source/mvp/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npm run test:e2e
+
+  prototype-02:
+    name: Prototype 02 — lint, unit, E2E placeholder
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: source/prototype-02
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
           cache-dependency-path: source/prototype-02/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint (JS, CSS, HTML)
-        run: npm run lint
-
-      - name: Unit tests
-        run: npm run test:unit
-
-      - name: E2E placeholder
-        run: npm run test:e2e
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npm run test:e2e

@@ -1,0 +1,190 @@
+/**
+ * Shared form layout (no inline styles in JS templates).
+ */
+
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-field label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font: inherit;
+}
+
+.form-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-actions {
+  margin-top: 0.5rem;
+}
+
+.form-actions .primary-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.dashboard-grid .span-2 {
+  grid-column: span 2;
+}
+
+.text-center-block {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.progress-track {
+  background: var(--border);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: var(--primary);
+  height: 100%;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.week-strip {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.day-box {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.day-box.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.summary-stats {
+  display: flex;
+  gap: 1rem;
+  text-align: center;
+}
+
+.summary-stats .stat-item {
+  flex: 1;
+}
+
+.card-highlight {
+  background: var(--primary-light);
+  border-color: #dbeafe;
+}
+
+.issues-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.issues-filters-card {
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.issues-search {
+  width: 100%;
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  cursor: pointer;
+  border: none;
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.filter-chip-active {
+  background: var(--primary);
+  color: white;
+}
+
+.issues-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.issue-card-header {
+  margin-bottom: 0.5rem;
+}
+
+.issue-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.issue-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.issue-description {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.issue-meta {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.75rem;
+  color: var(--text-light);
+  flex-wrap: wrap;
+}
+
+.badge-muted {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.empty-hint {
+  color: var(--text-muted);
+  padding: 1rem;
+}

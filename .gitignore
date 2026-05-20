@@ -1,4 +1,11 @@
 source/prototype-02/node_modules
 source/prototype-02/coverage
+source/mvp/node_modules
+source/mvp/coverage
+source/backend/data/db.json
+source/backend/data/sitrep.db
+source/backend/data/sitrep.db-*
+source/backend/.env
+source/backend/node_modules
 *.log
 .DS_Store
