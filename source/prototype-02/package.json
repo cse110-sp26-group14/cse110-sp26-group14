@@ -1,14 +1,28 @@
 {
-  "name": "prototype-02-backlog-tests",
+  "name": "prototype-02-sitrep",
   "version": "1.0.0",
   "private": true,
+  "description": "SE SitRep — Prototype 2 (MVP baseline). DevDependencies are for CI/testing only.",
   "scripts": {
-    "test": "jest --runInBand"
+    "test": "node ./node_modules/jest/bin/jest.js --runInBand",
+    "test:unit": "node ./node_modules/jest/bin/jest.js --runInBand --testPathPattern=__tests__",
+    "test:e2e": "node ./node_modules/jest/bin/jest.js --runInBand --testPathPattern=e2e",
+    "lint": "npm run lint:js && npm run lint:css && npm run lint:html",
+    "lint:js": "eslint .",
+    "lint:css": "stylelint \"**/*.css\"",
+    "lint:html": "html-validate index.html",
+    "ci": "npm run lint && npm run test:unit && npm run test:e2e"
   },
   "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@testing-library/dom": "^8.0.0",
+    "eslint": "^9.32.0",
+    "globals": "^16.0.0",
+    "html-validate": "^9.0.0",
     "jest": "^29.0.0",
     "jest-environment-jsdom": "^29.0.0",
     "jsdom": "^22.0.0",
-    "@testing-library/dom": "^8.0.0"
+    "stylelint": "^16.0.0",
+    "stylelint-config-standard": "^36.0.0"
   }
 }

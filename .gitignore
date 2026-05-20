@@ -1,1 +1,4 @@
 source/prototype-02/node_modules
+source/prototype-02/coverage
+*.log
+.DS_Store

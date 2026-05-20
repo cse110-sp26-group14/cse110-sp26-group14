@@ -15,7 +15,8 @@ Team **14** course repository: planning docs, meeting notes, branding, and (late
 | `admin/` | Team admin: `team.md`, `branding/`, `meetings/`, `videos/`, etc. |
 | `admin/meetings/` | Markdown meeting minutes (`mmddyy-topic.md`) |
 | `specs/` | Design / requirements (as the course progresses) |
-| `source/` | Application source code (when development starts) |
+| `source/` | Application source code |
+| `source/prototype-02/` | **MVP baseline** — app + `npm run ci` (see [prototype-02 README](source/prototype-02/README.md)) |
 
 ## Project
 
