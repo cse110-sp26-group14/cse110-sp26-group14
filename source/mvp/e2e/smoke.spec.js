@@ -46,6 +46,25 @@ test.describe('Smoke — auth & navigation', () => {
     }
   });
 
+  test('mobile menu opens and closes sidebar drawer', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAsDemo(page);
+    const menuBtn = page.locator('#btn-mobile-menu');
+    await expect(menuBtn).toBeVisible();
+    await expect(page.locator('#root')).not.toHaveClass(/nav-open/);
+
+    await menuBtn.click();
+    await expect(page.locator('#root')).toHaveClass(/nav-open/);
+    await expect(page.locator('#sidebar-backdrop')).toBeVisible();
+
+    // Sidebar (≈280px) sits above backdrop; click the exposed strip on the right.
+    const backdrop = page.locator('#sidebar-backdrop');
+    const box = await backdrop.boundingBox();
+    expect(box).not.toBeNull();
+    await page.mouse.click(box.x + box.width - 8, box.y + box.height / 2);
+    await expect(page.locator('#root')).not.toHaveClass(/nav-open/);
+  });
+
   test('log out returns to login', async ({ page }) => {
     await loginAsDemo(page);
     await page.locator('#user-menu-trigger').click();

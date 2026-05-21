@@ -14,6 +14,13 @@
   .mobile-menu-btn {
     display: inline-flex;
     flex-shrink: 0;
+    touch-action: manipulation;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  body.mobile-nav-open {
+    overflow: hidden;
   }
 
   #root {
@@ -26,6 +33,7 @@
     left: 0;
     bottom: 0;
     width: min(280px, 85vw);
+    z-index: 200;
     transform: translateX(-100%);
     transition: transform 0.2s ease;
     box-shadow: var(--shadow-lg);
@@ -39,7 +47,7 @@
     display: none;
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: 190;
     background: rgba(0, 0, 0, 0.45);
   }
 
@@ -128,7 +136,7 @@
     scrollbar-width: thin;
   }
 
-  #quick-actions > span {
+  #quick-actions > span.quick-actions-label {
     display: none;
   }
 
