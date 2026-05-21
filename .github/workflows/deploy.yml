@@ -8,7 +8,6 @@ on:
     paths:
       - "source/mvp/**"
       - "source/worker/**"
-      - "source/backend/**"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
@@ -49,7 +48,9 @@ jobs:
             echo "::error::Set repository variable D1_DATABASE_ID (from: npx wrangler d1 create se-sitrep)"
             exit 1
           fi
-          sed -i "s/REPLACE_WITH_YOUR_D1_DATABASE_ID/${D1_DATABASE_ID}/g" wrangler.toml
+          if grep -q 'REPLACE_WITH_YOUR_D1_DATABASE_ID' wrangler.toml; then
+            sed -i "s/REPLACE_WITH_YOUR_D1_DATABASE_ID/${D1_DATABASE_ID}/g" wrangler.toml
+          fi
           grep database_id wrangler.toml
 
       - name: Deploy Worker to Cloudflare

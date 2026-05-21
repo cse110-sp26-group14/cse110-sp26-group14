@@ -6,5 +6,6 @@ source/mvp/test-results
 source/mvp/playwright-report
 source/worker/node_modules
 source/worker/.wrangler
+source/backend/
 *.log
 .DS_Store
