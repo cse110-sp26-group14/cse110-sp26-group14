@@ -79,7 +79,8 @@ Never put the Google **Client Secret** in the frontend (browser uses Client ID o
 3. **Build Command**: `npm install`  
 4. **Start Command**: `npm start`  
 5. Add **`DEEPSEEK_API_KEY`** in Environment  
-6. After deploy, copy the URL into GitHub **`API_BASE_URL`**  
+6. Set **`NODE_VERSION`** = `20.18.0` (required — default Node 26 breaks `better-sqlite3` build)  
+7. After deploy, copy the URL into GitHub **`API_BASE_URL`**  
 7. Optional: add **`RENDER_DEPLOY_HOOK`** Secret  
 
 You can also import `source/backend/render.yaml` (Blueprint).
@@ -126,3 +127,15 @@ npx serve . -p 5173
 | AI summary / tasks | Header buttons | `POST /api/ai/*` (needs `DEEPSEEK_API_KEY` on Render) |
 
 CI does **not** call DeepSeek; it only runs SQLite/auth unit tests.
+
+---
+
+## Troubleshooting: Render `better-sqlite3` build failed
+
+If the log shows **Node v26** and `better_sqlite3` compile errors:
+
+1. Render dashboard → Web Service → **Environment** → add `NODE_VERSION` = `20.18.0`  
+2. **Manual Deploy** → Clear build cache & deploy  
+3. Confirm **Root Directory** is `source/backend`
+
+Do not use Node 26 until `better-sqlite3` publishes compatible prebuilds.
