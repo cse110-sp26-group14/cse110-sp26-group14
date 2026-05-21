@@ -1,13 +1,13 @@
 # SE SitRep Backend
 
-Vanilla Node.js HTTP API with **SQLite** (team-shared data), **session auth**, and **OpenAI** for AI summaries and sprint task suggestions.
+Vanilla Node.js HTTP API with **SQLite** (team-shared data), **session auth**, and **DeepSeek** for AI summaries and sprint task suggestions.
 
 ## Quick start
 
 ```bash
 cd source/backend
 cp .env.example .env
-# Edit .env — set OPENAI_API_KEY for AI features
+# Edit .env — set DEEPSEEK_API_KEY for AI features
 npm install
 npm start
 ```
@@ -35,7 +35,7 @@ Open `http://localhost:5173` — `index.html` sets `SITREP_CONFIG.dataMode: 'api
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/health` | No | Health + OpenAI configured flag |
+| GET | `/api/health` | No | Health + DeepSeek configured flag |
 | POST | `/api/auth/signup` | No | Register |
 | POST | `/api/auth/login` | No | Login → `{ token, user }` |
 | POST | `/api/auth/logout` | Bearer | Logout |
@@ -46,8 +46,8 @@ Open `http://localhost:5173` — `index.html` sets `SITREP_CONFIG.dataMode: 'api
 | POST | `/api/reports` | Bearer | Daily check-in |
 | POST | `/api/tasks` | Bearer | Create task |
 | PUT | `/api/availability` | Bearer | Save availability slots |
-| POST | `/api/ai/team-summary` | Bearer | OpenAI team summary + AI log |
-| POST | `/api/ai/suggest-tasks` | Bearer (admin) | OpenAI task suggestions |
+| POST | `/api/ai/team-summary` | Bearer | DeepSeek team summary + AI log |
+| POST | `/api/ai/suggest-tasks` | Bearer (admin) | DeepSeek task suggestions |
 
 Send `Authorization: Bearer <token>` on protected routes.
 
@@ -55,8 +55,9 @@ Send `Authorization: Bearer <token>` on protected routes.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `OPENAI_API_KEY` | For AI | OpenAI API key |
-| `OPENAI_MODEL` | No | Default `gpt-4o-mini` |
+| `DEEPSEEK_API_KEY` | For AI | [DeepSeek API key](https://platform.deepseek.com/api_keys) |
+| `DEEPSEEK_MODEL` | No | Default `deepseek-v4-flash` |
+| `DEEPSEEK_BASE_URL` | No | Default `https://api.deepseek.com` |
 | `PORT` | No | Default `3001` |
 | `HOST` | No | Default `0.0.0.0` |
 

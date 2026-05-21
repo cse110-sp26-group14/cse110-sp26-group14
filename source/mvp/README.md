@@ -4,11 +4,11 @@ Course MVP from **prototype-02**, aligned with `specs/feature/feature_list.md` a
 
 ## Full stack (recommended)
 
-**Terminal 1 — backend** (SQLite + auth + OpenAI):
+**Terminal 1 — backend** (SQLite + auth + DeepSeek):
 
 ```bash
 cd source/backend
-cp .env.example .env   # set OPENAI_API_KEY for AI buttons
+cp .env.example .env   # set DEEPSEEK_API_KEY for AI buttons
 npm install
 npm start              # http://localhost:3001
 ```
@@ -51,8 +51,8 @@ npm run ci
 | 2 | Sprint calendar | ✅ |
 | 3 | Dashboard | ✅ |
 | 4 | Async check-in | ✅ POST `/api/reports` |
-| 5 | AI team summary | ✅ OpenAI via `POST /api/ai/team-summary` |
-| 6 | AI task suggestion | ✅ Admin + OpenAI `/api/ai/suggest-tasks` |
+| 5 | AI team summary | ✅ DeepSeek via `POST /api/ai/team-summary` |
+| 6 | AI task suggestion | ✅ Admin + DeepSeek `/api/ai/suggest-tasks` |
 | 7 | Issues / blockers | ✅ Shared list + create |
 | 8 | Activity log / backlog | ✅ AI log + backlog views |
 | 9 | Availability | ✅ Seed grid + online indicators from sessions |

@@ -5,7 +5,7 @@
 ```
 Browser (source/mvp)  --fetch + Bearer token-->  Node API (source/backend)
                                                       SQLite (data/sitrep.db)
-                                                      OpenAI (server-side key)
+                                                      DeepSeek (server-side key)
 ```
 
 ## Default config
@@ -23,8 +23,8 @@ window.SITREP_CONFIG = {
 ## Auth flow
 
 1. `POST /api/auth/login` → `{ token, user }`
-2. Frontend stores token; sends `Authorization: Bearer <token>` on all `/api/*` routes (except login/signup/health).
-3. `user.profileUserId` links to team user row for reports and check-ins.
+2. Frontend stores token; sends `Authorization: Bearer <token>` on protected `/api/*` routes.
+3. `user.profileUserId` links to the team user row for reports and check-ins.
 
 ## Main endpoints
 
@@ -33,16 +33,16 @@ window.SITREP_CONFIG = {
 | `GET /api/state` | Full shared state after login |
 | `GET/POST /api/issues` | Team issues |
 | `POST /api/reports` | Daily check-in |
-| `POST /api/ai/team-summary` | OpenAI summary → AI log |
-| `POST /api/ai/suggest-tasks` | Admin: OpenAI tasks → sprint |
+| `POST /api/ai/team-summary` | DeepSeek summary → AI log |
+| `POST /api/ai/suggest-tasks` | Admin: DeepSeek tasks → sprint |
 
-Requires `OPENAI_API_KEY` in `source/backend/.env` for AI routes.
+Requires `DEEPSEEK_API_KEY` in `source/backend/.env` (or Render env) for AI routes.
 
 ## Google Calendar
 
-Set `googleClientId` in `SITREP_CONFIG`. OAuth origins must include your dev URL (e.g. `http://localhost:5173`). Scaffold: `js/services/googleCalendarService.js`.
+Set `googleClientId` in `SITREP_CONFIG`. OAuth origins must include your dev URL (e.g. `http://localhost:5173`). See `js/services/googleCalendarService.js`.
 
 ## Deploy notes
 
-- Frontend: GitHub Pages / static host — point `apiBaseUrl` to deployed API.
-- Backend: Render, Railway, Fly.io, etc. — set env vars; enable CORS origin if not `*`.
+- **Frontend**: GitHub Pages — set repo variable `API_BASE_URL` to your Render API URL.
+- **Backend**: Render — set `DEEPSEEK_API_KEY`; see [docs/DEPLOY.md](../../../docs/DEPLOY.md).
