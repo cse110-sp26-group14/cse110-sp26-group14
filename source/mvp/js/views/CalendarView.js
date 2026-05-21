@@ -15,6 +15,7 @@ import { useGoogleCalendar } from '../config/appConfig.js';
 import { todayISO } from '../utils/dates.js';
 import { getSprintTasksWithoutDue } from '../utils/taskHelpers.js';
 import { renderTemplate } from '../utils/templateEngine.js';
+import { showToast } from '../utils/toast.js';
 import {
   renderCalendarDayCell,
   renderCalendarLayout,
@@ -202,13 +203,17 @@ export class CalendarView extends BaseView {
     };
 
     container.querySelector('#btn-connect-gcal')?.addEventListener('click', async () => {
+      const btn = container.querySelector('#btn-connect-gcal');
       try {
+        showToast('Connecting to Google Calendar…', 'info', 2200);
         const events = await connectAndFetchGoogleEvents();
         this.store.setGoogleEvents(events);
         rerender();
-        alert(`Loaded ${events.length} upcoming Google Calendar event(s).`);
+        showToast(`Loaded ${events.length} upcoming event(s).`, 'success', 4200);
       } catch (err) {
-        alert(err.message || 'Google Calendar connection failed.');
+        showToast(err.message || 'Google Calendar connection failed.', 'error', 6000);
+      } finally {
+        if (btn) btn.disabled = false;
       }
     });
 

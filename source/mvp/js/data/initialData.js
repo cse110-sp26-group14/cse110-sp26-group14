@@ -18,10 +18,10 @@
 export const INITIAL_DATA = {
   users: [
     { id: 1, name: 'Maya Patel', role: 'Project Manager', avatar: 'MP', availability: {}, isAdmin: true },
-    { id: 2, name: 'Alex Chen', role: 'Frontend', avatar: 'AC', availability: {} },
-    { id: 3, name: 'Jordan Lee', role: 'Backend', avatar: 'JL', availability: {} },
-    { id: 4, name: 'Priya Shah', role: 'QA / Testing', avatar: 'PS', availability: {} },
-    { id: 5, name: 'Sam Rivera', role: 'Documentation', avatar: 'SR', availability: {} },
+    { id: 2, name: 'Alex Chen', role: 'Frontend', avatar: 'AC', availability: {}, isAdmin: true },
+    { id: 3, name: 'Jordan Lee', role: 'Backend', avatar: 'JL', availability: {}, isAdmin: true },
+    { id: 4, name: 'Priya Shah', role: 'QA / Testing', avatar: 'PS', availability: {}, isAdmin: true },
+    { id: 5, name: 'Sam Rivera', role: 'Documentation', avatar: 'SR', availability: {}, isAdmin: true },
   ],
   sprints: [
     { id: 1, name: 'Sprint 1', start: '2026-05-01', end: '2026-05-08', status: 'completed' },

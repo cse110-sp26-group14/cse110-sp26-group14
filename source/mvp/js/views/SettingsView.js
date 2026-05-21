@@ -1,5 +1,6 @@
 import { BaseView } from './BaseView.js';
 import { useRemoteData } from '../config/appConfig.js';
+import { showToast } from '../utils/toast.js';
 import { updateProfileRemote } from '../services/dataSyncService.js';
 import { appConfig } from '../config/appConfig.js';
 
@@ -45,6 +46,7 @@ export class SettingsView extends BaseView {
       e.preventDefault();
       const fd = new FormData(e.target);
       const msg = container.querySelector('#settings-msg');
+      showToast('Saving profile…', 'info', 2000);
       try {
         await updateProfileRemote(this.store, {
           name: fd.get('name'),
@@ -52,6 +54,7 @@ export class SettingsView extends BaseView {
         });
         msg.textContent = 'Profile saved.';
         msg.style.color = 'var(--success)';
+        showToast('Profile updated.', 'success', 3500);
         const nameEl = document.getElementById('user-name');
         const roleEl = document.getElementById('user-role');
         if (nameEl) nameEl.textContent = this.store.currentAuthUser?.name || '';
@@ -64,7 +67,7 @@ export class SettingsView extends BaseView {
 
     container.querySelector('#settings-reset-local')?.addEventListener('click', () => {
       localStorage.removeItem('se-sitrep-mvp-state');
-      alert('Local cache cleared. Reloading…');
+      showToast('Local cache cleared. Reloading…', 'info', 2000);
       location.reload();
     });
   }

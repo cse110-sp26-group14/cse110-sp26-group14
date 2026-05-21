@@ -100,6 +100,20 @@
   </form>
 </template>
 
+<template id="tpl-form-ai-goals">
+  <form id="ai-goals-form" class="form-stack">
+    <p class="form-hint">Describe sprint goals or deadlines. AI will suggest tasks using team check-ins and availability.</p>
+    <div class="form-field">
+      <label for="ai-goals-input">Sprint goals</label>
+      <textarea id="ai-goals-input" name="goals" rows="3" required>MVP delivery and bug fixes</textarea>
+    </div>
+    <div class="form-actions form-actions-split">
+      <button type="button" class="action-btn" id="ai-goals-cancel">Cancel</button>
+      <button type="submit" class="primary-btn">Generate suggestions</button>
+    </div>
+  </form>
+</template>
+
 <template id="tpl-form-ai-review-intro">
   <form id="ai-task-review-form" class="form-stack">
     <p class="form-hint">Suggestions use team roles, check-ins, and availability (no check-in = assumed available). Edit assignee and due before accepting.</p>

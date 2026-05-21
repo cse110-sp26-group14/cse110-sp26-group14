@@ -206,6 +206,7 @@ export function ensureDemoAccount() {
       role: 'Frontend',
       avatar: 'AC',
       profileUserId: 2,
+      isAdmin: true,
     },
   ]);
 }
