@@ -177,7 +177,6 @@ export async function handleApi(request, env) {
     }
 
     if (method === 'POST' && pathname === '/api/ai/suggest-tasks') {
-      if (!user.isAdmin) return json({ error: 'Admin only' }, 403);
       const goals = body.goals || body.input || 'Sprint goals';
       const sprintId = Number(body.sprintId) || 2;
       const state = await db.getFullState(env.DB);

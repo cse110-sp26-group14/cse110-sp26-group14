@@ -11,10 +11,10 @@ DELETE FROM sprints;
 
 INSERT INTO users (id, name, email, password_hash, role, avatar, is_admin) VALUES
 (1, 'Maya Patel', 'maya@team.local', 'bdb8c193cd6687f527a1e21c304fa2ff:4c8d07d8f0e41de1ac55dfb4c219570d024f5b3f303182947874a442f89a349b0437ea5822d795eab9bd55f58166e58506c9a7a9d4947682adc49b86a8b4a48e', 'Project Manager', 'MP', 1),
-(2, 'Alex Chen', 'alex@team.local', 'bdb8c193cd6687f527a1e21c304fa2ff:4c8d07d8f0e41de1ac55dfb4c219570d024f5b3f303182947874a442f89a349b0437ea5822d795eab9bd55f58166e58506c9a7a9d4947682adc49b86a8b4a48e', 'Frontend', 'AC', 0),
-(3, 'Jordan Lee', 'jordan@team.local', 'bdb8c193cd6687f527a1e21c304fa2ff:4c8d07d8f0e41de1ac55dfb4c219570d024f5b3f303182947874a442f89a349b0437ea5822d795eab9bd55f58166e58506c9a7a9d4947682adc49b86a8b4a48e', 'Backend', 'JL', 0),
-(4, 'Priya Shah', 'priya@team.local', 'bdb8c193cd6687f527a1e21c304fa2ff:4c8d07d8f0e41de1ac55dfb4c219570d024f5b3f303182947874a442f89a349b0437ea5822d795eab9bd55f58166e58506c9a7a9d4947682adc49b86a8b4a48e', 'QA / Testing', 'PS', 0),
-(5, 'Sam Rivera', 'sam@team.local', 'bdb8c193cd6687f527a1e21c304fa2ff:4c8d07d8f0e41de1ac55dfb4c219570d024f5b3f303182947874a442f89a349b0437ea5822d795eab9bd55f58166e58506c9a7a9d4947682adc49b86a8b4a48e', 'Documentation', 'SR', 0);
+(2, 'Alex Chen', 'alex@team.local', 'bdb8c193cd6687f527a1e21c304fa2ff:4c8d07d8f0e41de1ac55dfb4c219570d024f5b3f303182947874a442f89a349b0437ea5822d795eab9bd55f58166e58506c9a7a9d4947682adc49b86a8b4a48e', 'Frontend', 'AC', 1),
+(3, 'Jordan Lee', 'jordan@team.local', 'bdb8c193cd6687f527a1e21c304fa2ff:4c8d07d8f0e41de1ac55dfb4c219570d024f5b3f303182947874a442f89a349b0437ea5822d795eab9bd55f58166e58506c9a7a9d4947682adc49b86a8b4a48e', 'Backend', 'JL', 1),
+(4, 'Priya Shah', 'priya@team.local', 'bdb8c193cd6687f527a1e21c304fa2ff:4c8d07d8f0e41de1ac55dfb4c219570d024f5b3f303182947874a442f89a349b0437ea5822d795eab9bd55f58166e58506c9a7a9d4947682adc49b86a8b4a48e', 'QA / Testing', 'PS', 1),
+(5, 'Sam Rivera', 'sam@team.local', 'bdb8c193cd6687f527a1e21c304fa2ff:4c8d07d8f0e41de1ac55dfb4c219570d024f5b3f303182947874a442f89a349b0437ea5822d795eab9bd55f58166e58506c9a7a9d4947682adc49b86a8b4a48e', 'Documentation', 'SR', 1);
 
 INSERT INTO sprints (id, name, start_date, end_date, status) VALUES
 (1, 'Sprint 1', '2026-05-01', '2026-05-08', 'completed'),
