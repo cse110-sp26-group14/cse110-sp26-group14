@@ -1,10 +1,18 @@
-import { BaseView } from './BaseView.js';
-import { getMyReportToday, getCheckInStats } from '../utils/teamStats.js';
-import { todayISO } from '../utils/dates.js';
+/**
+ * Team dashboard overview for the selected sprint.
+ * @module views/DashboardView
+ */
 
+import { BaseView } from './BaseView.js';
+import { getMyReportToday, getCheckInStats, getMissingCheckInUsers } from '../utils/teamStats.js';
+import { renderTemplate } from '../utils/templateEngine.js';
+
+/**
+ * @extends BaseView
+ */
 export class DashboardView extends BaseView {
   render() {
-    const activeSprint = this.store.getActiveSprint();
+    const activeSprint = this.store.getSelectedSprint();
     const sprintTasks = this.store.getTasksBySprint(activeSprint?.id ?? 2);
     const issues = this.store.getIssues();
     const urgentIssues = issues.filter((i) =>
@@ -13,7 +21,12 @@ export class DashboardView extends BaseView {
     const reports = this.store.getReports();
     const users = this.store.getUsers();
     const stats = getCheckInStats(reports, users);
+    const missingUsers = getMissingCheckInUsers(reports, users);
     const myReport = getMyReportToday(this.store);
+    const priorityTasks = sprintTasks
+      .filter((t) => t.status !== 'done' && t.status !== 'resolved')
+      .filter((t) => t.priority === 'high' || t.priority === 'critical')
+      .slice(0, 3);
     const latestAi = this.store.getAiLogs()[0];
     const meetings = this.store.getMeetings().filter((m) => m.sprintId === activeSprint?.id);
     const nextMeeting = meetings[0];
@@ -27,6 +40,12 @@ export class DashboardView extends BaseView {
                 <h1 class="view-title">Dashboard</h1>
                 <p class="view-subtitle">Real-time overview of ${activeSprint?.name || 'Sprint'} ${this.store.dataModeLabel}</p>
             </div>
+
+            ${!myReport
+              ? renderTemplate('tpl-dashboard-reminder', {
+                text: `Reminder: submit your daily check-in${missingUsers.length ? ` — ${missingUsers.length} teammate(s) still missing today` : ''}.`,
+              })
+              : ''}
 
             <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
                 <div class="card" style="grid-column: span 2;">
@@ -76,6 +95,15 @@ export class DashboardView extends BaseView {
                          </div>`
                       : ''}
                 </div>
+
+                ${priorityTasks.length
+                  ? `<div class="card span-3">
+                       <div class="card-header"><h3 class="card-title">Priority tasks</h3></div>
+                       <ul class="priority-task-list">
+                         ${priorityTasks.map((t) => `<li>${t.title} — ${t.owner || 'Unassigned'} (due ${t.due || '—'})</li>`).join('')}
+                       </ul>
+                     </div>`
+                  : ''}
 
                 <div class="card" style="background: var(--primary-light); border-color: #dbeafe;">
                     <div class="card-header">
@@ -141,11 +169,8 @@ export class DashboardView extends BaseView {
   }
 
   mount(container) {
-    const btn = container.querySelector('#dashboard-edit-checkin');
-    if (btn) {
-      btn.addEventListener('click', () => {
-        document.getElementById('btn-daily-checkin')?.click();
-      });
-    }
+    const openCheckin = () => document.getElementById('btn-daily-checkin')?.click();
+    container.querySelector('#dashboard-edit-checkin')?.addEventListener('click', openCheckin);
+    container.querySelector('#dashboard-reminder-checkin')?.addEventListener('click', openCheckin);
   }
 }

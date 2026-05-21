@@ -108,10 +108,10 @@ export async function suggestSprintTasksRemote(goals, sprintId = 2) {
     id: createId(),
     type: 'Suggestion',
     title: 'AI Sprint Tasks Suggested',
-    status: 'applied',
-    content: `${tasks.length} tasks (local simulation)`,
+    status: 'pending',
+    content: `Review ${tasks.length} task suggestion(s) (local simulation)`,
     timestamp: currentTimestamp(),
-    details: { input: goals },
+    details: { input: goals, suggestions: tasks },
   };
-  return { tasks, log };
+  return { suggestions: tasks, tasks, log };
 }

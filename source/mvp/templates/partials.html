@@ -1,0 +1,246 @@
+<!-- Form templates (structure only; filled by templateEngine.js) -->
+
+<template id="tpl-form-daily-checkin">
+  <form id="checkin-form" class="form-stack">
+    <div class="form-field">
+      <label for="checkin-status">Status</label>
+      <select id="checkin-status" name="status" required>
+        <option value="Completed">Completed</option>
+        <option value="In Progress" selected>In Progress</option>
+        <option value="Blocked">Blocked</option>
+        <option value="Not Started">Not Started</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="checkin-mood">Mood</label>
+      <select id="checkin-mood" name="mood">
+        <option>Good</option>
+        <option>Neutral</option>
+        <option>Stressed</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="checkin-progress">What did you work on?</label>
+      <textarea id="checkin-progress" name="progress" required></textarea>
+    </div>
+    <div class="form-field">
+      <label for="checkin-blockers">Any blockers?</label>
+      <input id="checkin-blockers" name="blockers" type="text" placeholder="None" />
+    </div>
+    <div class="form-field">
+      <label for="checkin-notes">Notes (optional)</label>
+      <textarea id="checkin-notes" name="notes" placeholder="Links, follow-ups, context for the team…"></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="primary-btn">Submit Check-In</button>
+    </div>
+  </form>
+</template>
+
+<template id="tpl-form-meeting">
+  <form id="meeting-form" class="form-stack">
+    <div class="form-field">
+      <label for="meeting-title">Title</label>
+      <input id="meeting-title" name="title" type="text" required value="Team sync" />
+    </div>
+    <div class="form-field">
+      <label for="meeting-date">Date</label>
+      <input id="meeting-date" name="date" type="date" required value="{{defaultDate}}" />
+    </div>
+    <div class="form-field">
+      <label for="meeting-time">Time</label>
+      <input id="meeting-time" name="time" type="text" required value="{{defaultTime}}" placeholder="10:00 AM" />
+    </div>
+    <div class="form-field">
+      <label for="meeting-format">Format</label>
+      <select id="meeting-format" name="format">
+        <option value="Zoom">Zoom</option>
+        <option value="In-person">In-person</option>
+        <option value="Hybrid">Hybrid</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="meeting-goal">Goal (optional)</label>
+      <textarea id="meeting-goal" name="goal" placeholder="Sprint planning, retro, etc."></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="primary-btn">Add to sprint calendar</button>
+    </div>
+  </form>
+</template>
+
+<template id="tpl-form-issue">
+  <form id="issue-form" class="form-stack">
+    <div class="form-field">
+      <label for="issue-title">Title</label>
+      <input id="issue-title" name="title" type="text" required />
+    </div>
+    <div class="form-field">
+      <label for="issue-severity">Priority</label>
+      <select id="issue-severity" name="severity">
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="issue-description">Description</label>
+      <textarea id="issue-description" name="description" required></textarea>
+    </div>
+    <div class="form-field form-field--row">
+      <label>
+        <input type="checkbox" name="createTask" value="1" />
+        Also create a tracking task in the backlog
+      </label>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="primary-btn">Submit Issue</button>
+    </div>
+  </form>
+</template>
+
+<template id="tpl-form-ai-review-intro">
+  <form id="ai-task-review-form" class="form-stack">
+    <p class="form-hint">Select tasks to add to the sprint backlog. You can edit titles before accepting.</p>
+    <div id="ai-review-rows">{{rows}}</div>
+    <div class="form-actions form-actions--split">
+      <button type="button" class="action-btn" id="ai-review-reject-all">Reject all</button>
+      <button type="submit" class="primary-btn">Accept selected</button>
+    </div>
+  </form>
+</template>
+
+<template id="tpl-form-ai-review-row">
+  <label class="ai-review-row">
+    <input type="checkbox" name="pick-{{index}}" value="1" checked />
+    <div class="ai-review-row__fields">
+      <input type="text" name="title-{{index}}" value="{{title}}" />
+      <select name="priority-{{index}}">
+        <option value="high" {{highSelected}}>High</option>
+        <option value="medium" {{mediumSelected}}>Medium</option>
+        <option value="low" {{lowSelected}}>Low</option>
+      </select>
+    </div>
+  </label>
+</template>
+
+<!-- Calendar partials -->
+
+<template id="tpl-cal-layout">
+  <div class="cal-view">
+    <div class="view-header cal-view__header">
+      <div>
+        <h1 class="view-title">Sprint Calendar</h1>
+        <p class="view-subtitle">{{subtitle}}</p>
+      </div>
+      <div class="cal-view__toolbar">
+        {{gcalToolbar}}
+        <div class="cal-controls">
+          <button type="button" class="action-btn cal-controls__btn" id="cal-prev-month" aria-label="Previous month">‹</button>
+          <span class="cal-controls__label">{{monthLabel}}</span>
+          <button type="button" class="action-btn cal-controls__btn" id="cal-next-month" aria-label="Next month">›</button>
+          <span class="cal-controls__divider"></span>
+          <button type="button" class="action-btn cal-controls__btn" id="cal-goto-today">Today</button>
+        </div>
+      </div>
+    </div>
+    <div class="cal-layout">
+      <div class="card cal-grid-card">
+        <div class="cal-grid">
+          {{weekdayHeaders}}
+          {{dayCells}}
+        </div>
+        <div class="cal-legend">{{legend}}</div>
+      </div>
+      <div class="card cal-sidebar" id="calendar-sidebar">
+        <div class="card-header">
+          <h3 class="card-title">{{sidebarTitle}}</h3>
+        </div>
+        {{sidebarBody}}
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-cal-weekday">MON</template>
+
+<template id="tpl-cal-day">
+  <button type="button" data-cal-date="{{iso}}" class="calendar-day {{dayClasses}}">
+    <span class="calendar-day__num {{dayNumClass}}">{{day}}</span>
+    {{chips}}
+  </button>
+</template>
+
+<template id="tpl-cal-chip">
+  <span class="cal-chip {{chipClass}}">{{text}}{{ellipsis}}</span>
+</template>
+
+<template id="tpl-cal-sidebar-section">
+  <section class="cal-sidebar__section">
+    <h4 class="cal-sidebar__heading">{{heading}}</h4>
+    {{body}}
+  </section>
+</template>
+
+<template id="tpl-cal-meeting-card">
+  <article class="cal-event-card">
+    <div class="cal-event-card__title">{{title}}</div>
+    <div class="cal-event-card__meta">{{meta}}</div>
+    {{extra}}
+  </article>
+</template>
+
+<template id="tpl-cal-checkin-card">
+  <article class="cal-checkin-card">
+    <div class="cal-checkin-card__name">{{name}}</div>
+    {{body}}
+  </article>
+</template>
+
+<template id="tpl-cal-empty">No meetings this day</template>
+
+<!-- Issues / activity -->
+
+<template id="tpl-issues-tabs">
+  <div class="filter-chips issues-tabs">{{tabs}}</div>
+</template>
+
+<template id="tpl-report-card">
+  <div class="card issue-card report-card">
+    <div class="issue-card-title-row">
+      <h3 class="issue-title">{{title}}</h3>
+      {{badges}}
+    </div>
+    <p class="issue-description">{{progress}}</p>
+    {{blockers}}
+    {{notes}}
+  </div>
+</template>
+
+<template id="tpl-activity-card">
+  <div class="card activity-card">
+    <div class="activity-card__top">
+      <span class="badge badge-muted">{{kind}}</span>
+      <span class="activity-card__time">{{time}}</span>
+    </div>
+    <div class="activity-card__title">{{title}}</div>
+    <p class="activity-card__body">{{body}}</p>
+    <div class="activity-card__meta">{{meta}}</div>
+  </div>
+</template>
+
+<template id="tpl-dashboard-reminder">
+  <div class="card dashboard-reminder">
+    <span class="dashboard-reminder__text">{{text}}</span>
+    <button type="button" class="primary-btn" id="dashboard-reminder-checkin">Check in now</button>
+  </div>
+</template>
+
+<template id="tpl-gcal-connect-btn">
+  <button type="button" class="action-btn" id="btn-connect-gcal">{{label}}</button>
+</template>
+
+<template id="tpl-gcal-hint">
+  <span class="cal-gcal-hint">Add googleClientId in Settings to sync Google Calendar</span>
+</template>

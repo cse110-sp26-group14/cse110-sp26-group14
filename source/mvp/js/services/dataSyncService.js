@@ -11,7 +11,9 @@ import {
   postReport,
   patchIssue,
   postTask,
+  postMeeting,
   postAiLog,
+  patchAiLog,
   putAvailability,
   putUserProfile,
 } from './apiClient.js';
@@ -97,7 +99,7 @@ export async function createReportRemote(store, reportInput) {
       tags: ['Check-In Blocker'],
       author: store.currentAuthUser?.name || 'Team Member',
       assignee: null,
-      sprintId: store.getActiveSprint()?.id ?? 2,
+      sprintId: store.getSelectedSprint()?.id ?? 2,
       description: payload.progress || '',
     });
   }
@@ -108,6 +110,41 @@ export async function createReportRemote(store, reportInput) {
  * @param {import('../core/store.js').Store} store
  * @param {object} taskInput
  */
+/**
+ * @param {import('../core/store.js').Store} store
+ * @param {object} meetingInput
+ */
+export async function createMeetingRemote(store, meetingInput) {
+  const sprintId = meetingInput.sprintId ?? store.getSelectedSprint()?.id ?? 2;
+  const payload = { ...meetingInput, sprintId };
+  if (!useRemoteData()) {
+    return store.addMeeting(payload);
+  }
+  const created = await postMeeting(payload);
+  if (!store.state.meetings) store.state.meetings = [];
+  store.state.meetings.push(created);
+  store.publish(EVENTS.MEETINGS_CHANGED, store.state.meetings);
+  return created;
+}
+
+/**
+ * @param {import('../core/store.js').Store} store
+ * @param {number} logId
+ * @param {string} status
+ */
+export async function updateAiLogStatusRemote(store, logId, status) {
+  if (!useRemoteData()) {
+    store.updateAiLogStatus(logId, status);
+    return;
+  }
+  const { log } = await patchAiLog(logId, { status });
+  const entry = store.state.aiLogs.find((l) => l.id === logId);
+  if (entry) {
+    entry.status = log.status;
+    store.publish(EVENTS.AI_LOGS_CHANGED, store.state.aiLogs);
+  }
+}
+
 export async function createTaskRemote(store, taskInput) {
   if (!useRemoteData()) {
     return store.addTask({
@@ -118,7 +155,7 @@ export async function createTaskRemote(store, taskInput) {
   const created = await postTask({
     ...taskInput,
     owner: taskInput.owner ?? store.currentAuthUser?.name,
-    sprintId: taskInput.sprintId ?? store.getActiveSprint()?.id ?? 2,
+    sprintId: taskInput.sprintId ?? store.getSelectedSprint()?.id ?? 2,
   });
   store.state.tasks.push(created);
   store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);

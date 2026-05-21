@@ -1,4 +1,10 @@
+/**
+ * AI action log with search, filters, and approve flow for pending suggestions.
+ * @module views/AILogView
+ */
+
 import { BaseView } from './BaseView.js';
+import { updateAiLogStatusRemote } from '../services/dataSyncService.js';
 
 export class AILogView extends BaseView {
   constructor(store) {
@@ -47,6 +53,9 @@ export class AILogView extends BaseView {
 
         <div style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase;">Reviewer</div>
         <div style="font-size: 0.8125rem;">${details.reviewer || '—'}</div>
+        ${log.status === 'pending' && log.type === 'Suggestion'
+          ? `<button type="button" class="primary-btn" id="ailog-approve-btn" data-log-id="${log.id}" style="margin-top: 1.5rem; width: 100%;">Mark as reviewed</button>`
+          : ''}
       </div>
     `;
   }
@@ -125,6 +134,13 @@ export class AILogView extends BaseView {
         this.selectedLogId = Number(btn.dataset.logId);
         rerender();
       });
+    });
+
+    container.querySelector('#ailog-approve-btn')?.addEventListener('click', async () => {
+      const id = Number(container.querySelector('#ailog-approve-btn')?.dataset.logId);
+      if (!id) return;
+      await updateAiLogStatusRemote(this.store, id, 'approved');
+      rerender();
     });
   }
 }

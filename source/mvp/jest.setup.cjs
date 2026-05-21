@@ -18,3 +18,14 @@ if (typeof global.TextDecoder === 'undefined') {
 if (typeof global.URL === 'undefined') {
   global.URL = require('url').URL;
 }
+
+// Load HTML partials for unit tests that call renderTemplate()
+const fs = require('fs');
+const path = require('path');
+const partialsPath = path.join(__dirname, 'templates', 'partials.html');
+if (typeof document !== 'undefined' && fs.existsSync(partialsPath)) {
+  const host = document.createElement('div');
+  host.id = 'template-host';
+  host.innerHTML = fs.readFileSync(partialsPath, 'utf8');
+  document.body.appendChild(host);
+}

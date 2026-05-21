@@ -8,7 +8,7 @@ export class BacklogView extends BaseView {
   }
 
   getFilteredTasks() {
-    const activeId = this.store.getActiveSprint()?.id;
+    const activeId = this.store.getSelectedSprint()?.id;
     let tasks = [...this.store.getState().tasks];
 
     switch (this.filter) {

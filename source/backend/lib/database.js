@@ -332,6 +332,51 @@ export function createReport(input) {
  * @param {object} input
  * @returns {object}
  */
+/**
+ * @param {object} input
+ * @returns {object}
+ */
+export function createMeeting(input) {
+  const id = (getDb().prepare('SELECT MAX(id) AS m FROM meetings').get().m || 0) + 1;
+  const meeting = {
+    id,
+    sprintId: input.sprintId ?? 2,
+    title: input.title || 'Team meeting',
+    date: input.date || new Date().toISOString().slice(0, 10),
+    time: input.time || '10:00 AM',
+    format: input.format || 'Zoom',
+    location: input.location || '',
+    zoomLink: input.zoomLink || '',
+    goal: input.goal || '',
+  };
+  getDb().prepare(`
+    INSERT INTO meetings (id, sprint_id, title, date, time, format, location, zoom_link, goal)
+    VALUES (@id, @sprintId, @title, @date, @time, @format, @location, @zoomLink, @goal)
+  `).run(meeting);
+  return meeting;
+}
+
+/**
+ * @param {number} id
+ * @param {object} patch
+ * @returns {object|null}
+ */
+export function updateAiLog(id, patch) {
+  const row = getDb().prepare('SELECT * FROM ai_logs WHERE id = ?').get(id);
+  if (!row) return null;
+  const status = patch.status ?? row.status;
+  getDb().prepare('UPDATE ai_logs SET status = ? WHERE id = ?').run(status, id);
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    status,
+    content: row.content,
+    timestamp: row.timestamp,
+    details: JSON.parse(row.details_json || '{}'),
+  };
+}
+
 export function createTask(input) {
   const id = (getDb().prepare('SELECT MAX(id) AS m FROM tasks').get().m || 0) + 1;
   const task = {
