@@ -45,7 +45,7 @@ When users click **AI Team Summary**, the browser calls your **Render backend**,
 
    (no trailing `/`)
 
-3. On push to `main`, the Deploy workflow replaces `apiBaseUrl` in the Pages build from `localhost` to this URL.
+3. On push to `main`, the **Deploy** workflow replaces `http://localhost:3001` in `index.html` with this URL before uploading to Pages (the repo on disk still shows localhost for local dev).
 
 ### Optional: auto-deploy backend — **GitHub Secret**
 
