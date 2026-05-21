@@ -13,6 +13,7 @@ test.describe('Smoke — auth & navigation', () => {
     await loginAsDemo(page);
     await expect(page.locator('#user-name')).toHaveText('Maya Patel');
     await expect(page.locator('#header-sprint-badge')).toContainText('Sprint 2');
+    await expect(page.locator('#header-sprint-select')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Daily Check-In' })).toBeVisible();
   });
 

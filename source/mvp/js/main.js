@@ -73,9 +73,7 @@ function syncHeaderFromStore() {
   const sprint = store.getSelectedSprint();
   const badge = document.getElementById('header-sprint-badge');
   if (badge && sprint) {
-    const active = store.getActiveSprint();
-    const label = sprint.id === active?.id ? 'Active' : sprint.status || 'Sprint';
-    badge.innerHTML = `<span class="dot"></span> ${label}: ${sprint.start} – ${sprint.end}`;
+    badge.innerHTML = `<span class="dot"></span> ${sprint.name}: ${sprint.start} – ${sprint.end}`;
   }
   const select = document.getElementById('header-sprint-select');
   if (select && store.getState().sprints?.length) {

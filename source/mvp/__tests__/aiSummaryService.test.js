@@ -1,4 +1,4 @@
-import { buildTeamSummary, suggestSprintTasks } from '../js/services/aiSummaryService.js';
+import { buildTeamSummary, suggestSprintTasks, suggestSprintTasksRemote } from '../js/services/aiSummaryService.js';
 
 describe('aiSummaryService', () => {
   test('buildTeamSummary counts blockers and missing check-ins', () => {
@@ -16,5 +16,12 @@ describe('aiSummaryService', () => {
     const tasks = suggestSprintTasks('Ship MVP');
     expect(tasks.length).toBeGreaterThanOrEqual(3);
     expect(tasks[0].title).toContain('Ship MVP');
+  });
+
+  test('suggestSprintTasksRemote local mode returns pending log for review', async () => {
+    const result = await suggestSprintTasksRemote('Ship MVP', 2);
+    expect(result.log.status).toBe('pending');
+    expect(result.suggestions.length).toBeGreaterThanOrEqual(3);
+    expect(result.log.details.suggestions).toBeDefined();
   });
 });
