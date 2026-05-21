@@ -25,13 +25,14 @@ export class AvailabilityView extends BaseView {
                 <p class="view-subtitle">Shared schedule for ${date}. <button type="button" class="action-btn" id="avail-update-btn">Update my availability</button></p>
             </div>
 
-            <div class="availability-layout" style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
+            <div class="availability-layout">
                 <div class="card" style="padding: 1.5rem;">
                     <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: 1rem;">
                         <span class="badge" style="background: var(--bg-main); color: var(--text-muted); border: 1px solid var(--border);">${date}</span>
                         <span class="badge" style="background: var(--bg-main); color: var(--text-muted); border: 1px solid var(--border);">${this.store.getSelectedSprint()?.name || 'Sprint'}</span>
                     </div>
-                    <div class="availability-grid" style="display: grid; grid-template-columns: 150px repeat(9, 1fr); gap: 1px; background: var(--border);">
+                    <div class="availability-grid-scroll">
+                    <div class="availability-grid">
                         <div style="background: var(--bg-main); padding: 0.75rem; font-size: 0.75rem; color: var(--text-light);">Team</div>
                         ${HOURS.map((h) => `<div style="background: var(--bg-main); padding: 0.75rem; text-align: center; font-size: 0.75rem; color: var(--text-light);">${h}</div>`).join('')}
                         
@@ -62,6 +63,7 @@ export class AvailabilityView extends BaseView {
                                 `;
                             }).join('')}
                         `).join('')}
+                    </div>
                     </div>
                 </div>
 

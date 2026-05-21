@@ -49,6 +49,25 @@
   grid-column: span 2;
 }
 
+.ai-log-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 2rem;
+}
+
+.availability-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 2rem;
+}
+
+.availability-grid {
+  display: grid;
+  grid-template-columns: 150px repeat(9, 1fr);
+  gap: 1px;
+  background: var(--border);
+}
+
 .text-center-block {
   text-align: center;
   padding: 1rem 0;

@@ -151,6 +151,7 @@ async function startApp(authUser) {
     wireTaskModal();
     wireAiActions();
     wireHeader();
+    wireMobileNav();
     wireSprintSelector();
     wireMeetingModal();
     wireLogout();
@@ -333,6 +334,31 @@ function wireCreateIssue() {
       pendingToast: 'Issue submitted — saving…',
       successToast: 'Issue created.',
     });
+  });
+}
+
+function wireMobileNav() {
+  const menuBtn = document.getElementById('btn-mobile-menu');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const root = document.getElementById('root');
+
+  const closeNav = () => {
+    root?.classList.remove('nav-open');
+    menuBtn?.setAttribute('aria-expanded', 'false');
+  };
+
+  const openNav = () => {
+    root?.classList.add('nav-open');
+    menuBtn?.setAttribute('aria-expanded', 'true');
+  };
+
+  bindOnce(menuBtn, 'click', () => {
+    if (root?.classList.contains('nav-open')) closeNav();
+    else openNav();
+  });
+  bindOnce(backdrop, 'click', closeNav);
+  document.querySelectorAll('#sidebar-nav .nav-item').forEach((link) => {
+    bindOnce(link, 'click', closeNav);
   });
 }
 

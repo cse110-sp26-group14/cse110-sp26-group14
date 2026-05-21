@@ -76,6 +76,7 @@ export class BacklogView extends BaseView {
             <button type="button" class="badge backlog-filter-chip ${tag === this.filter ? 'filter-chip-active' : ''}" data-filter="${tag}" style="cursor: pointer; border: none; ${tag === this.filter ? 'background: var(--primary); color: white;' : 'background: var(--primary-light); color: var(--primary);'}">${tag}</button>
           `).join('')}
         </div>
+        <div class="table-scroll">
         <table>
           <thead>
             <tr>
@@ -101,6 +102,7 @@ export class BacklogView extends BaseView {
             `).join('')}
           </tbody>
         </table>
+        </div>
       </div>
     `;
   }
