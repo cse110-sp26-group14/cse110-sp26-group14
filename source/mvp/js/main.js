@@ -150,6 +150,7 @@ async function startApp(authUser) {
 
   try {
     await hydrateStoreFromApi(store);
+    store.reconcileSprints();
     if (normalizeTasksInStore(store)) {
       store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);
     }

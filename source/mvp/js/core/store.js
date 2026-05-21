@@ -10,6 +10,7 @@ import { loadState, saveState } from '../services/storageService.js';
 import { createId } from '../utils/ids.js';
 import { currentTimestamp, todayISO } from '../utils/dates.js';
 import { defaultDueForSprint } from '../utils/taskHelpers.js';
+import { applySprintLifecycle, pickDefaultSprint } from '../utils/sprintLifecycle.js';
 
 const STORAGE_KEY = 'se-sitrep-mvp-state';
 
@@ -85,14 +86,28 @@ export class Store {
     return this.state.sprints.find((s) => s.status === 'active');
   }
 
-  /** Sprint shown in dashboard/calendar/backlog (selected or active). */
+  /**
+   * Update sprint statuses from start/end dates (completed / active / planned).
+   * @param {string} [today] YYYY-MM-DD
+   * @returns {boolean} whether any sprint status changed
+   */
+  reconcileSprints(today) {
+    const changed = applySprintLifecycle(this.state.sprints, today);
+    if (changed) {
+      this.publish(EVENTS.SPRINT_CHANGED, this.getSelectedSprint());
+    }
+    return changed;
+  }
+
+  /** Sprint shown in dashboard/calendar/backlog (selected or date-based default). */
   getSelectedSprint() {
     if (this.selectedSprintId != null) {
-      return this.state.sprints.find(
+      const manual = this.state.sprints.find(
         (s) => Number(s.id) === Number(this.selectedSprintId),
-      ) || this.getActiveSprint();
+      );
+      if (manual) return manual;
     }
-    return this.getActiveSprint();
+    return this.getActiveSprint() || pickDefaultSprint(this.state.sprints);
   }
 
   /**
@@ -110,23 +125,18 @@ export class Store {
   addSprint(input) {
     const maxId = this.state.sprints.reduce((m, s) => Math.max(m, Number(s.id)), 0);
     const id = maxId + 1;
-    const status = input.status || 'planned';
-    if (status === 'active') {
-      this.state.sprints.forEach((s) => {
-        if (s.status === 'active') s.status = 'planned';
-      });
-    }
     const sprint = {
       id,
       name: String(input.name || '').trim() || `Sprint ${id}`,
       start: input.start,
       end: input.end,
-      status,
+      status: input.status || 'planned',
     };
     this.state.sprints.push(sprint);
+    this.reconcileSprints();
     this.selectedSprintId = id;
-    this.publish(EVENTS.SPRINT_CHANGED, sprint);
-    return sprint;
+    this.publish(EVENTS.SPRINT_CHANGED, this.getSelectedSprint());
+    return this.state.sprints.find((s) => Number(s.id) === id) || sprint;
   }
 
   /** @returns {object[]} */

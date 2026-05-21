@@ -31,6 +31,7 @@ export async function refreshStoreFromApi(store) {
   if (!useRemoteData()) return;
   const state = await fetchAppState();
   store.state = state;
+  store.reconcileSprints();
   if (normalizeTasksInStore(store)) {
     store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);
   } else {

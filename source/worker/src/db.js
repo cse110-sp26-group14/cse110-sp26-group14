@@ -3,6 +3,8 @@
  * @module db
  */
 
+import { syncSprintStatusesInDb } from './sprintLifecycle.js';
+
 /**
  * @param {D1Database} db
  * @param {number} userId
@@ -22,6 +24,8 @@ async function isUserOnline(db, userId) {
  * @returns {Promise<object>}
  */
 export async function getFullState(db) {
+  await syncSprintStatusesInDb(db);
+
   const userRows = (await db.prepare(
     'SELECT id, name, role, avatar, is_admin AS isAdmin, availability_json FROM users',
   ).all()).results;
@@ -162,7 +166,11 @@ export async function createSprint(db, input) {
     INSERT INTO sprints (id, name, start_date, end_date, status)
     VALUES (?, ?, ?, ?, ?)
   `).bind(id, sprint.name, sprint.start, sprint.end, sprint.status).run();
-  return sprint;
+  await syncSprintStatusesInDb(db);
+  const row = await db.prepare(
+    'SELECT id, name, start_date AS start, end_date AS end, status FROM sprints WHERE id = ?',
+  ).bind(id).first();
+  return row || sprint;
 }
 
 /**

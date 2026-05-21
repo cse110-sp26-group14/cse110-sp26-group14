@@ -22,7 +22,8 @@ test.describe('Smoke — auth & navigation', () => {
   test('demo login opens dashboard with user header', async ({ page }) => {
     await loginAsDemo(page);
     await expect(page.locator('#user-name')).toHaveText('Maya Patel');
-    await expect(page.locator('#header-sprint-badge')).toContainText('Sprint 2');
+    await expect(page.locator('#header-sprint-badge')).toContainText(/Sprint \d/);
+    await expect(page.locator('#header-sprint-select option:checked')).toContainText(/Sprint/);
     await expect(page.locator('#header-sprint-select')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Daily Check-In' })).toBeVisible();
   });
