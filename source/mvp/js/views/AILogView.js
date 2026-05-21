@@ -4,6 +4,7 @@
  */
 
 import { BaseView } from './BaseView.js';
+import { escapeHtml } from '../utils/templateEngine.js';
 import { updateAiLogStatusRemote } from '../services/dataSyncService.js';
 
 export class AILogView extends BaseView {
@@ -31,28 +32,83 @@ export class AILogView extends BaseView {
     return logs;
   }
 
+  renderSuggestionDetails(details) {
+    const parseFailed = Boolean(details.parseFailed);
+    const suggestions = details.suggestions || [];
+    const preview = details.modelResponsePreview || '';
+    const source = details.source || (parseFailed ? 'fallback' : '—');
+
+    return `
+      <div class="ai-log-detail-block">
+        <div class="ai-log-detail-label">AI source</div>
+        <div class="ai-log-detail-value">${escapeHtml(source)}</div>
+
+        ${parseFailed
+          ? `<div class="ai-log-parse-warning">
+              <strong>Parse failed</strong>
+              <p>Model output could not be parsed as JSON. Fallback tasks were shown instead.</p>
+              ${details.parseError ? `<p class="ai-log-parse-error">Error: ${escapeHtml(details.parseError)}</p>` : ''}
+            </div>`
+          : '<p class="ai-log-parse-ok">Model JSON parsed successfully.</p>'}
+
+        <div class="ai-log-detail-label">Sprint goals (input)</div>
+        <div class="ai-log-detail-value ai-log-detail-pre">${escapeHtml(details.input || '—')}</div>
+
+        <div class="ai-log-detail-label">Suggested tasks (${suggestions.length})</div>
+        <ul class="ai-log-suggestion-list">
+          ${suggestions.length
+            ? suggestions.map((s) => `
+              <li>
+                <strong>${escapeHtml(s.title || '—')}</strong>
+                <span>${escapeHtml(s.priority || 'medium')} · due ${escapeHtml(s.due || '—')} · ${escapeHtml(s.owner || 'Unassigned')}</span>
+              </li>
+            `).join('')
+            : '<li class="empty-hint">No suggestions recorded.</li>'}
+        </ul>
+
+        ${preview
+          ? `<details class="ai-log-raw-details">
+              <summary>Model response preview</summary>
+              <pre class="ai-log-raw-pre">${escapeHtml(preview)}</pre>
+            </details>`
+          : ''}
+      </div>
+    `;
+  }
+
   renderDetail(log) {
     if (!log) {
       return '<p style="font-size: 0.875rem; color: var(--text-muted);">Select a log entry to view details.</p>';
     }
     const ts = (log.timestamp || '').replace('T', ' ').substring(0, 19);
     const details = log.details || {};
+    const suggestionBlock = log.type === 'Suggestion' || details.suggestions?.length
+      ? this.renderSuggestionDetails(details)
+      : '';
+
     return `
-      <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">${log.title}</h3>
+      <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">${escapeHtml(log.title)}</h3>
       ${this.getBadgeHTML(log.status, (log.status || 'pending').toUpperCase())}
-      <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem;">${log.content}</p>
+      <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem;">${escapeHtml(log.content)}</p>
       <div style="margin-top: 1.5rem;">
-        <div style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase;">Type</div>
-        <div style="font-size: 0.8125rem; margin-bottom: 1rem;">${log.type || '—'}</div>
+        <div class="ai-log-detail-label">Type</div>
+        <div class="ai-log-detail-value">${escapeHtml(log.type || '—')}</div>
 
-        <div style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase;">Timestamp</div>
-        <div style="font-size: 0.8125rem; margin-bottom: 1rem;">${ts}</div>
+        <div class="ai-log-detail-label">Timestamp</div>
+        <div class="ai-log-detail-value">${escapeHtml(ts)}</div>
 
-        <div style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase;">Input source</div>
-        <div style="font-size: 0.8125rem; margin-bottom: 1rem;">${details.input || details.reportCount != null ? `${details.reportCount ?? '—'} check-ins` : '—'}</div>
+        <div class="ai-log-detail-label">Input source</div>
+        <div class="ai-log-detail-value">${details.input
+          ? escapeHtml(String(details.input))
+          : details.reportCount != null
+            ? `${details.reportCount ?? '—'} check-ins`
+            : '—'}</div>
 
-        <div style="font-size: 0.6rem; color: var(--text-light); text-transform: uppercase;">Reviewer</div>
-        <div style="font-size: 0.8125rem;">${details.reviewer || '—'}</div>
+        <div class="ai-log-detail-label">Reviewer</div>
+        <div class="ai-log-detail-value">${escapeHtml(details.reviewer || '—')}</div>
+
+        ${suggestionBlock}
+
         ${log.status === 'pending' && log.type === 'Suggestion'
           ? `<button type="button" class="primary-btn" id="ailog-approve-btn" data-log-id="${log.id}" style="margin-top: 1.5rem; width: 100%;">Mark as reviewed</button>`
           : ''}
