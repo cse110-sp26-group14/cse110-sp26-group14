@@ -6,7 +6,7 @@
 import { BaseView } from './BaseView.js';
 import { resolveIssueRemote } from '../services/dataSyncService.js';
 import { buildActivityTimeline } from '../utils/activityTimeline.js';
-import { renderActivityCard, renderReportCard, renderTabButton } from './renderers/issuesRenderer.js';
+import { renderActivityCard, renderReportCard, renderTabButton, renderTaskCard } from './renderers/issuesRenderer.js';
 
 /**
  * @extends BaseView
@@ -19,7 +19,7 @@ export class IssuesView extends BaseView {
     super(store);
     /** @type {string} */
     this.filter = 'All';
-    /** @type {'issues'|'reports'|'activity'} */
+    /** @type {'issues'|'tasks'|'reports'|'activity'} */
     this.panel = 'issues';
   }
 
@@ -79,6 +79,22 @@ export class IssuesView extends BaseView {
   /**
    * @returns {string}
    */
+  renderTasksPanel() {
+    const sprintId = this.store.getSelectedSprint()?.id;
+    const tasks = this.store.getState().tasks
+      .filter((t) => sprintId == null || Number(t.sprintId) === Number(sprintId))
+      .sort((a, b) => (a.due || '').localeCompare(b.due || '') || a.title.localeCompare(b.title));
+
+    if (!tasks.length) {
+      return '<p class="empty-hint">No sprint tasks yet. Add tasks from Backlog or accept AI suggestions.</p>';
+    }
+
+    return `<div class="issues-list">${tasks.map((t) => renderTaskCard(t, (type, label) => this.getBadgeHTML(type, label))).join('')}</div>`;
+  }
+
+  /**
+   * @returns {string}
+   */
   renderIssuesPanel() {
     const issues = this.getFilteredIssues();
     return `
@@ -112,6 +128,7 @@ export class IssuesView extends BaseView {
             <div class="issue-meta">
               <span>By ${issue.author}</span>
               <span>Assignee ${issue.assignee || 'Unassigned'}</span>
+              <span>Due ${issue.due || issue.created || '—'}</span>
               <span>Sprint ${issue.sprintId}</span>
               <span>created ${issue.created}</span>
             </div>
@@ -128,6 +145,7 @@ export class IssuesView extends BaseView {
     const modeNote = this.store.dataModeLabel || '';
     const tabs = [
       { id: 'issues', label: 'Issues' },
+      { id: 'tasks', label: 'Tasks' },
       { id: 'reports', label: 'Reports' },
       { id: 'activity', label: 'Activity' },
     ].map((t) => renderTabButton({ ...t, active: this.panel === t.id })).join('');
@@ -141,6 +159,7 @@ export class IssuesView extends BaseView {
       </div>
       <div class="filter-chips issues-tabs">${tabs}</div>
       ${this.panel === 'issues' ? this.renderIssuesPanel() : ''}
+      ${this.panel === 'tasks' ? this.renderTasksPanel() : ''}
       ${this.panel === 'reports' ? `<div class="reports-list">${this.renderReportsPanel()}</div>` : ''}
       ${this.panel === 'activity' ? `<div class="activity-list">${this.renderActivityPanel()}</div>` : ''}
     `;

@@ -9,6 +9,7 @@ import { useRemoteData } from '../config/appConfig.js';
 import { loadState, saveState } from '../services/storageService.js';
 import { createId } from '../utils/ids.js';
 import { currentTimestamp, todayISO } from '../utils/dates.js';
+import { defaultDueForSprint } from '../utils/taskHelpers.js';
 
 const STORAGE_KEY = 'se-sitrep-mvp-state';
 
@@ -214,10 +215,15 @@ export class Store {
    * @returns {object}
    */
   addIssue(issue) {
+    const sprint = this.state.sprints.find((s) => s.id === issue.sprintId)
+      || this.getSelectedSprint()
+      || this.getActiveSprint();
     const newIssue = {
       ...issue,
       id: createId(),
-      created: todayISO(),
+      created: issue.created || todayISO(),
+      due: issue.due || defaultDueForSprint(sprint),
+      assignee: issue.assignee ?? this.currentAuthUser?.name ?? null,
     };
 
     this.state.issues.unshift(newIssue);
@@ -251,11 +257,16 @@ export class Store {
    * @returns {object}
    */
   addTask(task) {
+    const sprint = this.state.sprints.find((s) => s.id === task.sprintId)
+      || this.getSelectedSprint()
+      || this.getActiveSprint();
     const newTask = {
       ...task,
       id: createId(),
-      sprintId: task.sprintId ?? this.getActiveSprint()?.id,
+      sprintId: task.sprintId ?? sprint?.id,
       status: task.status || 'open',
+      owner: task.owner || this.currentAuthUser?.name || null,
+      due: task.due || defaultDueForSprint(sprint),
     };
     this.state.tasks.push(newTask);
     this.publish(EVENTS.TASKS_CHANGED, this.state.tasks);

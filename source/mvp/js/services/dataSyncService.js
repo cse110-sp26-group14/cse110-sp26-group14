@@ -19,6 +19,8 @@ import {
 } from './apiClient.js';
 import { createNoteLog } from './aiLogService.js';
 import { todayISO } from '../utils/dates.js';
+import { enrichNewTask, normalizeTasksInStore } from '../utils/taskHelpers.js';
+import { enrichNewIssue } from '../utils/issueHelpers.js';
 
 /**
  * @param {import('../core/store.js').Store} store
@@ -28,7 +30,11 @@ export async function refreshStoreFromApi(store) {
   if (!useRemoteData()) return;
   const state = await fetchAppState();
   store.state = state;
-  store.save();
+  if (normalizeTasksInStore(store)) {
+    store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);
+  } else {
+    store.save();
+  }
 }
 
 /**
@@ -45,11 +51,12 @@ export async function hydrateStoreFromApi(store) {
  * @returns {Promise<object>}
  */
 export async function createIssueRemote(store, issue) {
+  const payload = enrichNewIssue(store, issue);
   if (!useRemoteData()) {
-    return store.addIssue(issue);
+    return store.addIssue(payload);
   }
 
-  const created = await postIssue(issue);
+  const created = await postIssue(payload);
   store.state.issues.unshift(created);
   store.publish(EVENTS.ISSUES_CHANGED, store.state.issues);
   return created;
@@ -145,18 +152,12 @@ export async function updateAiLogStatusRemote(store, logId, status) {
   }
 }
 
-export async function createTaskRemote(store, taskInput) {
+export async function createTaskRemote(store, taskInput, opts = {}) {
+  const payload = enrichNewTask(store, taskInput, opts);
   if (!useRemoteData()) {
-    return store.addTask({
-      ...taskInput,
-      owner: taskInput.owner ?? store.currentAuthUser?.name,
-    });
+    return store.addTask(payload);
   }
-  const created = await postTask({
-    ...taskInput,
-    owner: taskInput.owner ?? store.currentAuthUser?.name,
-    sprintId: taskInput.sprintId ?? store.getSelectedSprint()?.id ?? 2,
-  });
+  const created = await postTask(payload);
   store.state.tasks.push(created);
   store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);
   return created;

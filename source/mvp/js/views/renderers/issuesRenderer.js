@@ -51,3 +51,31 @@ export function renderActivityCard(item) {
     meta: item.meta,
   });
 }
+
+/**
+ * @param {object} task
+ * @param {function(string, string): string} badgeFn
+ * @returns {string}
+ */
+export function renderTaskCard(task, badgeFn) {
+  const aiTag = (task.tags || []).includes('AI Suggested') || task.source === 'ai'
+    ? '<span class="badge badge-muted">AI Suggested</span>'
+    : '';
+  const badges = `${badgeFn(task.priority, (task.priority || 'medium').toUpperCase())}
+    ${badgeFn(task.status, (task.status || 'open').toUpperCase())}${aiTag}`;
+  return `
+    <div class="card issue-card task-card">
+      <div class="issue-card-header">
+        <div class="issue-card-title-row">
+          <h3 class="issue-title">${escapeHtml(task.title)}</h3>
+          ${badges}
+        </div>
+      </div>
+      <div class="issue-meta">
+        <span>Owner ${escapeHtml(task.owner || 'Unassigned')}</span>
+        <span>Sprint ${task.sprintId}</span>
+        <span>Due ${escapeHtml(task.due || '—')}</span>
+      </div>
+    </div>
+  `;
+}

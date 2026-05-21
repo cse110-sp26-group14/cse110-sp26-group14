@@ -28,6 +28,7 @@ import {
 } from './lib/database.js';
 import { signUp, login, logout, getUserFromToken } from './lib/auth.js';
 import { generateTeamSummary, generateTaskSuggestions, isOpenAiConfigured } from './lib/openai.js';
+import { buildTeamContextForAi, formatTeamContextForPrompt } from './lib/teamContext.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -251,24 +252,39 @@ async function handleRequest(req, res) {
         return;
       }
       const goals = body.goals || body.input || 'Sprint goals';
+      const sprintId = Number(body.sprintId) || 2;
+      const state = getFullState();
+      const teamContext = body.teamContext || buildTeamContextForAi(state, sprintId);
+      const teamText = formatTeamContextForPrompt(teamContext);
       const issues = listOpenIssuesForAi();
+      const sprint = state.sprints.find((s) => Number(s.id) === sprintId) || null;
       let result;
       try {
-        result = await generateTaskSuggestions(goals, issues);
+        result = await generateTaskSuggestions(goals, issues, sprint, teamText);
       } catch (err) {
         sendJson(res, 503, { error: err.message });
         return;
       }
-      const suggestions = result.tasks.map((t) => ({
-        title: t.title,
-        priority: t.priority || 'medium',
-      }));
+      const rosterNames = new Set((teamContext.members || []).map((m) => m.name));
+      const suggestions = result.tasks.map((t) => {
+        let owner = t.owner || null;
+        if (owner && !rosterNames.has(owner)) {
+          const match = [...rosterNames].find((n) => n.toLowerCase().includes(String(owner).toLowerCase()));
+          owner = match || owner;
+        }
+        return {
+          title: t.title,
+          priority: t.priority || 'medium',
+          due: t.due || sprint?.end || null,
+          owner,
+        };
+      });
       const log = createAiLog({
         type: 'Suggestion',
         title: 'AI Sprint Tasks Suggested',
         status: 'pending',
         content: `Review ${suggestions.length} task suggestion(s) for: "${goals}"`,
-        details: { input: goals, suggestions },
+        details: { input: goals, suggestions, teamContext },
       });
       sendJson(res, 200, { suggestions, tasks: suggestions, log, raw: result.raw });
       return;

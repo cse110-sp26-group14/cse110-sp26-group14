@@ -13,6 +13,7 @@ import {
 } from '../services/googleCalendarService.js';
 import { useGoogleCalendar } from '../config/appConfig.js';
 import { todayISO } from '../utils/dates.js';
+import { getSprintTasksWithoutDue } from '../utils/taskHelpers.js';
 import { renderTemplate } from '../utils/templateEngine.js';
 import {
   renderCalendarDayCell,
@@ -113,11 +114,23 @@ export class CalendarView extends BaseView {
       return renderTemplate('tpl-cal-checkin-card', { name: user.name, body }, { raw: ['body'] });
     }).join('');
 
-    return [
+    const undated = getSprintTasksWithoutDue(this.store, this.store.getSelectedSprint()?.id);
+    const undatedHtml = undated.length
+      ? undated.map((t) => renderMeetingCard({
+        title: t.title,
+        meta: `${t.owner || 'Unassigned'} • ${t.priority} • set a due date`,
+      })).join('')
+      : '';
+
+    const sections = [
       renderSidebarSection('Meetings', meetingsHtml + googleHtml),
       renderSidebarSection('Tasks due', tasksHtml),
-      renderSidebarSection('Team check-ins', checkinsHtml),
-    ].join('');
+    ];
+    if (undatedHtml) {
+      sections.push(renderSidebarSection('Tasks without due date', undatedHtml));
+    }
+    sections.push(renderSidebarSection('Team check-ins', checkinsHtml));
+    return sections.join('');
   }
 
   /**

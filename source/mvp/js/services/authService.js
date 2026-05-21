@@ -62,7 +62,12 @@ function persistApiSession(apiUser, token) {
 export async function signUp(payload) {
   if (useRemoteData()) {
     const result = await apiSignUp(payload);
-    if (!result.ok) return result;
+    if (!result.ok) {
+      return { ok: false, error: result.error || 'Sign up failed.' };
+    }
+    if (!result.user || !result.token) {
+      return { ok: false, error: 'Sign up failed. Please try again.' };
+    }
     persistApiSession(result.user, result.token);
     return { ok: true, user: result.user };
   }
@@ -106,7 +111,12 @@ export async function signUp(payload) {
 export async function login(payload) {
   if (useRemoteData()) {
     const result = await apiLogin(payload);
-    if (!result.ok) return result;
+    if (!result.ok) {
+      return { ok: false, error: result.error || 'Invalid email or password.' };
+    }
+    if (!result.user || !result.token) {
+      return { ok: false, error: 'Login failed. Please try again.' };
+    }
     persistApiSession(result.user, result.token);
     return { ok: true, user: result.user };
   }

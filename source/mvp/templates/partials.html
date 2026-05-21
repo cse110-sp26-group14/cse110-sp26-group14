@@ -102,8 +102,14 @@
 
 <template id="tpl-form-ai-review-intro">
   <form id="ai-task-review-form" class="form-stack">
-    <p class="form-hint">Select tasks to add to the sprint backlog. You can edit titles before accepting.</p>
+    <p class="form-hint">Suggestions use team roles, check-ins, and availability (no check-in = assumed available). Edit assignee and due before accepting.</p>
     <div id="ai-review-rows">{{rows}}</div>
+    <div class="form-field form-field-row">
+      <label>
+        <input type="checkbox" name="createIssues" value="1" />
+        Also create Issues for selected high/critical tasks
+      </label>
+    </div>
     <div class="form-actions form-actions-split">
       <button type="button" class="action-btn" id="ai-review-reject-all">Reject all</button>
       <button type="submit" class="primary-btn">Accept selected</button>
@@ -116,11 +122,13 @@
     <input type="checkbox" name="pick-{{index}}" value="1" checked />
     <div class="ai-review-row-fields">
       <input type="text" name="title-{{index}}" value="{{title}}" />
+      <select name="owner-{{index}}">{{ownerOptions}}</select>
       <select name="priority-{{index}}">
         <option value="high" {{highSelected}}>High</option>
         <option value="medium" {{mediumSelected}}>Medium</option>
         <option value="low" {{lowSelected}}>Low</option>
       </select>
+      <label class="ai-review-due-label">Due <input type="date" name="due-{{index}}" value="{{defaultDue}}" /></label>
     </div>
   </label>
 </template>

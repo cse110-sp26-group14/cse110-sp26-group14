@@ -35,24 +35,26 @@ export function buildActivityTimeline(store, sprintId) {
 
   store.getIssues().forEach((i) => {
     if (sprint != null && i.sprintId != null && Number(i.sprintId) !== Number(sprint)) return;
+    const issueDue = i.due || i.created || '2026-01-01';
     items.push({
       kind: 'issue',
-      ts: `${i.created || '2026-01-01'}T09:00:00`,
+      ts: `${issueDue}T09:00:00`,
       title: i.title,
-      body: i.description || '',
-      meta: `${i.severity} • ${i.status}`,
+      body: `${i.assignee || 'Unassigned'} — ${(i.description || '').slice(0, 100)}`,
+      meta: `${i.severity} • ${i.status} • due ${issueDue}`,
     });
   });
 
+  const sprintRow = store.getState().sprints.find((s) => Number(s.id) === Number(sprint));
   store.getState().tasks.forEach((t) => {
     if (sprint != null && t.sprintId != null && Number(t.sprintId) !== Number(sprint)) return;
-    if (!t.due) return;
+    const due = t.due || sprintRow?.end || '2026-01-01';
     items.push({
       kind: 'task',
-      ts: `${t.due}T08:00:00`,
-      title: `Task due: ${t.title}`,
-      body: `${t.owner || 'Unassigned'} • ${t.priority}`,
-      meta: t.due,
+      ts: `${due}T08:00:00`,
+      title: t.due ? `Task due: ${t.title}` : `Task: ${t.title}`,
+      body: `${t.owner || 'Unassigned'} • ${t.priority}${t.source === 'ai' ? ' • AI' : ''}`,
+      meta: t.due || 'No due date',
     });
   });
 

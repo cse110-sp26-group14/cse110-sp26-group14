@@ -92,13 +92,16 @@ export async function generateTeamSummary(reports, issues) {
 /**
  * @param {string} goals
  * @param {object[]} issues
+ * @param {object|null} sprint
+ * @param {string} teamContextText formatted roster / check-ins / availability
  * @returns {Promise<{ tasks: object[], raw: string }>}
  */
-export async function generateTaskSuggestions(goals, issues) {
-  const issueText = issues.map((i) => `- ${i.title}`).join('\n');
+export async function generateTaskSuggestions(goals, issues, sprint, teamContextText) {
+  const issueText = issues.map((i) => `- ${i.title} (${i.severity}, assignee: ${i.assignee || 'none'})`).join('\n');
+  const sprintDates = sprint ? `${sprint.start} to ${sprint.end}` : 'current sprint';
   const raw = await chat(
-    'You help sprint planning. Return ONLY valid JSON: an array of 3-5 objects with keys title (string), priority (critical|high|medium|low). No markdown.',
-    `Sprint goals: ${goals}\n\nOpen issues:\n${issueText || 'None'}`,
+    'You help sprint planning. Return ONLY valid JSON: an array of 3-5 objects. Each object: title (string), priority (critical|high|medium|low), due (YYYY-MM-DD within sprint), owner (string — MUST be an exact name from the team roster). Assign owners by role fit, check-in capacity, and availability. If someone has no check-in, assume they have time. No markdown.',
+    `Sprint goals: ${goals}\nSprint dates: ${sprintDates}\n\n${teamContextText}\n\nOpen issues:\n${issueText || 'None'}\n\nSpread due dates across the sprint. Prefer members with high capacity.`,
   );
 
   let tasks = [];
@@ -106,10 +109,11 @@ export async function generateTaskSuggestions(goals, issues) {
     const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
     if (Array.isArray(parsed)) tasks = parsed;
   } catch {
+    const fallbackDue = sprint?.end || new Date().toISOString().slice(0, 10);
     tasks = [
-      { title: `${goals} — spike`, priority: 'high' },
-      { title: `${goals} — implementation`, priority: 'medium' },
-      { title: `${goals} — QA pass`, priority: 'medium' },
+      { title: `${goals} — spike`, priority: 'high', due: fallbackDue, owner: null },
+      { title: `${goals} — implementation`, priority: 'medium', due: fallbackDue, owner: null },
+      { title: `${goals} — QA pass`, priority: 'medium', due: fallbackDue, owner: null },
     ];
   }
   return { tasks, raw };

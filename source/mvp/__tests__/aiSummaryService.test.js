@@ -1,4 +1,6 @@
 import { buildTeamSummary, suggestSprintTasks, suggestSprintTasksRemote } from '../js/services/aiSummaryService.js';
+import { Store } from '../js/core/store.js';
+import { INITIAL_DATA } from '../js/data/initialData.js';
 
 describe('aiSummaryService', () => {
   test('buildTeamSummary counts blockers and missing check-ins', () => {
@@ -12,16 +14,23 @@ describe('aiSummaryService', () => {
     expect(result.content).toMatch(/blocker/i);
   });
 
-  test('suggestSprintTasks returns tasks from goals', () => {
-    const tasks = suggestSprintTasks('Ship MVP');
+  test('suggestSprintTasks assigns owners from team context', () => {
+    const ctx = { sprint: INITIAL_DATA.sprints[1], members: [], principles: '' };
+    ctx.members = [
+      { name: 'Jordan Lee', role: 'Backend', assumedAvailable: true, capacity: 'high', freeRatio: 1 },
+      { name: 'Priya Shah', role: 'QA / Testing', assumedAvailable: true, capacity: 'high', freeRatio: 1 },
+    ];
+    const tasks = suggestSprintTasks('Ship MVP', ctx);
     expect(tasks.length).toBeGreaterThanOrEqual(3);
-    expect(tasks[0].title).toContain('Ship MVP');
+    expect(tasks.every((t) => t.owner && t.due)).toBe(true);
   });
 
-  test('suggestSprintTasksRemote local mode returns pending log for review', async () => {
-    const result = await suggestSprintTasksRemote('Ship MVP', 2);
+  test('suggestSprintTasksRemote local mode returns pending log with teamContext', async () => {
+    const store = new Store(INITIAL_DATA);
+    const result = await suggestSprintTasksRemote(store, 'Ship MVP', 2);
     expect(result.log.status).toBe('pending');
     expect(result.suggestions.length).toBeGreaterThanOrEqual(3);
-    expect(result.log.details.suggestions).toBeDefined();
+    expect(result.suggestions[0].owner).toBeTruthy();
+    expect(result.log.details.teamContext).toBeDefined();
   });
 });
