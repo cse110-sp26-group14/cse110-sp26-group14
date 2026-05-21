@@ -42,16 +42,15 @@ jobs:
       - run: npm ci
       - run: npm test
 
-      - name: Trigger Render deploy
-        if: ${{ secrets.RENDER_DEPLOY_HOOK != '' }}
+      - name: Trigger Render deploy (if hook configured)
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-        run: curl -fsSL -X POST "$RENDER_DEPLOY_HOOK"
-
-      - name: Render not configured
-        if: ${{ secrets.RENDER_DEPLOY_HOOK == '' }}
         run: |
-          echo "::notice::Skip Render deploy — add secret RENDER_DEPLOY_HOOK (see docs/DEPLOY.md)"
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            curl -fsSL -X POST "$RENDER_DEPLOY_HOOK"
+          else
+            echo "::notice::Skip Render deploy — add secret RENDER_DEPLOY_HOOK (see docs/DEPLOY.md)"
+          fi
 
   deploy-frontend:
     name: Frontend — GitHub Pages
