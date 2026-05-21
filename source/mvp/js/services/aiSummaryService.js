@@ -121,7 +121,12 @@ export async function suggestSprintTasksRemote(store, goals, sprintId = 2) {
       result.suggestions || result.tasks || [],
       teamContext,
     );
-    return { ...result, suggestions, tasks: suggestions };
+    return {
+      ...result,
+      suggestions,
+      tasks: suggestions,
+      parseFailed: Boolean(result.parseFailed),
+    };
   }
 
   let tasks = suggestSprintTasks(goals, teamContext);
@@ -133,7 +138,15 @@ export async function suggestSprintTasksRemote(store, goals, sprintId = 2) {
     status: 'pending',
     content: `Review ${tasks.length} task suggestion(s) (local simulation)`,
     timestamp: currentTimestamp(),
-    details: { input: goals, suggestions: tasks, teamContext },
+    details: {
+      input: goals,
+      suggestions: tasks,
+      teamContext,
+      sprintId,
+      parseFailed: false,
+      parseError: null,
+      source: 'local',
+    },
   };
-  return { suggestions: tasks, tasks, log };
+  return { suggestions: tasks, tasks, log, parseFailed: false };
 }

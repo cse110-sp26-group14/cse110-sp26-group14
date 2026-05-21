@@ -102,6 +102,32 @@ export class Store {
     this.publish(EVENTS.SPRINT_CHANGED, this.getSelectedSprint());
   }
 
+  /**
+   * @param {{ name: string, start: string, end: string, status?: string }} input
+   * @returns {object}
+   */
+  addSprint(input) {
+    const maxId = this.state.sprints.reduce((m, s) => Math.max(m, Number(s.id)), 0);
+    const id = maxId + 1;
+    const status = input.status || 'planned';
+    if (status === 'active') {
+      this.state.sprints.forEach((s) => {
+        if (s.status === 'active') s.status = 'planned';
+      });
+    }
+    const sprint = {
+      id,
+      name: String(input.name || '').trim() || `Sprint ${id}`,
+      start: input.start,
+      end: input.end,
+      status,
+    };
+    this.state.sprints.push(sprint);
+    this.selectedSprintId = id;
+    this.publish(EVENTS.SPRINT_CHANGED, sprint);
+    return sprint;
+  }
+
   /** @returns {object[]} */
   getGoogleEvents() {
     return this.googleEvents;

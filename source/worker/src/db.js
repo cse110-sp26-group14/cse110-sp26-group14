@@ -142,6 +142,31 @@ export async function createReport(db, input) {
 
 /**
  * @param {D1Database} db
+ * @param {{ name: string, start: string, end: string, status?: string }} input
+ */
+export async function createSprint(db, input) {
+  const max = await db.prepare('SELECT MAX(id) AS m FROM sprints').first();
+  const id = (max?.m || 0) + 1;
+  const status = input.status || 'planned';
+  if (status === 'active') {
+    await db.prepare(`UPDATE sprints SET status = 'planned' WHERE status = 'active'`).run();
+  }
+  const sprint = {
+    id,
+    name: String(input.name).trim(),
+    start: input.start,
+    end: input.end,
+    status,
+  };
+  await db.prepare(`
+    INSERT INTO sprints (id, name, start_date, end_date, status)
+    VALUES (?, ?, ?, ?, ?)
+  `).bind(id, sprint.name, sprint.start, sprint.end, sprint.status).run();
+  return sprint;
+}
+
+/**
+ * @param {D1Database} db
  * @param {object} input
  */
 export async function createTask(db, input) {

@@ -85,10 +85,21 @@ export async function generateTaskSuggestions(env, goals, issues, sprint, teamCo
     `Sprint goals: ${goals}\nSprint dates: ${sprintDates}\n\n${teamContextText}\n\nOpen issues:\n${issueText || 'None'}\n\nSpread due dates across the sprint. Prefer members with high capacity.`,
   );
   let tasks = [];
+  let parseFailed = false;
+  let parseError = null;
   try {
     const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
-    if (Array.isArray(parsed)) tasks = parsed;
-  } catch {
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      tasks = parsed;
+    } else {
+      parseFailed = true;
+      parseError = Array.isArray(parsed) ? 'empty array' : 'response was not a JSON array';
+    }
+  } catch (err) {
+    parseFailed = true;
+    parseError = err?.message || 'invalid JSON';
+  }
+  if (parseFailed) {
     const fallbackDue = sprint?.end || new Date().toISOString().slice(0, 10);
     tasks = [
       { title: `${goals} — spike`, priority: 'high', due: fallbackDue, owner: null },
@@ -96,5 +107,5 @@ export async function generateTaskSuggestions(env, goals, issues, sprint, teamCo
       { title: `${goals} — QA pass`, priority: 'medium', due: fallbackDue, owner: null },
     ];
   }
-  return { tasks, raw };
+  return { tasks, raw, parseFailed, parseError };
 }

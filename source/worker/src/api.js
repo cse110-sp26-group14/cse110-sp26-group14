@@ -204,14 +204,43 @@ export async function handleApi(request, env) {
           owner,
         };
       });
+      const parseFailed = Boolean(result.parseFailed);
       const log = await db.createAiLog(env.DB, {
         type: 'Suggestion',
         title: 'AI Sprint Tasks Suggested',
         status: 'pending',
-        content: `Review ${suggestions.length} task suggestion(s) for: "${goals}"`,
-        details: { input: goals, suggestions, teamContext },
+        content: parseFailed
+          ? `Review ${suggestions.length} fallback task(s) — AI response could not be parsed for: "${goals}"`
+          : `Review ${suggestions.length} task suggestion(s) for: "${goals}"`,
+        details: {
+          input: goals,
+          suggestions,
+          teamContext,
+          sprintId,
+          parseFailed,
+          parseError: result.parseError || null,
+          modelResponsePreview: (result.raw || '').slice(0, 800),
+          source: 'deepseek',
+        },
       });
-      return json({ suggestions, tasks: suggestions, log, raw: result.raw });
+      return json({
+        suggestions,
+        tasks: suggestions,
+        log,
+        parseFailed,
+        warning: parseFailed
+          ? 'AI response could not be parsed; showing fallback tasks.'
+          : undefined,
+        raw: result.raw,
+      });
+    }
+
+    if (method === 'POST' && pathname === '/api/sprints') {
+      if (!body.name?.trim() || !body.start || !body.end) {
+        return json({ error: 'name, start, and end are required' }, 400);
+      }
+      const sprint = await db.createSprint(env.DB, body);
+      return json(sprint, 201);
     }
 
     return json({ error: 'Not found', path: pathname }, 404);

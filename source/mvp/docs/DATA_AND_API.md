@@ -29,7 +29,8 @@ GitHub Actions **Deploy** replaces `__API_BASE_URL__` with repository variable *
 | `POST /api/reports` | Daily check-in |
 | `POST /api/tasks` | Sprint tasks |
 | `POST /api/ai/team-summary` | DeepSeek summary → AI log |
-| `POST /api/ai/suggest-tasks` | DeepSeek task suggestions (uses team context) |
+| `POST /api/ai/suggest-tasks` | DeepSeek task suggestions (uses team context); `parseFailed` in response when JSON parse fails |
+| `POST /api/sprints` | Create sprint (`name`, `start`, `end`, optional `status`) |
 
 AI routes need `DEEPSEEK_API_KEY` on the Worker: `wrangler secret put DEEPSEEK_API_KEY`.
 

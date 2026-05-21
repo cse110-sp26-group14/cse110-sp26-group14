@@ -391,6 +391,14 @@ async function runAiTaskSuggestions(goals, aiBtn) {
     mergeAiLogFromApi(store, result.log);
     if (useRemoteData()) await refreshStoreFromApi(store);
 
+    if (result.parseFailed) {
+      showToast(
+        'AI response could not be parsed. Showing fallback tasks — see AI Log for details.',
+        'warning',
+        7000,
+      );
+    }
+
     modal.show('Review AI task suggestions', AiTaskReviewForm(suggestions, store));
     const form = document.getElementById('ai-task-review-form');
     document.getElementById('ai-review-reject-all')?.addEventListener('click', () => {
@@ -535,7 +543,7 @@ function subscribeToStoreEvents() {
   store.subscribe(EVENTS.SPRINT_CHANGED, () => {
     syncHeaderFromStore();
     rerenderIfCurrentRoute([
-      '#dashboard', '#calendar', '#backlog', '#issues', '#team-availability',
+      '#dashboard', '#calendar', '#backlog', '#issues', '#team-availability', '#settings',
     ]);
   });
 

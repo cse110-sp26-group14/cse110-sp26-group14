@@ -218,6 +218,17 @@ export async function postTask(task) {
 }
 
 /**
+ * @param {{ name: string, start: string, end: string, status?: string }} sprint
+ */
+export async function postSprint(sprint) {
+  const res = await request('/api/sprints', {
+    method: 'POST',
+    body: JSON.stringify(sprint),
+  });
+  return res.json();
+}
+
+/**
  * @param {object} meeting
  */
 export async function postMeeting(meeting) {

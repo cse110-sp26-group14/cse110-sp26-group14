@@ -11,6 +11,7 @@ import {
   postReport,
   patchIssue,
   postTask,
+  postSprint,
   postMeeting,
   postAiLog,
   patchAiLog,
@@ -244,6 +245,32 @@ export async function createNoteRemote(store, note) {
   });
   mergeAiLogFromApi(store, log);
   return log;
+}
+
+/**
+ * @param {import('../core/store.js').Store} store
+ * @param {{ name: string, start: string, end: string, status?: string }} input
+ * @returns {Promise<object>}
+ */
+export async function createSprintRemote(store, input) {
+  if (!input.name?.trim() || !input.start || !input.end) {
+    throw new Error('Sprint name, start date, and end date are required.');
+  }
+  if (input.end < input.start) {
+    throw new Error('End date must be on or after start date.');
+  }
+  if (!useRemoteData()) {
+    return store.addSprint(input);
+  }
+  const created = await postSprint({
+    name: input.name.trim(),
+    start: input.start,
+    end: input.end,
+    status: input.status || 'planned',
+  });
+  await refreshStoreFromApi(store);
+  store.setSelectedSprintId(created.id);
+  return created;
 }
 
 export function mergeTasksFromApi(store, tasks) {
