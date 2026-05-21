@@ -22,31 +22,31 @@
   border: 1px solid transparent;
 }
 
-.toast--info {
+.toast-info {
   background: var(--info-light);
   color: #1e40af;
   border-color: #bfdbfe;
 }
 
-.toast--success {
+.toast-success {
   background: var(--success-light);
   color: #065f46;
   border-color: #a7f3d0;
 }
 
-.toast--warning {
+.toast-warning {
   background: var(--warning-light);
   color: #92400e;
   border-color: #fde68a;
 }
 
-.toast--error {
+.toast-error {
   background: var(--danger-light);
   color: #991b1b;
   border-color: #fecaca;
 }
 
-.toast--out {
+.toast-out {
   animation: toast-out 0.2s ease forwards;
 }
 

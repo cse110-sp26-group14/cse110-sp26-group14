@@ -28,12 +28,12 @@ function getHost() {
  */
 export function showToast(message, type = 'info', durationMs = 4000) {
   const el = document.createElement('div');
-  el.className = `toast toast--${type}`;
+  el.className = `toast toast-${type}`;
   el.setAttribute('role', type === 'error' ? 'alert' : 'status');
   el.textContent = message;
   getHost().appendChild(el);
   const remove = () => {
-    el.classList.add('toast--out');
+    el.classList.add('toast-out');
     setTimeout(() => el.remove(), 200);
   };
   if (durationMs > 0) {
