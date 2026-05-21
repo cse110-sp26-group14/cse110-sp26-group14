@@ -47,8 +47,8 @@ export class DashboardView extends BaseView {
               })
               : ''}
 
-            <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
-                <div class="card" style="grid-column: span 2;">
+            <div class="dashboard-grid">
+                <div class="card span-2">
                     <div class="card-header">
                         <h3 class="card-title">Current Sprint</h3>
                         <span class="badge badge-medium">${urgentIssues.length ? 'Risk: Elevated' : 'On track'}</span>

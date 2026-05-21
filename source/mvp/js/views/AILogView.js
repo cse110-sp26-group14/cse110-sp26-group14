@@ -83,7 +83,7 @@ export class AILogView extends BaseView {
         </select>
       </div>
 
-      <div class="ai-log-layout" style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
+      <div class="ai-log-layout">
         <div class="log-list" style="display: flex; flex-direction: column; gap: 1rem;">
           ${logs.length === 0 ? '<p class="empty-hint">No log entries match your filters.</p>' : ''}
           ${logs.map((log) => `
