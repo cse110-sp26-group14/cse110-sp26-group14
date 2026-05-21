@@ -3,7 +3,7 @@ import { loginAsDemo, openHash } from './helpers.js';
 
 test.describe('Smoke — auth & navigation', () => {
   test('wrong password shows error on login form', async ({ page }) => {
-    await page.goto('/?dataMode=api&apiBaseUrl=https://cse110-sp26-group14.onrender.com');
+    await page.goto('/?dataMode=local');
     await page.locator('#login-email').fill('maya@team.local');
     await page.locator('#login-password').fill('wrong-password');
     await page.locator('#login-form').getByRole('button', { name: 'Log in' }).click();

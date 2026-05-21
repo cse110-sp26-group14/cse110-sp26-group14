@@ -122,7 +122,7 @@ async function startApp(authUser) {
         showLogin();
         return;
       }
-      alert('Could not load team data from API. Check apiBaseUrl and backend.');
+      alert('Could not load team data from API. Check apiBaseUrl and that the Cloudflare Worker is deployed.');
     }
   }
 
@@ -415,7 +415,7 @@ function wireAiActions(authUser) {
           showLogin();
           return;
         }
-        alert(msg || 'AI summary failed. Set DEEPSEEK_API_KEY on the backend (Render).');
+        alert(msg || 'AI summary failed. Set DEEPSEEK_API_KEY on the Cloudflare Worker (wrangler secret).');
       }
     });
   }

@@ -4,10 +4,8 @@ source/mvp/node_modules
 source/mvp/coverage
 source/mvp/test-results
 source/mvp/playwright-report
-source/backend/data/db.json
-source/backend/data/sitrep.db
-source/backend/data/sitrep.db-*
-source/backend/.env
-source/backend/node_modules
+source/worker/node_modules
+source/worker/.wrangler
+source/backend/
 *.log
 .DS_Store

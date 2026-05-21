@@ -3,22 +3,16 @@
 ## Architecture
 
 ```
-Browser (source/mvp)  --fetch + Bearer token-->  Node API (source/backend)
-                                                      SQLite (data/sitrep.db)
-                                                      DeepSeek (server-side key)
+Browser (source/mvp)  --fetch + Bearer token-->  Cloudflare Worker (source/worker)
+                                                      D1 (SQLite at edge)
+                                                      DeepSeek (Worker secret)
 ```
 
 ## Default config
 
-`index.html` sets:
+`index.html` sets `dataMode: 'api'` and `apiBaseUrl: '__API_BASE_URL__'`.
 
-```javascript
-window.SITREP_CONFIG = {
-  dataMode: 'api',
-  apiBaseUrl: 'http://localhost:3001',
-  googleClientId: '',
-};
-```
+GitHub Actions **Deploy** replaces `__API_BASE_URL__` with repository variable **`API_BASE_URL`** (your Cloudflare Worker URL).
 
 ## Auth flow
 
@@ -33,16 +27,17 @@ window.SITREP_CONFIG = {
 | `GET /api/state` | Full shared state after login |
 | `GET/POST /api/issues` | Team issues |
 | `POST /api/reports` | Daily check-in |
+| `POST /api/tasks` | Sprint tasks |
 | `POST /api/ai/team-summary` | DeepSeek summary → AI log |
-| `POST /api/ai/suggest-tasks` | Admin: DeepSeek tasks → sprint |
+| `POST /api/ai/suggest-tasks` | Admin: DeepSeek tasks (uses team context) |
 
-Requires `DEEPSEEK_API_KEY` in `source/backend/.env` (or Render env) for AI routes.
+AI routes need `DEEPSEEK_API_KEY` on the Worker: `wrangler secret put DEEPSEEK_API_KEY`.
 
 ## Google Calendar
 
-Set `googleClientId` in `SITREP_CONFIG`. OAuth origins must include your dev URL (e.g. `http://localhost:5173`). See `js/services/googleCalendarService.js`.
+Set `googleClientId` in `SITREP_CONFIG` (optional). OAuth origins must include your GitHub Pages URL. See `js/services/googleCalendarService.js`.
 
-## Deploy notes
+## Deploy
 
-- **Frontend**: GitHub Pages — set repo variable `API_BASE_URL` to your Render API URL.
-- **Backend**: Render — set `DEEPSEEK_API_KEY`; see [docs/DEPLOY.md](../../../docs/DEPLOY.md).
+- **Frontend**: GitHub Pages — `API_BASE_URL` variable  
+- **API**: Cloudflare Worker + D1 — see [docs/DEPLOY.md](../../../docs/DEPLOY.md) and [source/worker/README.md](../../worker/README.md)

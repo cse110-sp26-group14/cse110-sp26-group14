@@ -94,7 +94,7 @@ async function postAuthJson(path, body) {
       body: JSON.stringify(body),
     });
   } catch {
-    return { ok: false, error: 'Could not reach the server. Check apiBaseUrl and that Render is running.' };
+    return { ok: false, error: 'Could not reach the server. Check apiBaseUrl and that the Cloudflare Worker is deployed.' };
   }
 
   const text = await response.text();

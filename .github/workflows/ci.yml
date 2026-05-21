@@ -6,13 +6,13 @@ on:
     paths:
       - "source/mvp/**"
       - "source/prototype-02/**"
-      - "source/backend/**"
+      - "source/worker/**"
       - ".github/workflows/ci.yml"
   pull_request:
     paths:
       - "source/mvp/**"
       - "source/prototype-02/**"
-      - "source/backend/**"
+      - "source/worker/**"
       - ".github/workflows/ci.yml"
 
 concurrency:
@@ -20,12 +20,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  backend:
-    name: Backend — unit tests
+  worker:
+    name: Worker (Cloudflare API) — unit tests
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: source/backend
+        working-directory: source/worker
 
     steps:
       - uses: actions/checkout@v4
@@ -34,9 +34,9 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          cache-dependency-path: source/backend/package-lock.json
+          cache-dependency-path: source/worker/package-lock.json
 
-      - run: npm ci
+      - run: npm ci || npm install
       - run: npm test
 
   mvp:

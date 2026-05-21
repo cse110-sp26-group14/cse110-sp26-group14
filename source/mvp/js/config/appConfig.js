@@ -4,16 +4,13 @@
  */
 
 const defaults = {
-  /**
-   * `local` = browser-only (demo; teammates cannot see each other's data).
-   * `api` = read/write issues & app state via backend (required for team-wide issues).
-   */
-  dataMode: 'local',
-  /** Base URL when dataMode is `api` (index.html sets api + URL in browser) */
+  /** `api` = team data via Cloudflare Worker (`index.html` + GitHub Actions inject). */
+  dataMode: 'api',
+  /** Injected at deploy: `__API_BASE_URL__` → GitHub variable `API_BASE_URL`. */
   apiBaseUrl: '',
   /**
    * Google OAuth Web client ID (Calendar API). Create in Google Cloud Console.
-   * Never commit secrets; set in deployed `config.js` or hosting env injection.
+   * Set in `index.html` `SITREP_CONFIG` when needed.
    */
   googleClientId: '',
 };
@@ -41,9 +38,6 @@ export const appConfig = new Proxy(
   },
 );
 
-/**
- * @returns {boolean}
- */
 /**
  * @returns {typeof defaults}
  */
