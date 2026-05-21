@@ -1,8 +1,16 @@
+/**
+ * Team availability grid and meeting scheduling shortcuts.
+ * @module views/AvailabilityView
+ */
+
 import { BaseView } from './BaseView.js';
 import { HOURS } from '../components/forms/AvailabilityForm.js';
 import { suggestBestMeetingSlot } from '../utils/teamStats.js';
 import { todayISO } from '../utils/dates.js';
 
+/**
+ * @extends BaseView
+ */
 export class AvailabilityView extends BaseView {
   render() {
     const users = this.store.getUsers();
@@ -21,7 +29,7 @@ export class AvailabilityView extends BaseView {
                 <div class="card" style="padding: 1.5rem;">
                     <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: 1rem;">
                         <span class="badge" style="background: var(--bg-main); color: var(--text-muted); border: 1px solid var(--border);">${date}</span>
-                        <span class="badge" style="background: var(--bg-main); color: var(--text-muted); border: 1px solid var(--border);">${this.store.getActiveSprint()?.name || 'Sprint'}</span>
+                        <span class="badge" style="background: var(--bg-main); color: var(--text-muted); border: 1px solid var(--border);">${this.store.getSelectedSprint()?.name || 'Sprint'}</span>
                     </div>
                     <div class="availability-grid" style="display: grid; grid-template-columns: 150px repeat(9, 1fr); gap: 1px; background: var(--border);">
                         <div style="background: var(--bg-main); padding: 0.75rem; font-size: 0.75rem; color: var(--text-light);">Team</div>
@@ -66,6 +74,10 @@ export class AvailabilityView extends BaseView {
                             <div style="font-weight: 700; font-size: 1rem;">${best.label}</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">${best.detail}</div>
                         </div>
+                        <div class="avail-sidebar__actions">
+                          <button type="button" class="primary-btn" id="avail-add-meeting">Add meeting to calendar</button>
+                          <a href="#calendar" class="action-btn">View sprint calendar</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -76,5 +88,18 @@ export class AvailabilityView extends BaseView {
     container.querySelector('#avail-update-btn')?.addEventListener('click', () => {
       document.getElementById('btn-availability')?.click();
     });
+    container.querySelector('#avail-add-meeting')?.addEventListener('click', () => {
+      const d = todayISO();
+      const availability = this.store.getState().availability?.[d] || {};
+      const slot = suggestBestMeetingSlot(availability, HOURS);
+      window.dispatchEvent(new CustomEvent('sitrep:open-meeting-modal', {
+        detail: { date: d, time: bestTimeFromLabel(slot.label) },
+      }));
+    });
   }
+}
+
+function bestTimeFromLabel(label) {
+  const m = label.match(/•\s*(.+)$/);
+  return m ? m[1].trim() : '10:00 AM';
 }

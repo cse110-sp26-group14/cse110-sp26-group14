@@ -23,6 +23,10 @@ export class Store {
     this.state = loadState(STORAGE_KEY, JSON.parse(JSON.stringify(seed)));
     this.subscribers = {};
     this.currentAuthUser = null;
+    /** @type {number|null} null = follow active sprint */
+    this.selectedSprintId = null;
+    /** @type {object[]} cached Google Calendar events */
+    this.googleEvents = [];
     this.dataModeLabel = useRemoteData()
       ? '(shared via API)'
       : '(local only — other teammates will not see your issues)';
@@ -80,6 +84,63 @@ export class Store {
     return this.state.sprints.find((s) => s.status === 'active');
   }
 
+  /** Sprint shown in dashboard/calendar/backlog (selected or active). */
+  getSelectedSprint() {
+    if (this.selectedSprintId != null) {
+      return this.state.sprints.find((s) => s.id === this.selectedSprintId)
+        || this.getActiveSprint();
+    }
+    return this.getActiveSprint();
+  }
+
+  /**
+   * @param {number|null} sprintId
+   */
+  setSelectedSprintId(sprintId) {
+    this.selectedSprintId = sprintId;
+    this.publish(EVENTS.SPRINT_CHANGED, this.getSelectedSprint());
+  }
+
+  /** @returns {object[]} */
+  getGoogleEvents() {
+    return this.googleEvents;
+  }
+
+  /**
+   * @param {object[]} events
+   */
+  setGoogleEvents(events) {
+    this.googleEvents = events;
+  }
+
+  /**
+   * @param {object} meeting
+   * @returns {object}
+   */
+  addMeeting(meeting) {
+    if (!this.state.meetings) this.state.meetings = [];
+    const newMeeting = {
+      ...meeting,
+      id: meeting.id ?? createId(),
+      sprintId: meeting.sprintId ?? this.getSelectedSprint()?.id ?? 2,
+    };
+    this.state.meetings.push(newMeeting);
+    this.publish(EVENTS.MEETINGS_CHANGED, this.state.meetings);
+    return newMeeting;
+  }
+
+  /**
+   * @param {number} logId
+   * @param {string} status
+   */
+  updateAiLogStatus(logId, status) {
+    const log = this.state.aiLogs.find((l) => l.id === logId);
+    if (log) {
+      log.status = status;
+      this.publish(EVENTS.AI_LOGS_CHANGED, this.state.aiLogs);
+    }
+  }
+
   /**
    * @param {number} sprintId
    * @returns {object[]}
@@ -125,6 +186,8 @@ export class Store {
       date: report.date ?? todayISO(),
       timestamp: currentTimestamp(),
       status: report.status || 'In Progress',
+      notes: report.notes || '',
+      sprintId: report.sprintId ?? this.getSelectedSprint()?.id ?? this.getActiveSprint()?.id,
     };
 
     this.state.reports.push(newReport);

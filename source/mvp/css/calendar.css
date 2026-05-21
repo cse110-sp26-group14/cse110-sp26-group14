@@ -1,0 +1,217 @@
+/**
+ * Sprint calendar view (markup in templates/partials.html).
+ */
+
+.cal-view__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.cal-view__toolbar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.cal-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  background: var(--white);
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.cal-controls__btn {
+  border: none;
+}
+
+.cal-controls__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0 0.5rem;
+}
+
+.cal-controls__divider {
+  width: 1px;
+  background: var(--border);
+  height: 20px;
+  margin: 0 0.25rem;
+}
+
+.cal-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 2rem;
+}
+
+.cal-grid-card {
+  padding: 1.5rem;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--border);
+}
+
+.cal-grid__weekday {
+  background: var(--bg-main);
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.calendar-day {
+  background: white;
+  height: 120px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+}
+
+.calendar-day--selected {
+  outline: 2px solid var(--primary);
+  z-index: 10;
+}
+
+.calendar-day--today {
+  box-shadow: inset 0 0 0 2px var(--info);
+}
+
+.calendar-day__num {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.calendar-day__num--muted {
+  color: var(--text-light);
+}
+
+.calendar-day__num--sprint {
+  color: var(--text-main);
+}
+
+.cal-chip {
+  font-size: 0.6rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  font-weight: 600;
+  display: block;
+}
+
+.cal-chip--meeting {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.cal-chip--task {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.cal-chip--deadline {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.cal-chip--google {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.cal-legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cal-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cal-sidebar__section {
+  margin-bottom: 1.5rem;
+}
+
+.cal-sidebar__heading {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 0.75rem;
+}
+
+.cal-event-card {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+}
+
+.cal-event-card--google {
+  padding: 0.75rem;
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.cal-event-card__title {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.cal-event-card__meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.cal-checkin-card {
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+}
+
+.cal-checkin-card__name {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.cal-checkin-card__muted {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.cal-checkin-card__blocker {
+  font-size: 0.7rem;
+  color: var(--danger);
+  margin-top: 0.25rem;
+}
+
+.cal-gcal-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cal-empty {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+}

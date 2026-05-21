@@ -55,3 +55,17 @@ export function suggestBestMeetingSlot(daySlots, hours) {
   const total = Object.keys(daySlots).length;
   return { label: `Today • ${bestHour}`, detail: `${bestScore}/${total * 2} team score at this hour` };
 }
+
+/**
+ * Users who have not submitted a check-in for the given date.
+ * @param {object[]} reports
+ * @param {object[]} users
+ * @param {string} [date]
+ * @returns {object[]}
+ */
+export function getMissingCheckInUsers(reports, users, date = todayISO()) {
+  const submittedIds = new Set(
+    reports.filter((r) => r.date === date).map((r) => Number(r.userId)),
+  );
+  return users.filter((u) => !submittedIds.has(Number(u.id)));
+}

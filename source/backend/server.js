@@ -23,8 +23,8 @@ if (fs.existsSync(envFile)) {
 import http from 'http';
 import { sendJson, readBody, parseJsonBody, getBearerToken } from './lib/httpUtil.js';
 import {
-  getDb, getFullState, listIssues, createIssue, createReport, createTask, createAiLog,
-  listReportsForAi, listOpenIssuesForAi, updateUserProfile,
+  getDb, getFullState, listIssues, createIssue, createReport, createTask, createMeeting,
+  createAiLog, updateAiLog, listReportsForAi, listOpenIssuesForAi, updateUserProfile,
 } from './lib/database.js';
 import { signUp, login, logout, getUserFromToken } from './lib/auth.js';
 import { generateTeamSummary, generateTaskSuggestions, isOpenAiConfigured } from './lib/openai.js';
@@ -152,6 +152,15 @@ async function handleRequest(req, res) {
       return;
     }
 
+    if (method === 'POST' && pathname === '/api/meetings') {
+      const meeting = createMeeting({
+        ...body,
+        sprintId: body.sprintId ?? 2,
+      });
+      sendJson(res, 201, meeting);
+      return;
+    }
+
     if (method === 'PUT' && pathname === '/api/users/me') {
       const updated = updateUserProfile(user.profileUserId, {
         name: body.name,
@@ -196,11 +205,22 @@ async function handleRequest(req, res) {
       const log = createAiLog({
         type: body.type || 'Note',
         title: body.title || 'Team Note',
-        status: 'approved',
+        status: body.status || 'approved',
         content: body.content || '',
         details: body.details || { input: 'Manual note', reviewer: user.name },
       });
       sendJson(res, 201, { log });
+      return;
+    }
+
+    const aiLogPatch = pathname.match(/^\/api\/ai\/logs\/(\d+)$/);
+    if (method === 'PATCH' && aiLogPatch) {
+      const updated = updateAiLog(Number(aiLogPatch[1]), body);
+      if (!updated) {
+        sendJson(res, 404, { error: 'Log not found' });
+        return;
+      }
+      sendJson(res, 200, { log: updated });
       return;
     }
 
@@ -239,20 +259,18 @@ async function handleRequest(req, res) {
         sendJson(res, 503, { error: err.message });
         return;
       }
-      const created = result.tasks.map((t) => createTask({
+      const suggestions = result.tasks.map((t) => ({
         title: t.title,
         priority: t.priority || 'medium',
-        owner: user.name,
-        sprintId: body.sprintId ?? 2,
       }));
       const log = createAiLog({
         type: 'Suggestion',
         title: 'AI Sprint Tasks Suggested',
-        status: 'applied',
-        content: `${created.length} tasks from: "${goals}"`,
-        details: { input: goals, tasks: created },
+        status: 'pending',
+        content: `Review ${suggestions.length} task suggestion(s) for: "${goals}"`,
+        details: { input: goals, suggestions },
       });
-      sendJson(res, 200, { tasks: created, log, raw: result.raw });
+      sendJson(res, 200, { suggestions, tasks: suggestions, log, raw: result.raw });
       return;
     }
 

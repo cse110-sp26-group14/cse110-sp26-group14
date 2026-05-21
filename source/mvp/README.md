@@ -36,6 +36,16 @@ Sign up also works; accounts are stored in SQLite on the server.
 
 Open `http://localhost:5173/?dataMode=local` or set `window.SITREP_CONFIG.dataMode = 'local'` to use browser `localStorage` (no shared team data).
 
+## Frontend structure (HTML / CSS / JS)
+
+| Layer | Location |
+|-------|----------|
+| **HTML** | `index.html` (shell), `templates/partials.html` (forms + view fragments as `<template>`) |
+| **CSS** | `css/main.css`, `forms.css`, `calendar.css`, `views.css` |
+| **JS** | `js/views/*` (logic), `js/views/renderers/*` (bind data → templates), `js/utils/templateEngine.js` |
+
+Views do not embed large HTML strings; they call `renderTemplate()` after `loadHtmlTemplates()` runs in `main.js`. JSDoc: `@module` on each file under `js/`.
+
 ## Quality
 
 ```bash

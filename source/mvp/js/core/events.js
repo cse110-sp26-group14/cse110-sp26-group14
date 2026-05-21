@@ -5,4 +5,6 @@ export const EVENTS = {
   AI_LOGS_CHANGED: 'aiLogsChanged',
   TASKS_CHANGED: 'tasksChanged',
   AUTH_CHANGED: 'authChanged',
+  SPRINT_CHANGED: 'sprintChanged',
+  MEETINGS_CHANGED: 'meetingsChanged',
 };

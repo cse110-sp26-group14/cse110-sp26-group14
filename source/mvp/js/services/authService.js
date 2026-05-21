@@ -142,8 +142,12 @@ export async function getSessionUser() {
   const session = loadState(SESSION_KEY, null);
   if (!session) return null;
 
-  if (useRemoteData() && (session.mode === 'api' || getApiToken())) {
-    if (session.user && getApiToken()) return session.user;
+  if (useRemoteData()) {
+    const token = getApiToken();
+    if (!token) {
+      localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
     try {
       const user = await apiMe();
       if (user) {
@@ -151,8 +155,12 @@ export async function getSessionUser() {
         return user;
       }
     } catch {
+      setApiToken(null);
+      localStorage.removeItem(SESSION_KEY);
       return null;
     }
+    setApiToken(null);
+    localStorage.removeItem(SESSION_KEY);
     return null;
   }
 

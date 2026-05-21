@@ -153,6 +153,29 @@ export async function postTask(task) {
 }
 
 /**
+ * @param {object} meeting
+ */
+export async function postMeeting(meeting) {
+  const res = await request('/api/meetings', {
+    method: 'POST',
+    body: JSON.stringify(meeting),
+  });
+  return res.json();
+}
+
+/**
+ * @param {number} id
+ * @param {{ status: string }} patch
+ */
+export async function patchAiLog(id, patch) {
+  const res = await request(`/api/ai/logs/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+  return res.json();
+}
+
+/**
  * @param {object} payload
  */
 export async function postAiTeamSummary() {
