@@ -9,3 +9,4 @@ source/worker/.wrangler
 source/backend/
 *.log
 .DS_Store
+*:Zone.Identifier
