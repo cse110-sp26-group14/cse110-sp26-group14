@@ -476,7 +476,6 @@ function wireAiActions() {
           showLogin();
         }
       }
-    });
   });
 }
 
