@@ -7,8 +7,9 @@ function freshStore() {
 }
 
 describe('Store — sprint & meetings', () => {
-  test('getSelectedSprint follows active sprint when not set', () => {
+  test('getSelectedSprint follows date-based default when not set', () => {
     const store = freshStore();
+    store.reconcileSprints('2026-05-15');
     expect(store.getSelectedSprint()?.id).toBe(2);
     expect(store.getSelectedSprint()?.name).toBe('Sprint 2');
   });
@@ -79,17 +80,23 @@ describe('Store — sprint & meetings', () => {
     expect(store.getSelectedSprint()?.id).toBe(sprint.id);
   });
 
-  test('addSprint with active status demotes other active sprints', () => {
+  test('reconcileSprints activates sprint by date and completes ended ones', () => {
     const store = freshStore();
+    store.reconcileSprints('2026-05-20');
+    expect(store.state.sprints.find((s) => s.id === 2)?.status).toBe('completed');
+    expect(store.getActiveSprint()).toBeUndefined();
+    expect(store.getSelectedSprint()?.id).toBe(3);
+
     store.addSprint({
       name: 'Sprint 4',
-      start: '2026-06-01',
+      start: '2026-05-18',
       end: '2026-06-14',
       status: 'active',
     });
+    store.reconcileSprints('2026-05-20');
     const active = store.state.sprints.filter((s) => s.status === 'active');
     expect(active).toHaveLength(1);
     expect(active[0].name).toBe('Sprint 4');
-    expect(store.state.sprints.find((s) => s.id === 2)?.status).toBe('planned');
+    expect(store.state.sprints.find((s) => s.id === 2)?.status).toBe('completed');
   });
 });
