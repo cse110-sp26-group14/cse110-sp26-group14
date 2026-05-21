@@ -1,0 +1,13 @@
+name = "se-sitrep-api"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Replace database_id after: npx wrangler d1 create se-sitrep
+[[d1_databases]]
+binding = "DB"
+database_name = "se-sitrep"
+database_id = "dd75be38-33af-4f4c-a4bc-987ed4e877b8"
+
+[vars]
+DEEPSEEK_MODEL = "deepseek-v4-flash"
