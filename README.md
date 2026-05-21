@@ -1,6 +1,6 @@
 # CS Stress 14 — CSE 110 (Spring 2026)
 
-Team **14** course repository: planning docs, meeting notes, branding, and (later) specs and source code for our project.
+Team **14** course repository: planning docs, meeting notes, branding, and application source for our project.
 
 ## Quick links
 
@@ -15,12 +15,10 @@ Team **14** course repository: planning docs, meeting notes, branding, and (late
 | `admin/` | Team admin: `team.md`, `branding/`, `meetings/`, `videos/`, etc. |
 | `admin/meetings/` | Markdown meeting minutes (`mmddyy-topic.md`) |
 | `specs/` | Design / requirements (as the course progresses) |
-| `source/` | Application source code |
-| `source/mvp/` | **MVP frontend** — modular ES app + login ([mvp README](source/mvp/README.md)) |
-| `source/backend/` | **MVP API** — Vanilla JS (Node `http`) shared team data ([backend README](source/backend/README.md)) |
+| `source/mvp/` | **Frontend** — modular ES app + login ([mvp README](source/mvp/README.md)) |
+| `source/worker/` | **API** — Cloudflare Worker + D1 ([worker README](source/worker/README.md)) |
 | `source/prototype-02/` | Earlier prototype baseline + CI |
-| `docs/DEPLOY.md` | **GitHub Pages** (frontend) + **Render** (backend) via Actions |
-
+| `docs/DEPLOY.md` | **GitHub Pages** (frontend) + **Cloudflare Worker** (API) |
 
 ## Project
 

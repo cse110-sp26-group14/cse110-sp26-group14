@@ -350,7 +350,7 @@
         var p = new URLSearchParams(location.search);
         window.SITREP_CONFIG = {
           dataMode: p.get('dataMode') || 'api',
-          apiBaseUrl: p.get('apiBaseUrl') || 'http://localhost:3001',
+          apiBaseUrl: p.get('apiBaseUrl') || '__API_BASE_URL__',
           googleClientId: p.get('googleClientId') || '',
         };
       })();

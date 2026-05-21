@@ -1,5 +1,5 @@
 /**
- * Auth: API mode (shared backend) or local demo (localStorage).
+ * Auth: API mode (Cloudflare Worker) or local demo (localStorage).
  * @module services/authService
  */
 

@@ -1,141 +1,71 @@
-# Deployment & API keys
+# Deployment (GitHub Actions only)
 
-| Part | Hosting | Where to configure |
-|------|---------|-------------------|
-| **Frontend** `source/mvp` | **GitHub Pages** | Repo **Variables**: `API_BASE_URL` |
-| **Backend** `source/backend` | **Render** (free Node) | Render **Environment**: `DEEPSEEK_API_KEY`, etc. |
+| Part | Hosting | Directory |
+|------|---------|-----------|
+| **Frontend** | **GitHub Pages** | `source/mvp` |
+| **API + DB** | **Cloudflare Worker + D1** | `source/worker` |
 
-> GitHub Pages only serves **static** files. It cannot run Node/SQLite. The API must run on Render (or another PaaS). The frontend reaches it via `API_BASE_URL`.
-
----
-
-## 1. Where API keys go (never commit them)
-
-### DeepSeek (AI summary & task suggestions) — **Render only**
-
-1. Create an API key at [DeepSeek Platform](https://platform.deepseek.com/api_keys).
-2. Open [Render Dashboard](https://dashboard.render.com) → your Web Service → **Environment**.
-3. Add:
-
-   | Key | Value |
-   |-----|--------|
-   | `DEEPSEEK_API_KEY` | Your DeepSeek API key |
-   | `DEEPSEEK_MODEL` | Optional; default `deepseek-v4-flash` (or `deepseek-v4-pro`) |
-
-4. **Save Changes** → Render redeploys automatically.
-
-The backend calls the OpenAI-compatible endpoint: `https://api.deepseek.com/chat/completions` (no `openai` npm package required).
-
-**Do not** put `DEEPSEEK_API_KEY` in:
-
-- Git commits, `index.html`, or `appConfig.js`
-- GitHub Actions Variables (the frontend workflow does not need it)
-- GitHub Pages build artifacts
-
-When users click **AI Team Summary**, the browser calls your **Render backend**, which uses the env key to call DeepSeek.
-
-### Frontend → backend URL — **GitHub Variable**
-
-1. Repo **Settings → Secrets and variables → Actions → Variables**
-2. Add **`API_BASE_URL`** = your Render public URL, e.g.:
-
-   ```text
-   https://se-sitrep-api.onrender.com
-   ```
-
-   (no trailing `/`)
-
-3. On push to `main`, the **Deploy** workflow replaces `http://localhost:3001` in `index.html` with this URL before uploading to Pages (the repo on disk still shows localhost for local dev).
-
-### Optional: auto-deploy backend — **GitHub Secret**
-
-1. Render service → **Settings → Deploy Hook** → copy URL  
-2. GitHub **Settings → Secrets and variables → Actions → Secrets**  
-3. Add **`RENDER_DEPLOY_HOOK`** = that URL  
-
-### Google Calendar (optional)
-
-1. Create an OAuth Web Client ID in [Google Cloud Console](https://console.cloud.google.com/).
-2. **Authorized JavaScript origins**:
-   - `http://localhost:5173` (local)
-   - `https://<your-username>.github.io` (Pages)
-3. Set `googleClientId` in `SITREP_CONFIG` (or a GitHub Variable `GOOGLE_CLIENT_ID`).
-
-Never put the Google **Client Secret** in the frontend (browser uses Client ID only).
+Push to `main` / `master` (or run **Deploy** workflow manually) to deploy both.
 
 ---
 
-## 2. One-time setup
+## One-time: Cloudflare (before first Actions deploy)
 
-### GitHub Pages (frontend)
+Run once from any machine with Node 20+ (creates D1 and secrets on your Cloudflare account):
 
-1. **Settings → Pages → Build and deployment → Source** → **GitHub Actions**
-2. Add Variable **`API_BASE_URL`** (see above)
+```bash
+cd source/worker
+npm install
+npx wrangler login
+npx wrangler d1 create se-sitrep
+# Save database_id for GitHub variable D1_DATABASE_ID
 
-### Render (backend)
+npx wrangler d1 execute se-sitrep --remote --file=./schema.sql
+npx wrangler d1 execute se-sitrep --remote --file=./seed.sql
+npx wrangler secret put DEEPSEEK_API_KEY
+npx wrangler deploy
+```
 
-1. **New → Web Service** → connect this repo  
-2. **Root Directory**: `source/backend`  
-3. **Build Command**: `npm install`  
-4. **Start Command**: `npm start`  
-5. Add **`DEEPSEEK_API_KEY`** in Environment  
-6. Set **`NODE_VERSION`** = `20.18.0` (required — default Node 26 breaks `better-sqlite3` build)  
-7. After deploy, copy the URL into GitHub **`API_BASE_URL`**  
-7. Optional: add **`RENDER_DEPLOY_HOOK`** Secret  
+Note the Worker URL, e.g. `https://se-sitrep-api.<subdomain>.workers.dev`.  
+Verify: `https://<worker-url>/api/health` → `{ "ok": true, ... }`.
 
-You can also import `source/backend/render.yaml` (Blueprint).
+---
 
-### Push to `main`
+## GitHub repository settings
 
-- **CI** (`.github/workflows/ci.yml`): backend + MVP tests  
-- **Deploy** (`.github/workflows/deploy.yml`): Render + Pages  
+1. **Settings → Pages → Source** → **GitHub Actions**
+2. **Settings → Secrets and variables → Actions**
+
+| Name | Type | Purpose |
+|------|------|---------|
+| `CLOUDFLARE_API_TOKEN` | Secret | `wrangler deploy` in Actions |
+| `CLOUDFLARE_ACCOUNT_ID` | Variable | Cloudflare account ID |
+| `D1_DATABASE_ID` | Variable | D1 `database_id` from `d1 create` |
+| `API_BASE_URL` | Variable | Worker URL (no trailing `/`) |
+
+3. Push to `main` / `master` → **Deploy** workflow:
+   - Deploys Worker + D1 binding
+   - Replaces `__API_BASE_URL__` in `source/mvp/index.html` with `API_BASE_URL`
+   - Publishes `source/mvp` to GitHub Pages
 
 Live site: `https://<org>.github.io/<repo>/`
 
----
-
-## 3. Local development
-
-```bash
-# Backend — key in source/backend/.env (gitignored)
-cd source/backend
-cp .env.example .env
-# Edit .env: DEEPSEEK_API_KEY=...
-npm install && npm start
-
-# Frontend
-cd source/mvp
-npx serve . -p 5173
-```
-
-`index.html` uses `apiBaseUrl: http://localhost:3001` for local dev only.
+Demo login: `maya@team.local` / `demo1234`.
 
 ---
 
-## 4. Data flow after deploy
+## Troubleshooting
 
-| Action | Frontend | Backend API |
-|--------|----------|-------------|
-| Login / sign-up | `authService` | `POST /api/auth/login` |
-| Load team data | `hydrateStoreFromApi` on start | `GET /api/state` |
-| Daily check-in | `createReportRemote` | `POST /api/reports` |
-| Create issue | `createIssueRemote` | `POST /api/issues` |
-| Resolve issue | Issues page button | `PATCH /api/issues/:id` |
-| Availability | Availability form | `PUT /api/availability` |
-| Profile | Settings form | `PUT /api/users/me` |
-| Add task | Backlog form | `POST /api/tasks` |
-| AI summary / tasks | Header buttons | `POST /api/ai/*` (needs `DEEPSEEK_API_KEY` on Render) |
-
-CI does **not** call DeepSeek; it only runs SQLite/auth unit tests.
+| Problem | Fix |
+|---------|-----|
+| Deploy: missing `D1_DATABASE_ID` | Set variable from `wrangler d1 create` |
+| Deploy: API inject failed | Set `API_BASE_URL`; check workflow log |
+| Login fails on Pages | `API_BASE_URL` must match deployed Worker URL |
+| AI 503 | `wrangler secret put DEEPSEEK_API_KEY` on Worker |
+| Empty DB | Re-run `schema.sql` + `seed.sql` on remote D1 |
 
 ---
 
-## Troubleshooting: Render `better-sqlite3` build failed
+## CI
 
-If the log shows **Node v26** and `better_sqlite3` compile errors:
-
-1. Render dashboard → Web Service → **Environment** → add `NODE_VERSION` = `20.18.0`  
-2. **Manual Deploy** → Clear build cache & deploy  
-3. Confirm **Root Directory** is `source/backend`
-
-Do not use Node 26 until `better-sqlite3` publishes compatible prebuilds.
+`.github/workflows/ci.yml`: worker unit tests + mvp lint/unit/E2E (tests only; not production hosting).

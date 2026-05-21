@@ -1,5 +1,5 @@
 /**
- * AI team summary and task suggestions (OpenAI via backend when API mode).
+ * AI team summary and task suggestions (DeepSeek via Worker when API mode).
  * @module services/aiSummaryService
  */
 
