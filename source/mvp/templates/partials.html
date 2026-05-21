@@ -88,7 +88,7 @@
       <label for="issue-description">Description</label>
       <textarea id="issue-description" name="description" required></textarea>
     </div>
-    <div class="form-field form-field--row">
+    <div class="form-field form-field-row">
       <label>
         <input type="checkbox" name="createTask" value="1" />
         Also create a tracking task in the backlog
@@ -104,7 +104,7 @@
   <form id="ai-task-review-form" class="form-stack">
     <p class="form-hint">Select tasks to add to the sprint backlog. You can edit titles before accepting.</p>
     <div id="ai-review-rows">{{rows}}</div>
-    <div class="form-actions form-actions--split">
+    <div class="form-actions form-actions-split">
       <button type="button" class="action-btn" id="ai-review-reject-all">Reject all</button>
       <button type="submit" class="primary-btn">Accept selected</button>
     </div>
@@ -114,7 +114,7 @@
 <template id="tpl-form-ai-review-row">
   <label class="ai-review-row">
     <input type="checkbox" name="pick-{{index}}" value="1" checked />
-    <div class="ai-review-row__fields">
+    <div class="ai-review-row-fields">
       <input type="text" name="title-{{index}}" value="{{title}}" />
       <select name="priority-{{index}}">
         <option value="high" {{highSelected}}>High</option>
@@ -129,19 +129,19 @@
 
 <template id="tpl-cal-layout">
   <div class="cal-view">
-    <div class="view-header cal-view__header">
+    <div class="view-header cal-view-header">
       <div>
         <h1 class="view-title">Sprint Calendar</h1>
         <p class="view-subtitle">{{subtitle}}</p>
       </div>
-      <div class="cal-view__toolbar">
+      <div class="cal-view-toolbar">
         {{gcalToolbar}}
         <div class="cal-controls">
-          <button type="button" class="action-btn cal-controls__btn" id="cal-prev-month" aria-label="Previous month">‹</button>
-          <span class="cal-controls__label">{{monthLabel}}</span>
-          <button type="button" class="action-btn cal-controls__btn" id="cal-next-month" aria-label="Next month">›</button>
-          <span class="cal-controls__divider"></span>
-          <button type="button" class="action-btn cal-controls__btn" id="cal-goto-today">Today</button>
+          <button type="button" class="action-btn cal-controls-btn" id="cal-prev-month" aria-label="Previous month">‹</button>
+          <span class="cal-controls-label">{{monthLabel}}</span>
+          <button type="button" class="action-btn cal-controls-btn" id="cal-next-month" aria-label="Next month">›</button>
+          <span class="cal-controls-divider"></span>
+          <button type="button" class="action-btn cal-controls-btn" id="cal-goto-today">Today</button>
         </div>
       </div>
     </div>
@@ -167,7 +167,7 @@
 
 <template id="tpl-cal-day">
   <button type="button" data-cal-date="{{iso}}" class="calendar-day {{dayClasses}}">
-    <span class="calendar-day__num {{dayNumClass}}">{{day}}</span>
+    <span class="calendar-day-num {{dayNumClass}}">{{day}}</span>
     {{chips}}
   </button>
 </template>
@@ -177,23 +177,23 @@
 </template>
 
 <template id="tpl-cal-sidebar-section">
-  <section class="cal-sidebar__section">
-    <h4 class="cal-sidebar__heading">{{heading}}</h4>
+  <section class="cal-sidebar-section">
+    <h4 class="cal-sidebar-heading">{{heading}}</h4>
     {{body}}
   </section>
 </template>
 
 <template id="tpl-cal-meeting-card">
   <article class="cal-event-card">
-    <div class="cal-event-card__title">{{title}}</div>
-    <div class="cal-event-card__meta">{{meta}}</div>
+    <div class="cal-event-card-title">{{title}}</div>
+    <div class="cal-event-card-meta">{{meta}}</div>
     {{extra}}
   </article>
 </template>
 
 <template id="tpl-cal-checkin-card">
   <article class="cal-checkin-card">
-    <div class="cal-checkin-card__name">{{name}}</div>
+    <div class="cal-checkin-card-name">{{name}}</div>
     {{body}}
   </article>
 </template>
@@ -220,19 +220,19 @@
 
 <template id="tpl-activity-card">
   <div class="card activity-card">
-    <div class="activity-card__top">
+    <div class="activity-card-top">
       <span class="badge badge-muted">{{kind}}</span>
-      <span class="activity-card__time">{{time}}</span>
+      <span class="activity-card-time">{{time}}</span>
     </div>
-    <div class="activity-card__title">{{title}}</div>
-    <p class="activity-card__body">{{body}}</p>
-    <div class="activity-card__meta">{{meta}}</div>
+    <div class="activity-card-title">{{title}}</div>
+    <p class="activity-card-body">{{body}}</p>
+    <div class="activity-card-meta">{{meta}}</div>
   </div>
 </template>
 
 <template id="tpl-dashboard-reminder">
   <div class="card dashboard-reminder">
-    <span class="dashboard-reminder__text">{{text}}</span>
+    <span class="dashboard-reminder-text">{{text}}</span>
     <button type="button" class="primary-btn" id="dashboard-reminder-checkin">Check in now</button>
   </div>
 </template>

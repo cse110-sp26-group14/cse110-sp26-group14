@@ -53,19 +53,19 @@ export class CalendarView extends BaseView {
   buildDayChips(dayEvents) {
     const chips = [];
     if (dayEvents.isDeadline) {
-      chips.push({ text: 'Sprint ends', chipClass: 'cal-chip--deadline' });
+      chips.push({ text: 'Sprint ends', chipClass: 'cal-chip-deadline' });
     }
     dayEvents.dayMeetings.slice(0, 1).forEach((m) => {
       chips.push({
         text: `${m.time} ${m.title}`.slice(0, 22),
-        chipClass: 'cal-chip--meeting',
+        chipClass: 'cal-chip-meeting',
       });
     });
     dayEvents.dayGoogle.slice(0, 1).forEach((g) => {
-      chips.push({ text: `G: ${g.title}`.slice(0, 22), chipClass: 'cal-chip--google' });
+      chips.push({ text: `G: ${g.title}`.slice(0, 22), chipClass: 'cal-chip-google' });
     });
     dayEvents.dayTasks.slice(0, 1).forEach((t) => {
-      chips.push({ text: `Due: ${t.title}`.slice(0, 22), chipClass: 'cal-chip--task' });
+      chips.push({ text: `Due: ${t.title}`.slice(0, 22), chipClass: 'cal-chip-task' });
     });
     return chips;
   }
@@ -78,7 +78,7 @@ export class CalendarView extends BaseView {
       ? selected.dayMeetings.map((m) => renderMeetingCard({
         title: m.title,
         meta: `${m.time} • ${m.format || 'meeting'}`,
-        extra: m.goal ? `<p class="cal-event-card__meta">${m.goal}</p>` : '',
+        extra: m.goal ? `<p class="cal-event-card-meta">${m.goal}</p>` : '',
       }, 'default')).join('')
       : '<p class="cal-empty">No meetings this day</p>';
 
@@ -97,18 +97,18 @@ export class CalendarView extends BaseView {
       : '<p class="cal-empty">Nothing due</p>';
 
     const checkinsHtml = dayContext.byUser.map(({ user, report, tasks }) => {
-      let body = '<div class="cal-checkin-card__muted">No check-in</div>';
+      let body = '<div class="cal-checkin-card-muted">No check-in</div>';
       if (report) {
         body = `
-          <div class="cal-checkin-card__meta">${report.status} • ${report.mood}</div>
-          <div class="cal-checkin-card__muted">${report.progress || ''}</div>
+          <div class="cal-checkin-card-meta">${report.status} • ${report.mood}</div>
+          <div class="cal-checkin-card-muted">${report.progress || ''}</div>
           ${report.blockers && report.blockers !== 'None'
-            ? `<div class="cal-checkin-card__blocker">Blocker: ${report.blockers}</div>`
+            ? `<div class="cal-checkin-card-blocker">Blocker: ${report.blockers}</div>`
             : ''}
-          ${report.notes ? `<div class="cal-checkin-card__muted">Note: ${report.notes}</div>` : ''}`;
+          ${report.notes ? `<div class="cal-checkin-card-muted">Note: ${report.notes}</div>` : ''}`;
       }
       if (tasks.length) {
-        body += `<div class="cal-checkin-card__muted">Tasks due: ${tasks.map((t) => t.title).join(', ')}</div>`;
+        body += `<div class="cal-checkin-card-muted">Tasks due: ${tasks.map((t) => t.title).join(', ')}</div>`;
       }
       return renderTemplate('tpl-cal-checkin-card', { name: user.name, body }, { raw: ['body'] });
     }).join('');

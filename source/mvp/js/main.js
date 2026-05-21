@@ -19,7 +19,6 @@ import { createSummaryLogForReport } from './services/aiLogService.js';
 import { generateTeamSummaryRemote, suggestSprintTasksRemote } from './services/aiSummaryService.js';
 import {
   mergeAiLogFromApi,
-  mergeTasksFromApi,
   createNoteRemote,
 } from './services/dataSyncService.js';
 import {
