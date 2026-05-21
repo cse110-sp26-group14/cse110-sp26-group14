@@ -263,7 +263,7 @@ function wireAiActions(authUser) {
         alert('AI team summary generated and saved to AI Log.');
         rerenderIfCurrentRoute(['#dashboard', '#ai-log', '#backlog']);
       } catch (err) {
-        alert(err.message || 'AI summary failed. Set OPENAI_API_KEY on the backend.');
+        alert(err.message || 'AI summary failed. Set DEEPSEEK_API_KEY on the backend (Render).');
       }
     });
   }

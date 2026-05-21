@@ -63,7 +63,11 @@ async function handleRequest(req, res) {
       sendJson(res, 200, {
         ok: true,
         service: 'se-sitrep-backend',
-        openai: isOpenAiConfigured(),
+        ai: {
+          provider: 'deepseek',
+          configured: isOpenAiConfigured(),
+          model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
+        },
       });
       return;
     }
@@ -253,5 +257,5 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`SE SitRep API http://${HOST}:${PORT}`);
-  console.log(`  OpenAI: ${isOpenAiConfigured() ? 'configured' : 'missing OPENAI_API_KEY'}`);
+  console.log(`  DeepSeek: ${isOpenAiConfigured() ? 'configured' : 'missing DEEPSEEK_API_KEY'}`);
 });

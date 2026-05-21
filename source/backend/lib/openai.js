@@ -1,15 +1,33 @@
 /**
- * OpenAI Chat Completions for team summary and task suggestions.
+ * DeepSeek Chat API (OpenAI-compatible) for team summary and task suggestions.
+ * @see https://api-docs.deepseek.com/
  * @module lib/openai
  */
 
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const BASE_URL = (process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '');
+const MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
 
 /**
  * @returns {boolean}
  */
 export function isOpenAiConfigured() {
-  return Boolean(process.env.OPENAI_API_KEY);
+  return Boolean(process.env.DEEPSEEK_API_KEY);
+}
+
+/** @returns {boolean} */
+export function isAiConfigured() {
+  return isOpenAiConfigured();
+}
+
+/**
+ * @returns {string}
+ */
+function getApiKey() {
+  const key = process.env.DEEPSEEK_API_KEY;
+  if (!key) {
+    throw new Error('DEEPSEEK_API_KEY is not set on the server. Copy .env.example to .env');
+  }
+  return key;
 }
 
 /**
@@ -18,20 +36,16 @@ export function isOpenAiConfigured() {
  * @returns {Promise<string>}
  */
 async function chat(system, user) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) {
-    throw new Error('OPENAI_API_KEY is not set on the server. Copy .env.example to .env');
-  }
-
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const res = await fetch(`${BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${key}`,
+      Authorization: `Bearer ${getApiKey()}`,
     },
     body: JSON.stringify({
       model: MODEL,
       temperature: 0.4,
+      stream: false,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },
@@ -41,7 +55,7 @@ async function chat(system, user) {
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`OpenAI error ${res.status}: ${err}`);
+    throw new Error(`DeepSeek API error ${res.status}: ${err}`);
   }
 
   const data = await res.json();
@@ -66,7 +80,12 @@ export async function generateTeamSummary(reports, issues) {
 
   return {
     content,
-    details: { reportCount: reports.length, openIssues: issues.length, model: MODEL },
+    details: {
+      reportCount: reports.length,
+      openIssues: issues.length,
+      model: MODEL,
+      provider: 'deepseek',
+    },
   };
 }
 

@@ -1,126 +1,128 @@
-# 部署与 API Key 配置
+# Deployment & API keys
 
-| 部分 | 托管 | 配置位置 |
-|------|------|----------|
-| **前端** `source/mvp` | **GitHub Pages** | 仓库 **Variables**：`API_BASE_URL` |
-| **后端** `source/backend` | **Render**（免费 Node） | Render **Environment**：`OPENAI_API_KEY` 等 |
+| Part | Hosting | Where to configure |
+|------|---------|-------------------|
+| **Frontend** `source/mvp` | **GitHub Pages** | Repo **Variables**: `API_BASE_URL` |
+| **Backend** `source/backend` | **Render** (free Node) | Render **Environment**: `DEEPSEEK_API_KEY`, etc. |
 
-> GitHub Pages **只能**托管静态网页，不能跑 Node/SQLite。API 必须部署在 Render（或其它 PaaS），前端通过 `API_BASE_URL` 访问。
+> GitHub Pages only serves **static** files. It cannot run Node/SQLite. The API must run on Render (or another PaaS). The frontend reaches it via `API_BASE_URL`.
 
 ---
 
-## 一、API Key 放哪里？（不要写进代码仓库）
+## 1. Where API keys go (never commit them)
 
-### 1. OpenAI（AI 总结 / 任务建议）— **只放在 Render**
+### DeepSeek (AI summary & task suggestions) — **Render only**
 
-1. 打开 [Render Dashboard](https://dashboard.render.com) → 你的 Web Service → **Environment**
-2. 添加：
+1. Create an API key at [DeepSeek Platform](https://platform.deepseek.com/api_keys).
+2. Open [Render Dashboard](https://dashboard.render.com) → your Web Service → **Environment**.
+3. Add:
 
    | Key | Value |
    |-----|--------|
-   | `OPENAI_API_KEY` | 在 [OpenAI API Keys](https://platform.openai.com/api-keys) 创建的 key（`sk-...`） |
-   | `OPENAI_MODEL` | 可选，默认 `gpt-4o-mini` |
+   | `DEEPSEEK_API_KEY` | Your DeepSeek API key |
+   | `DEEPSEEK_MODEL` | Optional; default `deepseek-v4-flash` (or `deepseek-v4-pro`) |
 
-3. **Save Changes** → Render 会自动重新部署
+4. **Save Changes** → Render redeploys automatically.
 
-**不要**把 `OPENAI_API_KEY` 放进：
+The backend calls the OpenAI-compatible endpoint: `https://api.deepseek.com/chat/completions` (no `openai` npm package required).
 
-- Git 仓库、`index.html`、`appConfig.js`
-- GitHub Actions Variables（前端 workflow 不需要）
-- GitHub Pages 部署产物
+**Do not** put `DEEPSEEK_API_KEY` in:
 
-前端点「AI Team Summary」时，请求发到 **你的 Render 后端**，由后端用环境变量里的 key 调 OpenAI。
+- Git commits, `index.html`, or `appConfig.js`
+- GitHub Actions Variables (the frontend workflow does not need it)
+- GitHub Pages build artifacts
 
-### 2. 前端连哪个后端 — **GitHub Variables**
+When users click **AI Team Summary**, the browser calls your **Render backend**, which uses the env key to call DeepSeek.
 
-1. 仓库 **Settings → Secrets and variables → Actions → Variables**
-2. 新建 **`API_BASE_URL`** = Render 公网地址，例如：
+### Frontend → backend URL — **GitHub Variable**
+
+1. Repo **Settings → Secrets and variables → Actions → Variables**
+2. Add **`API_BASE_URL`** = your Render public URL, e.g.:
 
    ```text
    https://se-sitrep-api.onrender.com
    ```
 
-   （不要末尾 `/`）
+   (no trailing `/`)
 
-3. 推送到 `main` 后，Deploy workflow 会把 Pages 上的 `apiBaseUrl` 从 `localhost` 替换成该地址。
+3. On push to `main`, the Deploy workflow replaces `apiBaseUrl` in the Pages build from `localhost` to this URL.
 
-### 3. 触发 Render 部署 — **GitHub Secret**
+### Optional: auto-deploy backend — **GitHub Secret**
 
-1. Render 服务 → **Settings → Deploy Hook** → 复制 URL  
+1. Render service → **Settings → Deploy Hook** → copy URL  
 2. GitHub **Settings → Secrets and variables → Actions → Secrets**  
-3. 新建 **`RENDER_DEPLOY_HOOK`** = 上述 URL  
+3. Add **`RENDER_DEPLOY_HOOK`** = that URL  
 
-### 4. Google Calendar（可选）
+### Google Calendar (optional)
 
-若要用 Google 日历同步：
+1. Create an OAuth Web Client ID in [Google Cloud Console](https://console.cloud.google.com/).
+2. **Authorized JavaScript origins**:
+   - `http://localhost:5173` (local)
+   - `https://<your-username>.github.io` (Pages)
+3. Set `googleClientId` in `SITREP_CONFIG` (or a GitHub Variable `GOOGLE_CLIENT_ID`).
 
-1. [Google Cloud Console](https://console.cloud.google.com/) 创建 OAuth Web Client ID  
-2. **Authorized JavaScript origins** 加上：
-   - `http://localhost:5173`（本地）
-   - `https://<你的用户名>.github.io`（Pages）
-3. 在 **GitHub Variables** 增加 `GOOGLE_CLIENT_ID`（可选），或部署前改 `index.html` 里 `SITREP_CONFIG.googleClientId`  
-
-不要把 Google **Client Secret** 放进前端（浏览器只用 Client ID）。
+Never put the Google **Client Secret** in the frontend (browser uses Client ID only).
 
 ---
 
-## 二、一次性部署步骤
+## 2. One-time setup
 
-### GitHub Pages（前端）
+### GitHub Pages (frontend)
 
 1. **Settings → Pages → Build and deployment → Source** → **GitHub Actions**
-2. 设置 Variable **`API_BASE_URL`**（见上）
+2. Add Variable **`API_BASE_URL`** (see above)
 
-### Render（后端）
+### Render (backend)
 
-1. **New → Web Service** → 连接本仓库  
+1. **New → Web Service** → connect this repo  
 2. **Root Directory**: `source/backend`  
-3. **Build**: `npm install` · **Start**: `npm start`  
-4. Environment 添加 **`OPENAI_API_KEY`**  
-5. 部署完成后，把 URL 写入 GitHub **`API_BASE_URL`**  
-6. 配置 **`RENDER_DEPLOY_HOOK`** Secret  
+3. **Build Command**: `npm install`  
+4. **Start Command**: `npm start`  
+5. Add **`DEEPSEEK_API_KEY`** in Environment  
+6. After deploy, copy the URL into GitHub **`API_BASE_URL`**  
+7. Optional: add **`RENDER_DEPLOY_HOOK`** Secret  
 
-也可使用仓库内 `source/backend/render.yaml`。
+You can also import `source/backend/render.yaml` (Blueprint).
 
-### 推送 main
+### Push to `main`
 
-- **CI** (`.github/workflows/ci.yml`)：后端 + MVP 测试  
-- **Deploy** (`.github/workflows/deploy.yml`)：Render + Pages  
+- **CI** (`.github/workflows/ci.yml`): backend + MVP tests  
+- **Deploy** (`.github/workflows/deploy.yml`): Render + Pages  
 
-访问：`https://<org>.github.io/<repo>/`
+Live site: `https://<org>.github.io/<repo>/`
 
 ---
 
-## 三、本地开发
+## 3. Local development
 
 ```bash
-# 后端 — key 放在 source/backend/.env（已在 .gitignore）
+# Backend — key in source/backend/.env (gitignored)
 cd source/backend
 cp .env.example .env
-# 编辑 .env：OPENAI_API_KEY=sk-...
+# Edit .env: DEEPSEEK_API_KEY=...
 npm install && npm start
 
-# 前端
+# Frontend
 cd source/mvp
 npx serve . -p 5173
 ```
 
-`index.html` 默认 `apiBaseUrl: http://localhost:3001`，仅本地有效。
+`index.html` uses `apiBaseUrl: http://localhost:3001` for local dev only.
 
 ---
 
-## 四、功能与数据流（部署后）
+## 4. Data flow after deploy
 
-| 操作 | 前端 | 后端 API |
-|------|------|----------|
-| 登录 / 注册 | `authService` | `POST /api/auth/login` |
-| 加载团队数据 | 启动时 `hydrateStoreFromApi` | `GET /api/state` |
-| Daily Check-In | 表单 → `createReportRemote` | `POST /api/reports` |
-| 创建 Issue | 表单 → `createIssueRemote` | `POST /api/issues` |
-| 解决 Issue | Issues 页按钮 | `PATCH /api/issues/:id` |
-| 可用性 | Availability 表单 | `PUT /api/availability` |
-| 个人设置 | Settings 表单 | `PUT /api/users/me` |
-| 添加任务 | Backlog 表单 | `POST /api/tasks` |
-| AI 总结 / 任务 | 头部按钮 | `POST /api/ai/*`（需 Render 上的 OpenAI key） |
+| Action | Frontend | Backend API |
+|--------|----------|-------------|
+| Login / sign-up | `authService` | `POST /api/auth/login` |
+| Load team data | `hydrateStoreFromApi` on start | `GET /api/state` |
+| Daily check-in | `createReportRemote` | `POST /api/reports` |
+| Create issue | `createIssueRemote` | `POST /api/issues` |
+| Resolve issue | Issues page button | `PATCH /api/issues/:id` |
+| Availability | Availability form | `PUT /api/availability` |
+| Profile | Settings form | `PUT /api/users/me` |
+| Add task | Backlog form | `POST /api/tasks` |
+| AI summary / tasks | Header buttons | `POST /api/ai/*` (needs `DEEPSEEK_API_KEY` on Render) |
 
-CI **不会**使用真实 OpenAI key，只跑 SQLite/认证单元测试。
+CI does **not** call DeepSeek; it only runs SQLite/auth unit tests.
