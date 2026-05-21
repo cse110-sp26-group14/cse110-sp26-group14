@@ -5,7 +5,9 @@ import { routes } from './routes.js';
 import { Modal } from './components/Modal.js';
 import { DailyCheckInForm } from './components/forms/DailyCheckInForm.js';
 import { IssueForm } from './components/forms/IssueForm.js';
+import { AvailabilityCheckForm, parseAvailabilityForm } from './components/forms/AvailabilityCheckForm.js';
 import { createSummaryLogForReport } from './services/aiLogService.js';
+import { syncAvailabilityWithGoogleCalendar } from './services/googleCalendarService.js';
 import { todayISO } from './utils/dates.js';
 
 const store = new Store();
@@ -68,6 +70,34 @@ function wireCreateIssue() {
     });
 }
 
+function wireAvailabilityCheck() {
+    document.getElementById('btn-availability').addEventListener('click', () => {
+        openAvailabilityCheck();
+    });
+}
+
+function openAvailabilityCheck() {
+    modal.show('Weekly Availability Check', AvailabilityCheckForm());
+
+    document.getElementById('availability-check-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const { grid, weekKey } = parseAvailabilityForm(event.target);
+        const syncResult = await syncAvailabilityWithGoogleCalendar(grid);
+
+        store.submitWeeklyAvailabilityCheck({
+            userId: 1,
+            weekKey,
+            grid,
+            mergedAvailability: syncResult.availability,
+            calendarSync: syncResult.sync
+        });
+
+        modal.close();
+        rerenderIfCurrentRoute(['#team-availability', '#dashboard']);
+        alert('Availability check submitted!');
+    });
+}
+
 function subscribeToStoreEvents() {
     store.subscribe(EVENTS.AI_LOGS_CHANGED, () => {
         rerenderIfCurrentRoute(['#ai-log']);
@@ -76,9 +106,21 @@ function subscribeToStoreEvents() {
     store.subscribe(EVENTS.ISSUES_CHANGED, () => {
         rerenderIfCurrentRoute(['#issues', '#dashboard']);
     });
+
+    store.subscribe(EVENTS.AVAILABILITY_CHANGED, () => {
+        rerenderIfCurrentRoute(['#team-availability', '#dashboard']);
+    });
+}
+
+function maybePromptForWeeklyAvailability() {
+    if (store.needsWeeklyAvailabilityPrompt()) {
+        setTimeout(() => openAvailabilityCheck(), 0);
+    }
 }
 
 wireDailyCheckIn();
 wireCreateIssue();
+wireAvailabilityCheck();
 subscribeToStoreEvents();
 router.init();
+maybePromptForWeeklyAvailability();

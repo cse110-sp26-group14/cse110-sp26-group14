@@ -27,8 +27,8 @@ Runs on push/PR when `source/prototype-02/**` changes:
 
 | Path | Role |
 |------|------|
-| `index.html`, `app.js`, `style.css` | Runtime entry (loaded by browser) |
+| `index.html`, `src/app.js`, `style.css` | Runtime entry (loaded by browser) |
 | `storage.js`, `taskService.js`, `mockData.js` | Backlog / tasks |
-| `src/` | Modular ES refactor (in progress; not yet wired in `index.html`) |
+| `src/` | Active modular ES app |
 | `__tests__/` | Unit / UI tests (Jest + jsdom) |
 | `e2e/` | E2E placeholder for pipeline |

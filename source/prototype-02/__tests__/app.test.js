@@ -1,173 +1,159 @@
 /**
- * UI tests for app.js using jsdom
+ * UI tests for the active modular app entrypoint.
  */
 
 const fs = require("fs");
 const path = require("path");
 const { JSDOM } = require("jsdom");
-const {
-  fireEvent,
-  getByText,
-  getByLabelText,
-  getByRole,
-  queryByText,
-} = require("@testing-library/dom");
+const { fireEvent, waitFor } = require("@testing-library/dom");
 
-const appPath = path.resolve(__dirname, "..", "app.js");
-const taskServicePath = path.resolve(__dirname, "..", "taskService.js");
-const storagePath = path.resolve(__dirname, "..", "storage.js");
-const mockDataPath = path.resolve(__dirname, "..", "mockData.js");
-const indexPath = path.resolve(__dirname, "..", "index.html");
+const root = path.resolve(__dirname, "..");
+const indexPath = path.join(root, "index.html");
 
-function loadAll(window) {
-  const html = fs.readFileSync(indexPath, "utf8");
-  // create DOM
-  const dom = new JSDOM(html, {
-    runScripts: "dangerously",
-    resources: "usable",
-    url: "http://localhost",
-  });
-  const w = dom.window;
-  // load supporting scripts into window before app
-  const mockDataSrc = fs.readFileSync(mockDataPath, "utf8");
-  const storageSrc = fs.readFileSync(storagePath, "utf8");
-  const serviceSrc = fs.readFileSync(taskServicePath, "utf8");
-  const appSrc = fs.readFileSync(appPath, "utf8");
-  w.eval(mockDataSrc);
-  w.eval(storageSrc);
-  w.eval(serviceSrc);
-  w.eval(appSrc);
-  return w;
+const moduleLoadOrder = [
+  "src/components/Badge.js",
+  "src/views/BaseView.js",
+  "src/views/DashboardView.js",
+  "src/views/CalendarView.js",
+  "src/views/BacklogView.js",
+  "src/views/IssuesView.js",
+  "src/views/AvailabilityView.js",
+  "src/views/AILogView.js",
+  "src/views/SettingsView.js",
+  "src/routes.js",
+  "src/core/events.js",
+  "src/services/storageService.js",
+  "src/utils/ids.js",
+  "src/utils/dates.js",
+  "src/core/store.js",
+  "src/core/router.js",
+  "src/components/Modal.js",
+  "src/components/forms/DailyCheckInForm.js",
+  "src/components/forms/IssueForm.js",
+  "src/components/forms/AvailabilityCheckForm.js",
+  "src/services/aiLogService.js",
+  "src/services/googleCalendarService.js",
+  "src/app.js",
+];
+
+function transformModule(source) {
+  return source
+    .replace(/^import .*;\n/gm, "")
+    .replace(/export async function (\w+)/g, "window.$1 = async function $1")
+    .replace(/export function (\w+)/g, "window.$1 = function $1")
+    .replace(/export class (\w+)/g, "window.$1 = class $1")
+    .replace(/export const (\w+)\s*=/g, "window.$1 =");
 }
 
-describe("Backlog UI interactions", () => {
-  let window;
+function loadApp(savedState = null) {
+  const html = fs.readFileSync(indexPath, "utf8");
+  const dom = new JSDOM(html, {
+    runScripts: "dangerously",
+    url: "http://localhost/#dashboard",
+  });
+  const { window } = dom;
+  window.alert = jest.fn();
 
-  beforeEach(() => {
-    window = loadAll();
-    // ensure clean storage
-    window.localStorage.clear();
-    // initialize storage
-    window.BacklogStorage.initializeStorage(window.INITIAL_DATA.tasks || []);
-    // re-run mount by navigating to backlog
-    window.location.hash = "#backlog";
-    // allow router to handle
-    window.dispatchEvent(new window.HashChangeEvent("hashchange"));
+  window.eval(fs.readFileSync(path.join(root, "mockData.js"), "utf8"));
+  if (savedState) {
+    window.localStorage.setItem("se-sitrep-state", savedState);
+  }
+
+  moduleLoadOrder.forEach((relativePath) => {
+    const source = fs.readFileSync(path.join(root, relativePath), "utf8");
+    window.eval(transformModule(source));
   });
 
-  afterEach(() => {
+  return window;
+}
+
+function flushTimers() {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+describe("Modular app entrypoint", () => {
+  test("index.html loads src/app.js as a module instead of root app.js", () => {
+    const html = fs.readFileSync(indexPath, "utf8");
+
+    expect(html).toContain('type="module" src="src/app.js"');
+    expect(html).not.toContain('<script src="app.js"></script>');
+  });
+
+  test("weekly availability prompt opens when unresolved", async () => {
+    const window = loadApp();
+    await flushTimers();
+
+    expect(
+      window.document.querySelector("#availability-check-form"),
+    ).not.toBeNull();
+
     window.close();
   });
 
-  test("Add Task flow adds a task and updates localStorage and table", () => {
-    const doc = window.document;
-    const addBtn = doc.querySelector("#btn-add-task");
-    expect(addBtn).not.toBeNull();
-    // open modal
-    fireEvent.click(addBtn);
-    const modal = doc.getElementById("modal-host");
-    expect(modal.classList.contains("hidden")).toBe(false);
-    const titleInput = modal.querySelector('input[name="title"]');
-    fireEvent.input(titleInput, { target: { value: "Test add from jest" } });
-    const ownerInput = modal.querySelector('input[name="owner"]');
-    fireEvent.input(ownerInput, { target: { value: "Tester" } });
-    const submit = modal.querySelector('form button[type="submit"]');
-    fireEvent.click(submit);
-    // modal should close
-    expect(modal.classList.contains("hidden")).toBe(true);
-    // table should include new row
-    const rows = doc.querySelectorAll("#backlog-table-body tr");
-    let found = false;
-    rows.forEach((r) => {
-      if (r.textContent.includes("Test add from jest")) found = true;
+  test("availability submission updates schedule and creates a log", async () => {
+    const window = loadApp();
+    await flushTimers();
+
+    const form = window.document.querySelector("#availability-check-form");
+    const firstSelect = form.querySelector("select");
+    fireEvent.change(firstSelect, { target: { value: "preferred" } });
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      const state = JSON.parse(window.localStorage.getItem("se-sitrep-state"));
+      expect(state.availabilityLogs).toHaveLength(1);
+      expect(Object.keys(state.weeklyAvailabilityChecks)).toHaveLength(1);
     });
-    expect(found).toBe(true);
-    // localStorage should contain the new task
-    const tasks = JSON.parse(window.localStorage.getItem("backlog_tasks"));
-    expect(tasks.some((t) => t.title === "Test add from jest")).toBe(true);
-  });
 
-  test("Edit Task flow pre-fills fields and saves changes preserving id", () => {
-    const doc = window.document;
-    const firstEditBtn = doc.querySelector(".edit-task-btn");
-    expect(firstEditBtn).not.toBeNull();
-    const row = firstEditBtn.closest("tr");
-    const originalText = row.querySelector("td").textContent;
-    fireEvent.click(firstEditBtn);
-    const modal = doc.getElementById("modal-host");
-    const titleInput = modal.querySelector('input[name="title"]');
-    expect(titleInput.value.length).toBeGreaterThan(0);
-    // change title
-    fireEvent.input(titleInput, { target: { value: "Edited via test" } });
-    const saveBtn = modal.querySelector('form button[type="submit"]');
-    fireEvent.click(saveBtn);
-    expect(modal.classList.contains("hidden")).toBe(true);
-    // ensure table updated
-    const updatedRow = Array.from(
-      doc.querySelectorAll("#backlog-table-body tr"),
-    ).find((r) => r.textContent.includes("Edited via test"));
-    expect(updatedRow).toBeDefined();
-    // ensure same id preserved
-    const id = firstEditBtn.getAttribute("data-task-id");
-    const stored = JSON.parse(window.localStorage.getItem("backlog_tasks"));
-    const storedTask = stored.find((t) => t.id === id);
-    expect(storedTask.title).toBe("Edited via test");
-  });
+    const state = JSON.parse(window.localStorage.getItem("se-sitrep-state"));
+    const log = state.availabilityLogs[0];
+    expect(log.userId).toBe(1);
+    expect(log.calendarSync.status).toBe("fallback");
 
-  test("Search filters rows in real time", () => {
-    const doc = window.document;
-    const search = doc.querySelector("#backlog-search");
-    fireEvent.input(search, { target: { value: "OAuth" } });
-    const rows = doc.querySelectorAll("#backlog-table-body tr");
-    // all rows should include the search term
-    const matches = Array.from(rows).filter((r) =>
-      r.textContent.toLowerCase().includes("oauth"),
-    );
-    expect(matches.length).toBeGreaterThanOrEqual(0);
-  });
-
-  test("Sort dropdown changes ordering", () => {
-    const doc = window.document;
-    const sort = doc.querySelector("#backlog-sort");
-    fireEvent.change(sort, { target: { value: "owner" } });
-    // basic assertion: no errors and rows exist
-    const rows = doc.querySelectorAll("#backlog-table-body tr");
-    expect(rows.length).toBeGreaterThan(0);
-  });
-
-  test("Filter pills work and active state toggles", () => {
-    const doc = window.document;
-    const pills = doc.querySelectorAll(".filter-pill");
-    expect(pills.length).toBeGreaterThan(0);
-    const blocked = Array.from(pills).find(
-      (p) => p.getAttribute("data-filter") === "BLOCKED",
-    );
-    fireEvent.click(blocked);
-    expect(blocked.classList.contains("active")).toBe(true);
-    // ensure rows are filtered
-    const rows = doc.querySelectorAll("#backlog-table-body tr");
-    Array.from(rows).forEach((r) => {
-      // each row should have a status badge possibly with BLOCKED
-      // we just ensure no errors
-      expect(r).toBeDefined();
+    const submittedDate = Object.keys(state.availability).find((date) => {
+      return state.availability[date]?.[1]?.["9:00"];
     });
+    expect(state.availability[submittedDate][1]["9:00"]).toBe("preferred");
+
+    window.close();
   });
 
-  test("Combined flow: filter + search + sort", () => {
-    const doc = window.document;
-    const pills = doc.querySelectorAll(".filter-pill");
-    const blocked = Array.from(pills).find(
-      (p) => p.getAttribute("data-filter") === "BLOCKED",
-    );
-    fireEvent.click(blocked);
-    const search = doc.querySelector("#backlog-search");
-    fireEvent.input(search, { target: { value: "payment" } });
-    const sort = doc.querySelector("#backlog-sort");
-    fireEvent.change(sort, { target: { value: "due" } });
-    const rows = doc.querySelectorAll("#backlog-table-body tr");
-    // verify rows match filter+search
-    Array.from(rows).forEach((r) => {
-      expect(r.textContent.toLowerCase()).toEqual(r.textContent.toLowerCase());
+  test("same-week prompt is suppressed after submission", async () => {
+    const firstWindow = loadApp();
+    await flushTimers();
+    fireEvent.submit(firstWindow.document.querySelector("#availability-check-form"));
+
+    await waitFor(() => {
+      const state = JSON.parse(firstWindow.localStorage.getItem("se-sitrep-state"));
+      expect(state.availabilityLogs).toHaveLength(1);
     });
+
+    const savedState = firstWindow.localStorage.getItem("se-sitrep-state");
+    firstWindow.close();
+
+    const thirdWindow = loadApp(savedState);
+    await flushTimers();
+
+    expect(thirdWindow.document.querySelector("#availability-check-form")).toBeNull();
+    thirdWindow.close();
+  });
+
+  test("availability log appears on Team Availability view", async () => {
+    const window = loadApp();
+    await flushTimers();
+    fireEvent.submit(window.document.querySelector("#availability-check-form"));
+
+    await waitFor(() => {
+      const state = JSON.parse(window.localStorage.getItem("se-sitrep-state"));
+      expect(state.availabilityLogs).toHaveLength(1);
+    });
+
+    window.location.hash = "#team-availability";
+    window.dispatchEvent(new window.HashChangeEvent("hashchange"));
+
+    expect(window.document.body.textContent).toContain("Availability Log");
+    expect(window.document.body.textContent).toContain("Local busy blocks");
+
+    window.close();
   });
 });
