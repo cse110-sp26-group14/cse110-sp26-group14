@@ -62,6 +62,7 @@ let appShellWired = false;
 function toggleShell(authed) {
   loginRoot.classList.toggle('hidden', authed);
   appShell.classList.toggle('hidden', !authed);
+  if (!authed) closeMobileNav();
 }
 
 /**
@@ -189,7 +190,6 @@ async function startApp(authUser) {
     wireAiActions();
     wireHeader();
     wireUserMenu();
-    wireMobileNav();
     wireSprintSelector();
     wireLogout();
     subscribeToStoreEvents();
@@ -377,28 +377,48 @@ function wireCreateIssue() {
   });
 }
 
-function wireMobileNav() {
-  const menuBtn = document.getElementById('btn-mobile-menu');
-  const backdrop = document.getElementById('sidebar-backdrop');
+function closeMobileNav() {
   const root = document.getElementById('root');
+  const menuBtn = document.getElementById('btn-mobile-menu');
+  root?.classList.remove('nav-open');
+  menuBtn?.setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('mobile-nav-open');
+}
 
-  const closeNav = () => {
-    root?.classList.remove('nav-open');
-    menuBtn?.setAttribute('aria-expanded', 'false');
-  };
+function openMobileNav() {
+  const root = document.getElementById('root');
+  const menuBtn = document.getElementById('btn-mobile-menu');
+  root?.classList.add('nav-open');
+  menuBtn?.setAttribute('aria-expanded', 'true');
+  document.body.classList.add('mobile-nav-open');
+}
 
-  const openNav = () => {
-    root?.classList.add('nav-open');
-    menuBtn?.setAttribute('aria-expanded', 'true');
-  };
+/** Document-level mobile nav (survives pageshow / bfcache re-bootstrap). */
+function wireMobileNavDocument() {
+  if (document.documentElement.dataset.mobileNavWired === '1') return;
+  document.documentElement.dataset.mobileNavWired = '1';
 
-  bindOnce(menuBtn, 'click', () => {
-    if (root?.classList.contains('nav-open')) closeNav();
-    else openNav();
-  });
-  bindOnce(backdrop, 'click', closeNav);
-  document.querySelectorAll('#sidebar-nav .nav-item').forEach((link) => {
-    bindOnce(link, 'click', closeNav);
+  document.addEventListener('click', (e) => {
+    if (appShell?.classList.contains('hidden')) return;
+
+    if (e.target.closest('#btn-mobile-menu')) {
+      const root = document.getElementById('root');
+      if (root?.classList.contains('nav-open')) closeMobileNav();
+      else openMobileNav();
+      return;
+    }
+
+    if (e.target.closest('#sidebar-backdrop')) {
+      closeMobileNav();
+      return;
+    }
+
+    if (
+      e.target.closest('#sidebar-nav .nav-item')
+      && document.getElementById('root')?.classList.contains('nav-open')
+    ) {
+      closeMobileNav();
+    }
   });
 }
 
@@ -632,3 +652,4 @@ document.addEventListener('click', async (e) => {
 }, true);
 
 wireMeetingModal();
+wireMobileNavDocument();

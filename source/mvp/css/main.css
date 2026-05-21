@@ -408,7 +408,7 @@ body {
   flex-wrap: wrap;
 }
 
-#quick-actions span {
+#quick-actions > span.quick-actions-label {
   font-size: 0.75rem;
   color: var(--text-muted);
   font-weight: 500;
@@ -454,7 +454,23 @@ body {
 }
 
 .ai-btn {
-  background: #6366f1; /* Special Indigo for AI */
+  background: var(--primary);
+  color: #fff;
+  border: none;
+}
+
+.ai-btn:hover {
+  background: var(--primary-dark);
+  color: #fff;
+}
+
+.ai-btn span,
+.ai-btn svg {
+  color: inherit;
+}
+
+#quick-actions .primary-btn {
+  color: #fff;
 }
 
 #quick-actions .spacer {
