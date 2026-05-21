@@ -1,6 +1,9 @@
+/** Fixed "today" so sprint lifecycle + calendar E2E match seed data (Sprint 2 active). */
+export const E2E_TODAY = '2026-05-15';
+
 /** @param {import('@playwright/test').Page} page */
 export async function gotoLocalApp(page) {
-  await page.goto('/?dataMode=local');
+  await page.goto(`/?dataMode=local&sitrepToday=${E2E_TODAY}`);
 }
 
 /** @param {import('@playwright/test').Page} page */
