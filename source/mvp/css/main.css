@@ -158,6 +158,10 @@ body {
   gap: 1.5rem;
 }
 
+.header-sprint-select {
+  max-width: 220px;
+}
+
 .dropdown-toggle {
   background: none;
   border: 1px solid var(--border);

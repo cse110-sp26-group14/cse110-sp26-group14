@@ -74,7 +74,7 @@ export class AvailabilityView extends BaseView {
                             <div style="font-weight: 700; font-size: 1rem;">${best.label}</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">${best.detail}</div>
                         </div>
-                        <div class="avail-sidebar__actions">
+                        <div class="avail-sidebar-actions">
                           <button type="button" class="primary-btn" id="avail-add-meeting">Add meeting to calendar</button>
                           <a href="#calendar" class="action-btn">View sprint calendar</a>
                         </div>

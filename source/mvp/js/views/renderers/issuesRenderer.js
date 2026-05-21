@@ -23,7 +23,7 @@ export function renderTabButton(tab) {
 export function renderReportCard(report, userName, badgeFn) {
   const badges = `${badgeFn(report.status, report.status)}<span class="badge badge-muted">${report.mood}</span>`;
   const blockers = report.blockers && report.blockers !== 'None'
-    ? `<p class="issue-description issue-description--danger">Blockers: ${escapeHtml(report.blockers)}</p>`
+    ? `<p class="issue-description issue-description-danger">Blockers: ${escapeHtml(report.blockers)}</p>`
     : '';
   const notes = report.notes
     ? `<p class="issue-description">Notes: ${escapeHtml(report.notes)}</p>`

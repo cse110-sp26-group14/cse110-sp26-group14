@@ -26,7 +26,7 @@ export class BaseView {
     /**
      * @param {HTMLElement} container
      */
-    mount(container) {}
+    mount(_container) {}
 
     /**
      * @param {string} type

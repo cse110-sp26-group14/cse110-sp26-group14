@@ -2,7 +2,7 @@
  * Sprint calendar view (markup in templates/partials.html).
  */
 
-.cal-view__header {
+.cal-view-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -10,7 +10,7 @@
   gap: 1rem;
 }
 
-.cal-view__toolbar {
+.cal-view-toolbar {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
@@ -27,17 +27,17 @@
   border: 1px solid var(--border);
 }
 
-.cal-controls__btn {
+.cal-controls-btn {
   border: none;
 }
 
-.cal-controls__label {
+.cal-controls-label {
   font-size: 0.875rem;
   font-weight: 600;
   padding: 0 0.5rem;
 }
 
-.cal-controls__divider {
+.cal-controls-divider {
   width: 1px;
   background: var(--border);
   height: 20px;
@@ -61,7 +61,7 @@
   background: var(--border);
 }
 
-.cal-grid__weekday {
+.cal-grid-weekday {
   background: var(--bg-main);
   padding: 0.75rem;
   text-align: center;
@@ -82,25 +82,25 @@
   cursor: pointer;
 }
 
-.calendar-day--selected {
+.calendar-day-selected {
   outline: 2px solid var(--primary);
   z-index: 10;
 }
 
-.calendar-day--today {
+.calendar-day-today {
   box-shadow: inset 0 0 0 2px var(--info);
 }
 
-.calendar-day__num {
+.calendar-day-num {
   font-size: 0.875rem;
   font-weight: 500;
 }
 
-.calendar-day__num--muted {
+.calendar-day-num-muted {
   color: var(--text-light);
 }
 
-.calendar-day__num--sprint {
+.calendar-day-num-sprint {
   color: var(--text-main);
 }
 
@@ -112,22 +112,22 @@
   display: block;
 }
 
-.cal-chip--meeting {
+.cal-chip-meeting {
   background: var(--primary-light);
   color: var(--primary);
 }
 
-.cal-chip--task {
+.cal-chip-task {
   background: var(--warning-light);
   color: var(--warning);
 }
 
-.cal-chip--deadline {
+.cal-chip-deadline {
   background: var(--danger-light);
   color: var(--danger);
 }
 
-.cal-chip--google {
+.cal-chip-google {
   background: #e0e7ff;
   color: #4338ca;
 }
@@ -140,17 +140,17 @@
   flex-wrap: wrap;
 }
 
-.cal-legend__item {
+.cal-legend-item {
   display: flex;
   align-items: center;
   gap: 0.4rem;
 }
 
-.cal-sidebar__section {
+.cal-sidebar-section {
   margin-bottom: 1.5rem;
 }
 
-.cal-sidebar__heading {
+.cal-sidebar-heading {
   font-size: 0.7rem;
   text-transform: uppercase;
   color: var(--text-light);
@@ -164,18 +164,18 @@
   margin-bottom: 0.5rem;
 }
 
-.cal-event-card--google {
+.cal-event-card-google {
   padding: 0.75rem;
   border-color: #c7d2fe;
   background: #eef2ff;
 }
 
-.cal-event-card__title {
+.cal-event-card-title {
   font-weight: 600;
   font-size: 0.875rem;
 }
 
-.cal-event-card__meta {
+.cal-event-card-meta {
   font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 0.25rem;
@@ -188,21 +188,26 @@
   margin-bottom: 0.5rem;
 }
 
-.cal-checkin-card__name {
+.cal-checkin-card-name {
   font-weight: 600;
   font-size: 0.875rem;
 }
 
-.cal-checkin-card__muted {
+.cal-checkin-card-muted {
   font-size: 0.75rem;
   color: var(--text-muted);
   font-style: italic;
 }
 
-.cal-checkin-card__blocker {
+.cal-checkin-card-blocker {
   font-size: 0.7rem;
   color: var(--danger);
   margin-top: 0.25rem;
+}
+
+.cal-checkin-card-meta {
+  font-size: 0.75rem;
+  margin-top: 0.35rem;
 }
 
 .cal-gcal-hint {

@@ -30,13 +30,13 @@ export function renderCalendarDayCell(params) {
   } = params;
   const dayClasses = [
     'calendar-day',
-    isSelected ? 'calendar-day--selected' : '',
-    isToday && !isSelected ? 'calendar-day--today' : '',
+    isSelected ? 'calendar-day-selected' : '',
+    isToday && !isSelected ? 'calendar-day-today' : '',
   ].filter(Boolean).join(' ');
 
-  let dayNumClass = 'calendar-day__num--muted';
+  let dayNumClass = 'calendar-day-num-muted';
   if (inMonth) {
-    dayNumClass = inSprint ? 'calendar-day__num--sprint' : 'calendar-day__num--muted';
+    dayNumClass = inSprint ? 'calendar-day-num-sprint' : 'calendar-day-num-muted';
   }
 
   return renderTemplate('tpl-cal-day', {
@@ -73,7 +73,7 @@ export function renderMeetingCard(event, variant = 'default') {
     extra,
   }, { raw: ['extra'] });
   return variant === 'google'
-    ? card.replace('cal-event-card"', 'cal-event-card cal-event-card--google"')
+    ? card.replace('class="cal-event-card"', 'class="cal-event-card cal-event-card-google"')
     : card;
 }
 
@@ -83,7 +83,7 @@ export function renderMeetingCard(event, variant = 'default') {
  */
 export function renderCalendarLayout(params) {
   const weekdayHeaders = WEEKDAYS.map(
-    (d) => `<div class="cal-grid__weekday">${d}</div>`,
+    (d) => `<div class="cal-grid-weekday">${d}</div>`,
   ).join('');
 
   const legend = [
@@ -93,7 +93,7 @@ export function renderCalendarLayout(params) {
     { dot: '#6366f1', label: 'Google' },
     { dot: 'var(--warning)', label: 'Tasks due' },
   ].map(({ dot, label }) => `
-    <span class="cal-legend__item"><span class="dot" style="background:${dot};"></span> ${label}</span>
+    <span class="cal-legend-item"><span class="dot" style="background:${dot};"></span> ${label}</span>
   `).join('');
 
   return renderTemplate('tpl-cal-layout', {
