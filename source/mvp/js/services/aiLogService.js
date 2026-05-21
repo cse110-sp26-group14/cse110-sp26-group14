@@ -10,6 +10,24 @@ import { currentTimestamp } from '../utils/dates.js';
  * @param {object} report - daily check-in report
  * @returns {object|null}
  */
+/**
+ * @param {string} title
+ * @param {string} content
+ * @param {string} author
+ * @returns {object}
+ */
+export function createNoteLog(title, content, author) {
+  return {
+    id: createId(),
+    type: 'Note',
+    title: title || 'Team Note',
+    status: 'approved',
+    content,
+    timestamp: currentTimestamp(),
+    details: { input: 'Manual note', reviewer: author || 'Team' },
+  };
+}
+
 export function createSummaryLogForReport(report) {
   if (!report.blockers || report.blockers === 'None') {
     return null;

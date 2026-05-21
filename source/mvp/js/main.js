@@ -12,11 +12,13 @@ import { DailyCheckInForm } from './components/forms/DailyCheckInForm.js';
 import { IssueForm } from './components/forms/IssueForm.js';
 import { AvailabilityForm } from './components/forms/AvailabilityForm.js';
 import { TaskForm } from './components/forms/TaskForm.js';
+import { NoteForm } from './components/forms/NoteForm.js';
 import { createSummaryLogForReport } from './services/aiLogService.js';
 import { generateTeamSummaryRemote, suggestSprintTasksRemote } from './services/aiSummaryService.js';
 import {
   mergeAiLogFromApi,
   mergeTasksFromApi,
+  createNoteRemote,
 } from './services/dataSyncService.js';
 import {
   ensureDemoAccount,
@@ -34,6 +36,8 @@ import {
 import { initGoogleCalendar } from './services/googleCalendarService.js';
 import { useRemoteData } from './config/appConfig.js';
 import { mountLoginPage } from './views/LoginView.js';
+import { bindModalForm } from './utils/modalForm.js';
+
 const loginRoot = document.getElementById('login-root');
 const appShell = document.getElementById('app-shell');
 const store = new Store();
@@ -61,6 +65,14 @@ function updateHeaderUser(user) {
   if (role) role.textContent = user.role;
 }
 
+function syncHeaderFromStore() {
+  const sprint = store.getActiveSprint();
+  const badge = document.getElementById('header-sprint-badge');
+  if (badge && sprint) {
+    badge.innerHTML = `<span class="dot"></span> ${sprint.name}: ${sprint.start} – ${sprint.end}`;
+  }
+}
+
 /**
  * Start authenticated app (router, modals, actions).
  */
@@ -71,6 +83,7 @@ async function startApp(authUser) {
 
   try {
     await hydrateStoreFromApi(store);
+    syncHeaderFromStore();
   } catch (err) {
     console.error('Failed to load shared data from API', err);
     if (useRemoteData()) {
@@ -86,8 +99,10 @@ async function startApp(authUser) {
   wireDailyCheckIn();
   wireCreateIssue();
   wireAvailability();
+  wireAddNote();
   wireTaskModal(authUser);
   wireAiActions(authUser);
+  wireHeader();
   wireLogout();
   subscribeToStoreEvents();
   router.init();
@@ -116,10 +131,7 @@ function rerenderIfCurrentRoute(routeHashes) {
 function wireDailyCheckIn() {
   document.getElementById('btn-daily-checkin').addEventListener('click', () => {
     modal.show('Daily Check-In', DailyCheckInForm());
-
-    document.getElementById('checkin-form').addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const formData = new FormData(event.target);
+    bindModalForm('checkin-form', async (formData) => {
       const report = await createReportRemote(store, {
         status: formData.get('status'),
         mood: formData.get('mood'),
@@ -147,10 +159,7 @@ function wireAvailability() {
       || {};
 
     modal.show('Update Availability', AvailabilityForm(existing, date));
-
-    document.getElementById('availability-form')?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const formData = new FormData(event.target);
+    bindModalForm('availability-form', async (formData) => {
       const slots = {};
       for (const [key, val] of formData.entries()) {
         if (key.startsWith('slot-')) slots[key.replace('slot-', '')] = val;
@@ -162,15 +171,28 @@ function wireAvailability() {
   });
 }
 
+function wireAddNote() {
+  document.getElementById('btn-add-note')?.addEventListener('click', () => {
+    modal.show('Add Note', NoteForm());
+    bindModalForm('note-form', async (formData) => {
+      await createNoteRemote(store, {
+        title: formData.get('title'),
+        content: formData.get('content'),
+      });
+      modal.close();
+      alert('Note saved to AI Log.');
+      rerenderIfCurrentRoute(['#ai-log', '#dashboard']);
+    });
+  });
+}
+
 /**
  * @param {import('./services/authService.js').AuthUser} authUser
  */
 function wireTaskModal(authUser) {
   window.addEventListener('sitrep:open-task-modal', () => {
     modal.show('Add Task', TaskForm());
-    document.getElementById('task-form')?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const formData = new FormData(event.target);
+    bindModalForm('task-form', async (formData) => {
       await createTaskRemote(store, {
         title: formData.get('title'),
         priority: formData.get('priority'),
@@ -180,7 +202,7 @@ function wireTaskModal(authUser) {
         status: 'open',
       });
       modal.close();
-      rerenderIfCurrentRoute(['#backlog', '#dashboard']);
+      rerenderIfCurrentRoute(['#backlog', '#dashboard', '#calendar']);
     });
   });
 }
@@ -188,11 +210,7 @@ function wireTaskModal(authUser) {
 function wireCreateIssue() {
   document.getElementById('btn-create-issue').addEventListener('click', () => {
     modal.show('Create Issue', IssueForm());
-
-    document.getElementById('issue-form').addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const formData = new FormData(event.target);
-
+    bindModalForm('issue-form', async (formData) => {
       await createIssueRemote(store, {
         title: formData.get('title'),
         severity: formData.get('severity'),
@@ -207,6 +225,24 @@ function wireCreateIssue() {
       modal.close();
       rerenderIfCurrentRoute(['#issues', '#dashboard']);
     });
+  });
+}
+
+function wireHeader() {
+  const search = document.getElementById('header-search');
+  if (search) {
+    search.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const q = search.value.trim();
+      if (!q) return;
+      sessionStorage.setItem('sitrep:search', q);
+      window.location.hash = '#issues';
+    });
+  }
+
+  document.getElementById('btn-notifications')?.addEventListener('click', () => {
+    sessionStorage.setItem('sitrep:issues-filter', 'Open');
+    window.location.hash = '#issues';
   });
 }
 
@@ -242,7 +278,7 @@ function wireAiActions(authUser) {
         mergeAiLogFromApi(store, result.log);
         if (useRemoteData()) await refreshStoreFromApi(store);
         alert(`Added ${result.tasks.length} suggested tasks to the sprint.`);
-        rerenderIfCurrentRoute(['#dashboard', '#backlog', '#ai-log']);
+        rerenderIfCurrentRoute(['#dashboard', '#backlog', '#ai-log', '#calendar']);
       } catch (err) {
         alert(err.message || 'AI task suggestion failed.');
       }
@@ -291,6 +327,10 @@ function subscribeToStoreEvents() {
 
   store.subscribe(EVENTS.REPORTS_CHANGED, () => {
     rerenderIfCurrentRoute(['#dashboard', '#backlog']);
+  });
+
+  store.subscribe(EVENTS.TASKS_CHANGED, () => {
+    rerenderIfCurrentRoute(['#backlog', '#dashboard', '#calendar']);
   });
 }
 

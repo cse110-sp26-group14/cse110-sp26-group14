@@ -192,6 +192,18 @@ async function handleRequest(req, res) {
       return;
     }
 
+    if (method === 'POST' && pathname === '/api/ai/logs') {
+      const log = createAiLog({
+        type: body.type || 'Note',
+        title: body.title || 'Team Note',
+        status: 'approved',
+        content: body.content || '',
+        details: body.details || { input: 'Manual note', reviewer: user.name },
+      });
+      sendJson(res, 201, { log });
+      return;
+    }
+
     if (method === 'POST' && pathname === '/api/ai/team-summary') {
       const reports = listReportsForAi();
       const issues = listOpenIssuesForAi();

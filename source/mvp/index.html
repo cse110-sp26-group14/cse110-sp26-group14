@@ -179,8 +179,8 @@
                 </svg>
               </button>
             </div>
-            <div class="sprint-badge">
-              <span class="dot"></span> Sprint 2: May 12 – May 19
+            <div class="sprint-badge" id="header-sprint-badge">
+              <span class="dot"></span> Loading sprint…
             </div>
           </div>
           <div class="header-right">
@@ -196,10 +196,10 @@
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
-              <input type="text" placeholder="Search..." />
+              <input type="text" id="header-search" placeholder="Search issues & tasks…" />
             </div>
             <div class="header-actions">
-              <button class="icon-btn">
+              <button type="button" class="icon-btn" id="btn-notifications" title="Open issues">
                 <svg
                   width="20"
                   height="20"
@@ -341,11 +341,14 @@
     <script src="https://apis.google.com/js/api.js" async defer></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
-      window.SITREP_CONFIG = {
-        dataMode: 'api',
-        apiBaseUrl: 'http://localhost:3001',
-        googleClientId: '',
-      };
+      (function () {
+        var p = new URLSearchParams(location.search);
+        window.SITREP_CONFIG = {
+          dataMode: p.get('dataMode') || 'api',
+          apiBaseUrl: p.get('apiBaseUrl') || 'http://localhost:3001',
+          googleClientId: p.get('googleClientId') || '',
+        };
+      })();
     </script>
     <script type="module" src="js/main.js"></script>
   </body>

@@ -18,24 +18,40 @@ const defaults = {
   googleClientId: '',
 };
 
+/**
+ * @returns {typeof defaults}
+ */
+function readConfig() {
+  return {
+    ...defaults,
+    ...(typeof window !== 'undefined' && window.SITREP_CONFIG
+      ? window.SITREP_CONFIG
+      : {}),
+  };
+}
+
 /** @type {typeof defaults} */
-export const appConfig = {
-  ...defaults,
-  ...(typeof window !== 'undefined' && window.SITREP_CONFIG
-    ? window.SITREP_CONFIG
-    : {}),
-};
+export const appConfig = new Proxy(
+  {},
+  {
+    get(_target, prop) {
+      const cfg = readConfig();
+      return cfg[prop];
+    },
+  },
+);
 
 /**
  * @returns {boolean}
  */
 export function useRemoteData() {
-  return appConfig.dataMode === 'api' && Boolean(appConfig.apiBaseUrl);
+  const cfg = readConfig();
+  return cfg.dataMode === 'api' && Boolean(cfg.apiBaseUrl);
 }
 
 /**
  * @returns {boolean}
  */
 export function useGoogleCalendar() {
-  return Boolean(appConfig.googleClientId);
+  return Boolean(readConfig().googleClientId);
 }

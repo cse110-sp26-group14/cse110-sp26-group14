@@ -15,8 +15,8 @@ beforeEach(() => {
 });
 
 describe('authService', () => {
-  test('signUp and login flow', () => {
-    const created = signUp({
+  test('signUp and login flow', async () => {
+    const created = await signUp({
       name: 'Test User',
       email: 'test@example.com',
       password: 'pass1234',
@@ -24,18 +24,18 @@ describe('authService', () => {
     });
     expect(created.ok).toBe(true);
 
-    logout();
-    const bad = login({ email: 'test@example.com', password: 'wrong' });
+    await logout();
+    const bad = await login({ email: 'test@example.com', password: 'wrong' });
     expect(bad.ok).toBe(false);
 
-    const good = login({ email: 'test@example.com', password: 'pass1234' });
+    const good = await login({ email: 'test@example.com', password: 'pass1234' });
     expect(good.ok).toBe(true);
-    expect(getSessionUser()?.email).toBe('test@example.com');
+    expect((await getSessionUser())?.email).toBe('test@example.com');
   });
 
-  test('ensureDemoAccount seeds demo users', () => {
+  test('ensureDemoAccount seeds demo users', async () => {
     ensureDemoAccount();
-    const result = login({ email: 'maya@team.local', password: 'demo1234' });
+    const result = await login({ email: 'maya@team.local', password: 'demo1234' });
     expect(result.ok).toBe(true);
     expect(result.user?.name).toBe('Maya Patel');
   });

@@ -11,9 +11,11 @@ import {
   postReport,
   patchIssue,
   postTask,
+  postAiLog,
   putAvailability,
   putUserProfile,
 } from './apiClient.js';
+import { createNoteLog } from './aiLogService.js';
 import { todayISO } from '../utils/dates.js';
 
 /**
@@ -184,6 +186,28 @@ export function mergeAiLogFromApi(store, log) {
  * @param {import('../core/store.js').Store} store
  * @param {object[]} tasks
  */
+/**
+ * @param {import('../core/store.js').Store} store
+ * @param {{ title: string, content: string }} note
+ */
+export async function createNoteRemote(store, note) {
+  const author = store.currentAuthUser?.name || 'Team';
+  if (!useRemoteData()) {
+    const log = createNoteLog(note.title, note.content, author);
+    store.addAiLog(log);
+    return log;
+  }
+
+  const { log } = await postAiLog({
+    type: 'Note',
+    title: note.title,
+    content: note.content,
+    details: { input: 'Manual note', reviewer: author },
+  });
+  mergeAiLogFromApi(store, log);
+  return log;
+}
+
 export function mergeTasksFromApi(store, tasks) {
   if (!tasks?.length) return;
   tasks.forEach((t) => {
