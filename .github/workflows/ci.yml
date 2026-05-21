@@ -40,7 +40,7 @@ jobs:
       - run: npm test
 
   mvp:
-    name: MVP — lint, unit, E2E placeholder
+    name: MVP — lint, unit, E2E
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -56,6 +56,7 @@ jobs:
           cache-dependency-path: source/mvp/package-lock.json
 
       - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: npm run lint
       - run: npm run test:unit
       - run: npm run test:e2e

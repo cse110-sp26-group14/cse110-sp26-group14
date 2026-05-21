@@ -34,14 +34,20 @@ Sign up also works; accounts are stored in SQLite on the server.
 
 ## Local-only mode
 
-Set `window.SITREP_CONFIG.dataMode = 'local'` to use browser `localStorage` (no shared team data).
+Open `http://localhost:5173/?dataMode=local` or set `window.SITREP_CONFIG.dataMode = 'local'` to use browser `localStorage` (no shared team data).
 
 ## Quality
 
 ```bash
 cd source/mvp
-npm run ci
+npm install
+npx playwright install chromium   # first time only
+npm run ci                      # lint + unit + E2E (Playwright)
+npm run test:e2e                # browser tests only
+npm run test:e2e:ui             # interactive debugger
 ```
+
+E2E runs against `?dataMode=local` (no backend required). Specs live in `e2e/*.spec.js`.
 
 ## Features
 

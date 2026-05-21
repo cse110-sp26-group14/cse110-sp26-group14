@@ -56,6 +56,7 @@ Open `http://localhost:5173` — `index.html` sets `SITREP_CONFIG.dataMode: 'api
 | GET/POST | `/api/issues` | Bearer | List / create issues |
 | PATCH | `/api/issues/:id` | Bearer | Update issue (e.g. resolve) |
 | POST | `/api/reports` | Bearer | Daily check-in |
+| POST | `/api/ai/logs` | Bearer | Manual team note (AI log) |
 | POST | `/api/tasks` | Bearer | Create task |
 | PUT | `/api/availability` | Bearer | Save availability slots |
 | POST | `/api/ai/team-summary` | Bearer | DeepSeek team summary + AI log |

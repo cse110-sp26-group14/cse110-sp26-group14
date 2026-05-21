@@ -172,6 +172,17 @@ export async function postAiSuggestTasks(goals, sprintId = 2) {
 }
 
 /**
+ * @param {{ title: string, content: string, type?: string }} payload
+ */
+export async function postAiLog(payload) {
+  const res = await request('/api/ai/logs', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+/**
  * @param {object} payload
  */
 export async function putAvailability(payload) {

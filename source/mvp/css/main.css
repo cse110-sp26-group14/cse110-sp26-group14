@@ -554,3 +554,17 @@ tr:last-child td {
   background: var(--primary) !important;
   color: white !important;
 }
+
+.calendar-day:hover {
+  background: var(--bg-main) !important;
+}
+
+.ai-log-card-active {
+  border-color: var(--primary) !important;
+}
+
+.empty-hint {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  padding: 1rem 0;
+}

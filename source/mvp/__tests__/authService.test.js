@@ -31,8 +31,7 @@ describe('authService', () => {
 
     const good = await login({ email: 'test@example.com', password: 'pass1234' });
     expect(good.ok).toBe(true);
-    const session = await getSessionUser();
-    expect(session?.email).toBe('test@example.com');
+    expect((await getSessionUser())?.email).toBe('test@example.com');
   });
 
   test('ensureDemoAccount seeds demo users', async () => {

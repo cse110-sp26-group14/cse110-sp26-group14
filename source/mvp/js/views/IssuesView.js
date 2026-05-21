@@ -90,6 +90,25 @@ export class IssuesView extends BaseView {
    * @param {HTMLElement} container
    */
   mount(container) {
+    const savedFilter = sessionStorage.getItem('sitrep:issues-filter');
+    if (savedFilter) {
+      this.filter = savedFilter;
+      sessionStorage.removeItem('sitrep:issues-filter');
+      container.innerHTML = this.render();
+    }
+
+    const savedSearch = sessionStorage.getItem('sitrep:search');
+    const search = container.querySelector('#issues-search-input');
+    if (savedSearch && search) {
+      search.value = savedSearch;
+      sessionStorage.removeItem('sitrep:search');
+      const q = savedSearch.trim().toLowerCase();
+      container.querySelectorAll('.issue-card').forEach((card) => {
+        const title = card.dataset.title || '';
+        card.style.display = !q || title.includes(q) ? '' : 'none';
+      });
+    }
+
     container.querySelectorAll('.filter-chip').forEach((chip) => {
       chip.addEventListener('click', () => {
         this.filter = chip.dataset.filter || 'All';
@@ -98,7 +117,6 @@ export class IssuesView extends BaseView {
       });
     });
 
-    const search = container.querySelector('#issues-search-input');
     if (search) {
       search.addEventListener('input', () => {
         const q = search.value.trim().toLowerCase();
