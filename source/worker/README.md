@@ -28,5 +28,5 @@ See [docs/DEPLOY.md](../../docs/DEPLOY.md).
 
 | Email | Password |
 |-------|----------|
-| `maya@team.local` | `demo1234` (admin) |
+| `maya@team.local` | `demo1234` |
 | `alex@team.local` | `demo1234` |

@@ -32,7 +32,7 @@ export async function signUp(db, input) {
   const avatar = name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
   await db.prepare(`
     INSERT INTO users (id, name, email, password_hash, role, avatar, is_admin)
-    VALUES (?, ?, ?, ?, ?, ?, 0)
+    VALUES (?, ?, ?, ?, ?, ?, 1)
   `).bind(id, name, email, hashPassword(password), role, avatar).run();
   return createSession(db, id);
 }
