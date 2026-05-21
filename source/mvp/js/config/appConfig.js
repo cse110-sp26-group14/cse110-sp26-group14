@@ -8,9 +8,9 @@ const defaults = {
    * `local` = browser-only (demo; teammates cannot see each other's data).
    * `api` = read/write issues & app state via backend (required for team-wide issues).
    */
-  dataMode: 'api',
-  /** Base URL when dataMode is `api` */
-  apiBaseUrl: 'http://localhost:3001',
+  dataMode: 'local',
+  /** Base URL when dataMode is `api` (index.html sets api + URL in browser) */
+  apiBaseUrl: '',
   /**
    * Google OAuth Web client ID (Calendar API). Create in Google Cloud Console.
    * Never commit secrets; set in deployed `config.js` or hosting env injection.
@@ -29,8 +29,22 @@ export const appConfig = {
 /**
  * @returns {boolean}
  */
+/**
+ * @returns {typeof defaults}
+ */
+export function getRuntimeConfig() {
+  if (typeof window !== 'undefined' && window.SITREP_CONFIG) {
+    return { ...defaults, ...window.SITREP_CONFIG };
+  }
+  return appConfig;
+}
+
+/**
+ * @returns {boolean}
+ */
 export function useRemoteData() {
-  return appConfig.dataMode === 'api' && Boolean(appConfig.apiBaseUrl);
+  const cfg = getRuntimeConfig();
+  return cfg.dataMode === 'api' && Boolean(cfg.apiBaseUrl);
 }
 
 /**
