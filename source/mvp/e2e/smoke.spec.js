@@ -48,7 +48,9 @@ test.describe('Smoke — auth & navigation', () => {
 
   test('log out returns to login', async ({ page }) => {
     await loginAsDemo(page);
-    await page.getByRole('button', { name: 'Log out' }).click();
+    await page.locator('#user-menu-trigger').click();
+    await expect(page.locator('#user-menu-panel')).not.toHaveClass(/hidden/);
+    await page.locator('#btn-logout').click();
     await expect(page.locator('#login-root')).toBeVisible();
     await expect(page.locator('#app-shell')).toHaveClass(/hidden/);
   });

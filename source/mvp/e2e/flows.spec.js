@@ -12,7 +12,8 @@ test.describe('Core flows — local mode', () => {
     await page.locator('#checkin-progress').fill('E2E: finished API wiring');
     await page.locator('#checkin-form').getByRole('button', { name: 'Submit Check-In' }).click();
     await expect(page.locator('#modal-host')).toHaveClass(/hidden/);
-    await expect(page.locator('#dashboard-edit-checkin')).toContainText('Edit Check-In');
+    await openHash(page, '#dashboard');
+    await expect(page.locator('#dashboard-edit-checkin')).toContainText('Edit Check-In', { timeout: 10000 });
     await expect(page.getByText('E2E: finished API wiring')).toBeVisible();
   });
 

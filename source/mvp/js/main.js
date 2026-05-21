@@ -45,6 +45,7 @@ import { bindOnce } from './utils/dom.js';
 import { showToast, runWithButtonFeedback } from './utils/toast.js';
 import { loadHtmlTemplates } from './utils/templateEngine.js';
 import { normalizeTasksInStore } from './utils/taskHelpers.js';
+import { syncHeaderFromStore as syncHeader } from './services/headerSync.js';
 
 const loginRoot = document.getElementById('login-root');
 const appShell = document.getElementById('app-shell');
@@ -67,39 +68,75 @@ function toggleShell(authed) {
  * @param {import('./services/authService.js').AuthUser} user
  */
 function updateHeaderUser(user) {
-  const avatar = document.getElementById('user-avatar');
-  const name = document.getElementById('user-name');
-  const role = document.getElementById('user-role');
-  if (avatar) avatar.textContent = user.avatar || '??';
-  if (name) name.textContent = user.name;
-  if (role) role.textContent = user.role;
+  const initials = user.avatar || '??';
+  const nameText = user.name || 'Guest';
+  const roleText = user.role || '—';
+  ['user-avatar', 'user-avatar-menu'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = initials;
+  });
+  ['user-name', 'user-name-menu'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = nameText;
+  });
+  ['user-role', 'user-role-menu'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = roleText;
+  });
+}
+
+function closeUserMenu() {
+  const menu = document.getElementById('user-menu');
+  const trigger = document.getElementById('user-menu-trigger');
+  const panel = document.getElementById('user-menu-panel');
+  menu?.classList.remove('user-menu-open');
+  trigger?.setAttribute('aria-expanded', 'false');
+  panel?.classList.add('hidden');
+}
+
+function wireUserMenu() {
+  const menu = document.getElementById('user-menu');
+  const trigger = document.getElementById('user-menu-trigger');
+  const panel = document.getElementById('user-menu-panel');
+  if (!menu || !trigger || !panel) return;
+
+  bindOnce(trigger, 'click', (e) => {
+    e.stopPropagation();
+    const open = menu.classList.toggle('user-menu-open');
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    panel.classList.toggle('hidden', !open);
+  });
+
+  bindOnce(document, 'click', (e) => {
+    if (!menu.contains(e.target)) closeUserMenu();
+  });
+
+  bindOnce(document, 'keydown', (e) => {
+    if (e.key === 'Escape') closeUserMenu();
+  });
+
+  panel.querySelector('a[href="#settings"]')?.addEventListener('click', () => {
+    closeUserMenu();
+  });
 }
 
 function syncHeaderFromStore() {
-  const sprint = store.getSelectedSprint();
-  const badge = document.getElementById('header-sprint-badge');
-  if (badge && sprint) {
-    badge.innerHTML = `<span class="dot"></span> ${sprint.name}: ${sprint.start} – ${sprint.end}`;
-  }
+  syncHeader(store);
+}
+
+function onSprintSelectChange() {
   const select = document.getElementById('header-sprint-select');
-  if (select && store.getState().sprints?.length) {
-    const current = store.getSelectedSprint()?.id ?? '';
-    select.innerHTML = store.getState().sprints.map((s) => `
-      <option value="${s.id}" ${Number(s.id) === Number(current) ? 'selected' : ''}>${s.name} (${s.status})</option>
-    `).join('');
-  }
+  if (!select) return;
+  const id = Number(select.value);
+  store.setSelectedSprintId(Number.isFinite(id) ? id : null);
+  syncHeaderFromStore();
+  rerenderIfCurrentRoute([
+    '#dashboard', '#calendar', '#backlog', '#issues', '#team-availability', '#settings',
+  ]);
 }
 
 function wireSprintSelector() {
-  const select = document.getElementById('header-sprint-select');
-  bindOnce(select, 'change', () => {
-    const id = Number(select.value);
-    store.setSelectedSprintId(Number.isFinite(id) ? id : null);
-    syncHeaderFromStore();
-    rerenderIfCurrentRoute([
-      '#dashboard', '#calendar', '#backlog', '#issues', '#team-availability',
-    ]);
-  });
+  /* Sprint select is wired via document-level change delegation (see bottom of file). */
 }
 
 /**
@@ -151,9 +188,9 @@ async function startApp(authUser) {
     wireTaskModal();
     wireAiActions();
     wireHeader();
+    wireUserMenu();
     wireMobileNav();
     wireSprintSelector();
-    wireMeetingModal();
     wireLogout();
     subscribeToStoreEvents();
   }
@@ -174,7 +211,8 @@ function showLogin() {
 }
 
 function rerenderIfCurrentRoute(routeHashes) {
-  if (routeHashes.includes(window.location.hash)) {
+  const hash = window.location.hash || '#dashboard';
+  if (routeHashes.includes(hash) && router) {
     router.handleRoute();
   }
 }
@@ -270,9 +308,11 @@ function wireTaskModal() {
   });
 }
 
+let meetingModalWired = false;
+
 function wireMeetingModal() {
-  if (window.__sitrepMeetingModalWired) return;
-  window.__sitrepMeetingModalWired = true;
+  if (meetingModalWired) return;
+  meetingModalWired = true;
   window.addEventListener('sitrep:open-meeting-modal', (e) => {
     const detail = e.detail || {};
     const date = detail.date || new Date().toISOString().slice(0, 10);
@@ -514,11 +554,7 @@ function wireAiActions() {
 }
 
 function wireLogout() {
-  bindOnce(document.getElementById('btn-logout'), 'click', async () => {
-      await logout();
-      window.location.hash = '';
-      showLogin();
-  });
+  /* Log out is wired via document-level click delegation (see bottom of file). */
 }
 
 function subscribeToStoreEvents() {
@@ -552,8 +588,17 @@ function subscribeToStoreEvents() {
   });
 }
 
+/** Reset wiring flags so each full page load re-binds handlers (Playwright / bfcache). */
+function resetAppWiringFlags() {
+  appShellWired = false;
+  storeEventsWired = false;
+  delete window.__sitrepTaskModalWired;
+  delete document.dataset?.sitrepBound;
+}
+
 /** Bootstrap: load HTML partials, then auth + app shell. */
-async function init() {
+async function bootstrap() {
+  resetAppWiringFlags();
   try {
     await loadHtmlTemplates();
   } catch (err) {
@@ -568,4 +613,22 @@ async function init() {
   }
 }
 
-init();
+window.addEventListener('pageshow', () => {
+  bootstrap();
+});
+
+document.addEventListener('change', (e) => {
+  if (e.target?.id === 'header-sprint-select') onSprintSelectChange();
+});
+
+document.addEventListener('click', async (e) => {
+  if (!e.target.closest('#btn-logout')) return;
+  e.preventDefault();
+  e.stopPropagation();
+  closeUserMenu();
+  await logout();
+  window.location.hash = '';
+  showLogin();
+}, true);
+
+wireMeetingModal();

@@ -2,6 +2,7 @@ import { BaseView } from './BaseView.js';
 import { useRemoteData } from '../config/appConfig.js';
 import { showToast } from '../utils/toast.js';
 import { updateProfileRemote, createSprintRemote } from '../services/dataSyncService.js';
+import { syncHeaderFromStore } from '../services/headerSync.js';
 import { appConfig } from '../config/appConfig.js';
 import { escapeHtml } from '../utils/templateEngine.js';
 
@@ -135,6 +136,7 @@ export class SettingsView extends BaseView {
           end: String(fd.get('end') || ''),
           status: String(fd.get('status') || 'planned'),
         });
+        syncHeaderFromStore(this.store);
         showToast(`Sprint "${sprint.name}" added.`, 'success', 4000);
         e.target.reset();
         container.innerHTML = this.render();

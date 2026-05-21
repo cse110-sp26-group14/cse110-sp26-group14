@@ -229,7 +229,7 @@
               <input type="text" id="header-search" placeholder="Search issues & tasks…" />
             </div>
             <div class="header-actions">
-              <button type="button" class="icon-btn" id="btn-notifications" title="Open issues">
+              <button type="button" class="icon-btn" id="btn-notifications" title="Open issues" aria-label="Open issues">
                 <svg
                   width="20"
                   height="20"
@@ -242,13 +242,37 @@
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
               </button>
-              <div class="user-profile">
-                <span class="avatar" id="user-avatar">MP</span>
-                <div class="user-info">
-                  <div class="name" id="user-name">Guest</div>
-                  <div class="role" id="user-role">—</div>
+              <div class="user-menu" id="user-menu">
+                <button
+                  type="button"
+                  class="user-menu-trigger"
+                  id="user-menu-trigger"
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-controls="user-menu-panel"
+                >
+                  <span class="avatar" id="user-avatar">MP</span>
+                  <span class="user-info">
+                    <span class="name" id="user-name">Guest</span>
+                    <span class="role" id="user-role">—</span>
+                  </span>
+                  <svg class="user-menu-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                <div class="user-menu-panel hidden" id="user-menu-panel" role="menu">
+                  <div class="user-menu-panel-header">
+                    <span class="avatar avatar-lg" id="user-avatar-menu">MP</span>
+                    <div>
+                      <div class="name" id="user-name-menu">Guest</div>
+                      <div class="role" id="user-role-menu">—</div>
+                    </div>
+                  </div>
+                  <a href="#settings" class="user-menu-item" role="menuitem">Settings</a>
+                  <button type="button" class="user-menu-item user-menu-item-danger" id="btn-logout" role="menuitem">
+                    Log out
+                  </button>
                 </div>
-                <button type="button" class="action-btn" id="btn-logout">Log out</button>
               </div>
             </div>
           </div>
@@ -327,9 +351,12 @@
             </svg>
             Add Note
           </button>
-          <div class="spacer"></div>
-          <button type="button" class="action-btn" id="btn-ai-summary">AI Team Summary</button>
-          <button type="button" class="primary-btn ai-btn" id="btn-ai-suggest">
+          <div class="quick-actions-ai">
+          <button type="button" class="action-btn" id="btn-ai-summary" title="AI Team Summary">
+            <span class="btn-label-long">AI Team Summary</span>
+            <span class="btn-label-short">AI Summary</span>
+          </button>
+          <button type="button" class="primary-btn ai-btn" id="btn-ai-suggest" title="AI Sprint Task Suggestion">
             <svg
               width="16"
               height="16"
@@ -337,13 +364,16 @@
               fill="none"
               stroke="currentColor"
               stroke-width="2"
+              aria-hidden="true"
             >
               <polygon
                 points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
               />
             </svg>
-            AI Sprint Task Suggestion
+            <span class="btn-label-long">AI Sprint Task Suggestion</span>
+            <span class="btn-label-short">AI Tasks</span>
           </button>
+          </div>
         </div>
 
         <!-- Main Application Viewport -->

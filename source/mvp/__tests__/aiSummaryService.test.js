@@ -32,5 +32,8 @@ describe('aiSummaryService', () => {
     expect(result.suggestions.length).toBeGreaterThanOrEqual(3);
     expect(result.suggestions[0].owner).toBeTruthy();
     expect(result.log.details.teamContext).toBeDefined();
+    expect(result.parseFailed).toBe(false);
+    expect(result.log.details.parseFailed).toBe(false);
+    expect(result.log.details.source).toBe('local');
   });
 });

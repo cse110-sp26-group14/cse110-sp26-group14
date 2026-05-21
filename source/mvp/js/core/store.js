@@ -88,8 +88,9 @@ export class Store {
   /** Sprint shown in dashboard/calendar/backlog (selected or active). */
   getSelectedSprint() {
     if (this.selectedSprintId != null) {
-      return this.state.sprints.find((s) => s.id === this.selectedSprintId)
-        || this.getActiveSprint();
+      return this.state.sprints.find(
+        (s) => Number(s.id) === Number(this.selectedSprintId),
+      ) || this.getActiveSprint();
     }
     return this.getActiveSprint();
   }
