@@ -14,6 +14,7 @@ import { AvailabilityForm } from './components/forms/AvailabilityForm.js';
 import { TaskForm } from './components/forms/TaskForm.js';
 import { NoteForm } from './components/forms/NoteForm.js';
 import { MeetingForm } from './components/forms/MeetingForm.js';
+import { AiGoalsForm } from './components/forms/AiGoalsForm.js';
 import { AiTaskReviewForm } from './components/forms/AiTaskReviewForm.js';
 import { createSummaryLogForReport } from './services/aiLogService.js';
 import { generateTeamSummaryRemote, suggestSprintTasksRemote } from './services/aiSummaryService.js';
@@ -40,6 +41,8 @@ import { initGoogleCalendar } from './services/googleCalendarService.js';
 import { useRemoteData } from './config/appConfig.js';
 import { mountLoginPage } from './views/LoginView.js';
 import { bindModalForm } from './utils/modalForm.js';
+import { bindOnce } from './utils/dom.js';
+import { showToast, runWithButtonFeedback } from './utils/toast.js';
 import { loadHtmlTemplates } from './utils/templateEngine.js';
 import { normalizeTasksInStore } from './utils/taskHelpers.js';
 
@@ -48,6 +51,8 @@ const appShell = document.getElementById('app-shell');
 const store = new Store();
 let router;
 let modal;
+let storeEventsWired = false;
+let appShellWired = false;
 
 /**
  * Show login vs app shell.
@@ -87,8 +92,7 @@ function syncHeaderFromStore() {
 
 function wireSprintSelector() {
   const select = document.getElementById('header-sprint-select');
-  if (!select) return;
-  select.addEventListener('change', () => {
+  bindOnce(select, 'change', () => {
     const id = Number(select.value);
     store.setSelectedSprintId(Number.isFinite(id) ? id : null);
     syncHeaderFromStore();
@@ -118,31 +122,40 @@ async function startApp(authUser) {
       const msg = String(err?.message || '');
       if (msg.includes('401') || msg.includes('Login required') || msg.includes('Unauthorized')) {
         await logout();
-        alert('Session expired or invalid. Please log in again.');
+        showToast('Session expired. Please log in again.', 'warning', 5000);
         showLogin();
         return;
       }
-      alert('Could not load team data from API. Check apiBaseUrl and that the Cloudflare Worker is deployed.');
+      showToast('Could not load team data. Check API URL and Worker deploy.', 'error', 6000);
     }
   }
 
   initGoogleCalendar().catch((err) => console.warn('[Calendar]', err));
 
-  router = new Router(routes, store);
-  modal = new Modal(document.getElementById('modal-host'));
+  if (!modal) {
+    modal = new Modal(document.getElementById('modal-host'));
+  }
+  if (!router) {
+    router = new Router(routes, store);
+    router.init();
+  } else {
+    router.handleRoute();
+  }
 
-  wireDailyCheckIn();
-  wireCreateIssue();
-  wireAvailability();
-  wireAddNote();
-  wireTaskModal(authUser);
-  wireAiActions(authUser);
-  wireHeader();
-  wireSprintSelector();
-  wireMeetingModal();
-  wireLogout();
-  subscribeToStoreEvents();
-  router.init();
+  if (!appShellWired) {
+    appShellWired = true;
+    wireDailyCheckIn();
+    wireCreateIssue();
+    wireAvailability();
+    wireAddNote();
+    wireTaskModal();
+    wireAiActions();
+    wireHeader();
+    wireSprintSelector();
+    wireMeetingModal();
+    wireLogout();
+    subscribeToStoreEvents();
+  }
 
   if (!window.location.hash || window.location.hash === '#login') {
     window.location.hash = '#dashboard';
@@ -166,7 +179,7 @@ function rerenderIfCurrentRoute(routeHashes) {
 }
 
 function wireDailyCheckIn() {
-  document.getElementById('btn-daily-checkin').addEventListener('click', () => {
+  bindOnce(document.getElementById('btn-daily-checkin'), 'click', () => {
     modal.show('Daily Check-In', DailyCheckInForm());
     bindModalForm('checkin-form', async (formData) => {
       const report = await createReportRemote(store, {
@@ -183,14 +196,17 @@ function wireDailyCheckIn() {
         if (summaryLog) store.addAiLog(summaryLog);
       }
 
-      modal.close();
       rerenderIfCurrentRoute(['#dashboard', '#ai-log']);
+    }, {
+      onClose: () => modal.close(),
+      pendingToast: 'Check-in submitted — saving…',
+      successToast: 'Check-in saved.',
     });
   });
 }
 
 function wireAvailability() {
-  document.getElementById('btn-availability')?.addEventListener('click', () => {
+  bindOnce(document.getElementById('btn-availability'), 'click', () => {
     const date = new Date().toISOString().slice(0, 10);
     const uid = store.getCurrentUserId();
     const existing = store.getState().availability?.[date]?.[uid]
@@ -204,31 +220,35 @@ function wireAvailability() {
         if (key.startsWith('slot-')) slots[key.replace('slot-', '')] = val;
       }
       await saveAvailabilityRemote(store, formData.get('date') || date, slots);
-      modal.close();
       rerenderIfCurrentRoute(['#team-availability', '#dashboard']);
+    }, {
+      onClose: () => modal.close(),
+      pendingToast: 'Availability submitted — saving…',
+      successToast: 'Availability updated.',
     });
   });
 }
 
 function wireAddNote() {
-  document.getElementById('btn-add-note')?.addEventListener('click', () => {
+  bindOnce(document.getElementById('btn-add-note'), 'click', () => {
     modal.show('Add Note', NoteForm());
     bindModalForm('note-form', async (formData) => {
       await createNoteRemote(store, {
         title: formData.get('title'),
         content: formData.get('content'),
       });
-      modal.close();
-      alert('Note saved to AI Log.');
       rerenderIfCurrentRoute(['#ai-log', '#dashboard']);
+    }, {
+      onClose: () => modal.close(),
+      pendingToast: 'Note submitted — saving…',
+      successToast: 'Note saved to AI Log.',
     });
   });
 }
 
-/**
- * @param {import('./services/authService.js').AuthUser} authUser
- */
-function wireTaskModal(authUser) {
+function wireTaskModal() {
+  if (window.__sitrepTaskModalWired) return;
+  window.__sitrepTaskModalWired = true;
   window.addEventListener('sitrep:open-task-modal', () => {
     modal.show('Add Task', TaskForm(store));
     bindModalForm('task-form', async (formData) => {
@@ -236,17 +256,22 @@ function wireTaskModal(authUser) {
         title: formData.get('title'),
         priority: formData.get('priority'),
         due: formData.get('due'),
-        owner: formData.get('owner') || authUser.name,
+        owner: formData.get('owner') || store.currentAuthUser?.name || 'Team Member',
         sprintId: store.getSelectedSprint()?.id ?? 2,
         status: 'open',
       });
-      modal.close();
       rerenderIfCurrentRoute(['#backlog', '#dashboard', '#calendar']);
+    }, {
+      onClose: () => modal.close(),
+      pendingToast: 'Task submitted — saving…',
+      successToast: 'Task added to sprint.',
     });
   });
 }
 
 function wireMeetingModal() {
+  if (window.__sitrepMeetingModalWired) return;
+  window.__sitrepMeetingModalWired = true;
   window.addEventListener('sitrep:open-meeting-modal', (e) => {
     const detail = e.detail || {};
     const date = detail.date || new Date().toISOString().slice(0, 10);
@@ -261,14 +286,17 @@ function wireMeetingModal() {
         goal: formData.get('goal') || '',
         sprintId: store.getSelectedSprint()?.id ?? 2,
       });
-      modal.close();
       rerenderIfCurrentRoute(['#calendar', '#dashboard', '#team-availability']);
+    }, {
+      onClose: () => modal.close(),
+      pendingToast: 'Meeting submitted — saving…',
+      successToast: 'Meeting scheduled.',
     });
   });
 }
 
 function wireCreateIssue() {
-  document.getElementById('btn-create-issue').addEventListener('click', () => {
+  bindOnce(document.getElementById('btn-create-issue'), 'click', () => {
     modal.show('Create Issue', IssueForm(store));
     bindModalForm('issue-form', async (formData) => {
       const sprintId = store.getSelectedSprint()?.id ?? 2;
@@ -299,140 +327,170 @@ function wireCreateIssue() {
         });
       }
 
-      modal.close();
       rerenderIfCurrentRoute(['#issues', '#dashboard', '#backlog']);
+    }, {
+      onClose: () => modal.close(),
+      pendingToast: 'Issue submitted — saving…',
+      successToast: 'Issue created.',
     });
   });
 }
 
 function wireHeader() {
   const search = document.getElementById('header-search');
-  if (search) {
-    search.addEventListener('keydown', (e) => {
+  bindOnce(search, 'keydown', (e) => {
       if (e.key !== 'Enter') return;
       const q = search.value.trim();
       if (!q) return;
       sessionStorage.setItem('sitrep:search', q);
       window.location.hash = '#issues';
-    });
-  }
+  });
 
-  document.getElementById('btn-notifications')?.addEventListener('click', () => {
+  bindOnce(document.getElementById('btn-notifications'), 'click', () => {
     sessionStorage.setItem('sitrep:issues-filter', 'Open');
     window.location.hash = '#issues';
   });
 }
 
 /**
- * @param {import('./services/authService.js').AuthUser} authUser
+ * @param {string} goals
+ * @param {HTMLButtonElement|null} aiBtn
  */
-function wireAiActions(authUser) {
-  const aiBtn = document.getElementById('btn-ai-suggest');
-  if (aiBtn) {
-    aiBtn.addEventListener('click', async () => {
-      if (!authUser.isAdmin) {
-        alert('AI Sprint Task Suggestion is for admins only.');
-        return;
-      }
-      const goals = window.prompt('Describe sprint goals or deadlines:', 'MVP delivery and bug fixes');
-      if (goals === null) return;
+async function runAiTaskSuggestions(goals, aiBtn) {
+  const authUser = store.currentAuthUser;
+  await runWithButtonFeedback(aiBtn, async () => {
+    const sprintId = store.getSelectedSprint()?.id ?? 2;
+    const result = await suggestSprintTasksRemote(store, goals, sprintId);
+    const suggestions = result.suggestions || result.tasks || [];
+    mergeAiLogFromApi(store, result.log);
+    if (useRemoteData()) await refreshStoreFromApi(store);
+
+    modal.show('Review AI task suggestions', AiTaskReviewForm(suggestions, store));
+    const form = document.getElementById('ai-task-review-form');
+    document.getElementById('ai-review-reject-all')?.addEventListener('click', () => {
+      modal.close();
+      showToast('Suggestions dismissed.', 'info', 3000);
+    }, { once: true });
+    form?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const fd = new FormData(form);
+      const alsoIssues = fd.get('createIssues') === '1';
+      const picked = suggestions
+        .map((_, i) => (fd.get(`pick-${i}`) ? {
+          title: fd.get(`title-${i}`),
+          priority: fd.get(`priority-${i}`) || 'medium',
+          owner: fd.get(`owner-${i}`) || authUser?.name || 'Team Member',
+          due: fd.get(`due-${i}`),
+          sprintId,
+          status: 'open',
+        } : null))
+        .filter(Boolean);
+
+      modal.close();
+      showToast('Applying selected tasks…', 'info', 2200);
 
       try {
-        const sprintId = store.getSelectedSprint()?.id ?? 2;
-        const result = await suggestSprintTasksRemote(store, goals, sprintId);
-        const suggestions = result.suggestions || result.tasks || [];
-        mergeAiLogFromApi(store, result.log);
-        if (useRemoteData()) await refreshStoreFromApi(store);
-
-        modal.show('Review AI task suggestions', AiTaskReviewForm(suggestions, store));
-        const form = document.getElementById('ai-task-review-form');
-        document.getElementById('ai-review-reject-all')?.addEventListener('click', () => {
-          modal.close();
-        });
-        form?.addEventListener('submit', async (ev) => {
-          ev.preventDefault();
-          const fd = new FormData(form);
-          const alsoIssues = fd.get('createIssues') === '1';
-          const picked = suggestions
-            .map((_, i) => (fd.get(`pick-${i}`) ? {
-              title: fd.get(`title-${i}`),
-              priority: fd.get(`priority-${i}`) || 'medium',
-              owner: fd.get(`owner-${i}`) || authUser.name,
-              due: fd.get(`due-${i}`),
+        for (const t of picked) {
+          await createTaskRemote(store, t, { fromAi: true });
+          if (alsoIssues && (t.priority === 'critical' || t.priority === 'high')) {
+            await createIssueRemote(store, {
+              title: t.title,
+              severity: t.priority === 'critical' ? 'critical' : 'high',
+              assignee: t.owner,
+              due: t.due,
               sprintId,
-              status: 'open',
-            } : null))
-            .filter(Boolean);
-          for (const t of picked) {
-            await createTaskRemote(store, t, { fromAi: true });
-            if (alsoIssues && (t.priority === 'critical' || t.priority === 'high')) {
-              await createIssueRemote(store, {
-                title: t.title,
-                severity: t.priority === 'critical' ? 'critical' : 'high',
-                assignee: t.owner,
-                due: t.due,
-                sprintId,
-                tags: ['AI Suggested'],
-                author: authUser.name,
-                description: `Tracking issue for AI-suggested task: ${t.title}`,
-              });
-            }
+              tags: ['AI Suggested'],
+              author: authUser?.name || 'Team Member',
+              description: `Tracking issue for AI-suggested task: ${t.title}`,
+            });
           }
-          if (result.log?.id) {
-            await updateAiLogStatusRemote(store, result.log.id, picked.length ? 'applied' : 'rejected');
-          }
-          modal.close();
-          if (useRemoteData()) await refreshStoreFromApi(store);
-          alert(picked.length
+        }
+        if (result.log?.id) {
+          await updateAiLogStatusRemote(store, result.log.id, picked.length ? 'applied' : 'rejected');
+        }
+        if (useRemoteData()) await refreshStoreFromApi(store);
+        showToast(
+          picked.length
             ? `Added ${picked.length} task(s) to the sprint.`
-            : 'No tasks were added.');
-          rerenderIfCurrentRoute(['#dashboard', '#backlog', '#ai-log', '#calendar']);
-        });
+            : 'No tasks were added.',
+          picked.length ? 'success' : 'info',
+          4200,
+        );
+        rerenderIfCurrentRoute(['#dashboard', '#backlog', '#ai-log', '#calendar']);
       } catch (err) {
-        alert(err.message || 'AI task suggestion failed.');
+        showToast(err?.message || 'Could not apply tasks.', 'error', 6000);
       }
     });
-  }
+  }, {
+    busyLabel: 'Generating…',
+    pendingToast: false,
+    successToast: 'Suggestions ready — review in the dialog.',
+    errorToast: false,
+  });
+}
+
+function wireAiActions() {
+  const aiBtn = document.getElementById('btn-ai-suggest');
+  bindOnce(aiBtn, 'click', () => {
+    modal.show('AI Sprint Task Suggestion', AiGoalsForm());
+    document.getElementById('ai-goals-cancel')?.addEventListener('click', () => modal.close(), { once: true });
+    bindModalForm('ai-goals-form', async (fd) => {
+      const goals = String(fd.get('goals') || '').trim();
+      if (!goals) throw new Error('Please describe sprint goals.');
+      try {
+        await runAiTaskSuggestions(goals, aiBtn);
+      } catch {
+        /* runWithButtonFeedback already toasted */
+      }
+    }, {
+      onClose: () => modal.close(),
+      pendingToast: 'Generating task suggestions…',
+      successToast: false,
+      submittingLabel: 'Starting…',
+    });
+  });
 
   const summaryBtn = document.getElementById('btn-ai-summary');
-  if (summaryBtn) {
-    summaryBtn.addEventListener('click', async () => {
+  bindOnce(summaryBtn, 'click', async () => {
       try {
-        const log = await generateTeamSummaryRemote(store);
-        if (useRemoteData()) {
-          mergeAiLogFromApi(store, log);
-          await refreshStoreFromApi(store);
-        } else {
-          store.addAiLog(log);
-        }
-        alert('AI team summary generated and saved to AI Log.');
-        rerenderIfCurrentRoute(['#dashboard', '#ai-log', '#backlog']);
+        await runWithButtonFeedback(summaryBtn, async () => {
+          const log = await generateTeamSummaryRemote(store);
+          if (useRemoteData()) {
+            mergeAiLogFromApi(store, log);
+            await refreshStoreFromApi(store);
+          } else {
+            store.addAiLog(log);
+          }
+          rerenderIfCurrentRoute(['#dashboard', '#ai-log', '#backlog']);
+        }, {
+          busyLabel: 'Summarizing…',
+          pendingToast: 'Generating team summary…',
+          successToast: 'Summary saved to AI Log.',
+          errorToast: false,
+        });
       } catch (err) {
-        const msg = err.message || '';
+        const msg = err?.message || '';
         if (msg.includes('401') || msg.includes('Login required')) {
           await logout();
-          alert('Session expired. Please log in again, then retry AI Team Summary.');
+          showToast('Session expired. Please log in again.', 'warning', 5000);
           showLogin();
-          return;
         }
-        alert(msg || 'AI summary failed. Set DEEPSEEK_API_KEY on the Cloudflare Worker (wrangler secret).');
       }
     });
-  }
+  });
 }
 
 function wireLogout() {
-  const btn = document.getElementById('btn-logout');
-  if (btn) {
-    btn.addEventListener('click', async () => {
+  bindOnce(document.getElementById('btn-logout'), 'click', async () => {
       await logout();
       window.location.hash = '';
       showLogin();
-    });
-  }
+  });
 }
 
 function subscribeToStoreEvents() {
+  if (storeEventsWired) return;
+  storeEventsWired = true;
   store.subscribe(EVENTS.AI_LOGS_CHANGED, () => {
     rerenderIfCurrentRoute(['#ai-log', '#dashboard']);
   });

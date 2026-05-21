@@ -6,8 +6,11 @@ export class Modal {
         this.closeButton = host.querySelector('.close-modal');
         this.overlay = host.querySelector('.modal-overlay');
 
-        this.closeButton.addEventListener('click', () => this.close());
-        this.overlay.addEventListener('click', () => this.close());
+        if (host.dataset.modalCloseWired !== '1') {
+            host.dataset.modalCloseWired = '1';
+            this.closeButton.addEventListener('click', () => this.close());
+            this.overlay.addEventListener('click', () => this.close());
+        }
     }
 
     show(title, contentHTML) {

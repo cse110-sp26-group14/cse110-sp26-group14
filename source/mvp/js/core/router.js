@@ -23,6 +23,11 @@ export class Router {
     }
 
     init() {
+        if (this._inited) {
+            this.handleRoute();
+            return;
+        }
+        this._inited = true;
         window.addEventListener('hashchange', () => this.handleRoute());
         this.handleRoute();
     }

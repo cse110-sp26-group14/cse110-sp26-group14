@@ -63,6 +63,7 @@ Demo login: `maya@team.local` / `demo1234`.
 | Login fails on Pages | `API_BASE_URL` must match deployed Worker URL |
 | AI 503 | `wrangler secret put DEEPSEEK_API_KEY` on Worker |
 | Empty DB | Re-run `schema.sql` + `seed.sql` on remote D1 |
+| Too much random data | `cd source/worker && npm run db:reset` (clears tables + demo seed) |
 
 ---
 
