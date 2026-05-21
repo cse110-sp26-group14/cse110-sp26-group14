@@ -71,15 +71,16 @@ jobs:
             echo "::error::Set repository variable API_BASE_URL to your Render URL (e.g. https://se-sitrep-api.onrender.com)"
             exit 1
           fi
-          # Replace default API host (index uses URL params || 'http://localhost:3001')
+          # Git repo keeps localhost for local dev; Pages build MUST replace it (fail if not).
           sed -i "s|http://localhost:3001|${API_BASE_URL}|g" source/mvp/index.html
+          echo "=== apiBaseUrl after inject ==="
           grep -n "apiBaseUrl" source/mvp/index.html
           if grep -q 'localhost:3001' source/mvp/index.html; then
-            echo "::error::API URL injection failed — index.html still contains localhost:3001"
+            echo "::error::Deploy inject failed — index.html still contains localhost:3001"
             exit 1
           fi
           if ! grep -q "${API_BASE_URL}" source/mvp/index.html; then
-            echo "::error::index.html does not contain API_BASE_URL (${API_BASE_URL})"
+            echo "::error::Deploy inject failed — ${API_BASE_URL} not found in index.html"
             exit 1
           fi
 
