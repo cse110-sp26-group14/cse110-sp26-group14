@@ -2,6 +2,18 @@
 
 Vanilla Node.js HTTP API with **SQLite** (team-shared data), **session auth**, and **DeepSeek** for AI summaries and sprint task suggestions.
 
+## Render deploy (Node version)
+
+Render must use **Node 20**, not Node 26. `better-sqlite3` has no prebuild for Node 26 and will fail to compile.
+
+In the Render dashboard → your service → **Environment**:
+
+| Key | Value |
+|-----|--------|
+| `NODE_VERSION` | `20.18.0` |
+
+Or rely on `source/backend/.node-version` (committed in this repo).
+
 ## Quick start
 
 ```bash

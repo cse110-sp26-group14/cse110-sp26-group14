@@ -12,7 +12,7 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
-        value: "20"
+        value: "20.18.0"
       - key: DEEPSEEK_API_KEY
         sync: false
       - key: DEEPSEEK_MODEL
