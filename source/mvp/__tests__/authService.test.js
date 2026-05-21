@@ -12,6 +12,7 @@ import {
 
 beforeEach(() => {
   localStorage.clear();
+  window.SITREP_CONFIG = { dataMode: 'local', apiBaseUrl: '' };
 });
 
 describe('authService', () => {
