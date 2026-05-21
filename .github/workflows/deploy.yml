@@ -71,8 +71,17 @@ jobs:
             echo "::error::Set repository variable API_BASE_URL to your Render URL (e.g. https://se-sitrep-api.onrender.com)"
             exit 1
           fi
-          sed -i "s|apiBaseUrl: 'http://localhost:3001'|apiBaseUrl: '${API_BASE_URL}'|" source/mvp/index.html
-          grep apiBaseUrl source/mvp/index.html
+          # Replace default API host (index uses URL params || 'http://localhost:3001')
+          sed -i "s|http://localhost:3001|${API_BASE_URL}|g" source/mvp/index.html
+          grep -n "apiBaseUrl" source/mvp/index.html
+          if grep -q 'localhost:3001' source/mvp/index.html; then
+            echo "::error::API URL injection failed — index.html still contains localhost:3001"
+            exit 1
+          fi
+          if ! grep -q "${API_BASE_URL}" source/mvp/index.html; then
+            echo "::error::index.html does not contain API_BASE_URL (${API_BASE_URL})"
+            exit 1
+          fi
 
       - uses: actions/configure-pages@v5
 
