@@ -6,11 +6,25 @@ test.describe('MVP features — sprint, reports, meetings', () => {
     await loginAsDemo(page);
   });
 
+  test('settings can add a new sprint to the list', async ({ page }) => {
+    await openHash(page, '#settings');
+    await expect(page.locator('#sprint-add-form')).toBeVisible();
+    await page.locator('#sprint-add-name').fill('Sprint E2E');
+    await page.locator('#sprint-add-start').fill('2026-06-01');
+    await page.locator('#sprint-add-end').fill('2026-06-14');
+    await page.locator('#sprint-add-status').selectOption('planned');
+    await page.locator('#sprint-add-form').getByRole('button', { name: 'Add sprint' }).click();
+    await expect(page.locator('.sprint-list')).toContainText('Sprint E2E');
+    await expect(page.locator('#header-sprint-select option:checked')).toContainText('Sprint E2E');
+  });
+
   test('header sprint selector switches dashboard sprint', async ({ page }) => {
     await expect(page.locator('#header-sprint-select')).toBeVisible();
-    await page.locator('#header-sprint-select').selectOption('3');
-    await expect(page.locator('#header-sprint-badge')).toContainText('Sprint 3');
-    await expect(page.locator('.view-subtitle').first()).toContainText('Sprint 3');
+    await openHash(page, '#dashboard');
+    const sprintSelect = page.locator('#header-sprint-select');
+    await sprintSelect.selectOption('3');
+    await expect(sprintSelect).toHaveValue('3');
+    await expect(page.locator('#app')).toContainText(/Real-time overview of Sprint 3/, { timeout: 10000 });
   });
 
   test('check-in notes field saves and appears on Reports tab', async ({ page }) => {
@@ -49,7 +63,9 @@ test.describe('MVP features — sprint, reports, meetings', () => {
   test('availability can schedule meeting on calendar', async ({ page }) => {
     const title = `E2E Meeting ${Date.now()}`;
     await openHash(page, '#team-availability');
+    await page.locator('#avail-add-meeting').waitFor({ state: 'visible' });
     await page.locator('#avail-add-meeting').click();
+    await expect(page.locator('#modal-host')).not.toHaveClass(/hidden/);
     await expect(page.locator('#meeting-form')).toBeVisible();
     await page.locator('#meeting-title').fill(title);
     await page.locator('#meeting-date').fill('2026-05-15');

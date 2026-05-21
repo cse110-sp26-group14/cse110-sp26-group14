@@ -64,4 +64,32 @@ describe('Store — sprint & meetings', () => {
     store.setSelectedSprintId(1);
     expect(published).toBe(true);
   });
+
+  test('addSprint appends sprint and selects it', () => {
+    const store = freshStore();
+    const before = store.state.sprints.length;
+    const sprint = store.addSprint({
+      name: 'Sprint 4',
+      start: '2026-06-01',
+      end: '2026-06-14',
+      status: 'planned',
+    });
+    expect(store.state.sprints.length).toBe(before + 1);
+    expect(sprint.name).toBe('Sprint 4');
+    expect(store.getSelectedSprint()?.id).toBe(sprint.id);
+  });
+
+  test('addSprint with active status demotes other active sprints', () => {
+    const store = freshStore();
+    store.addSprint({
+      name: 'Sprint 4',
+      start: '2026-06-01',
+      end: '2026-06-14',
+      status: 'active',
+    });
+    const active = store.state.sprints.filter((s) => s.status === 'active');
+    expect(active).toHaveLength(1);
+    expect(active[0].name).toBe('Sprint 4');
+    expect(store.state.sprints.find((s) => s.id === 2)?.status).toBe('planned');
+  });
 });

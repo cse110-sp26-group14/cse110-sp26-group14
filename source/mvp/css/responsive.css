@@ -97,13 +97,26 @@
   }
 
   .header-actions {
-    width: 100%;
-    justify-content: space-between;
-    gap: 0.5rem;
+    width: auto;
+    margin-left: auto;
+    gap: 0.35rem;
   }
 
-  .user-profile .user-info {
+  .user-menu-trigger .user-info,
+  .user-menu-chevron {
     display: none;
+  }
+
+  .user-menu-trigger {
+    padding: 0.25rem;
+    border: none;
+    background: transparent;
+  }
+
+  .search-box {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
   }
 
   #quick-actions {
@@ -119,14 +132,28 @@
     display: none;
   }
 
-  #quick-actions .spacer {
-    display: none;
+  #quick-actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  #quick-actions .quick-actions-ai {
+    margin-left: 0;
+    flex-shrink: 0;
   }
 
   #quick-actions .action-btn,
   #quick-actions .primary-btn {
     flex-shrink: 0;
     white-space: nowrap;
+  }
+
+  #quick-actions .btn-label-long {
+    display: none;
+  }
+
+  #quick-actions .btn-label-short {
+    display: inline;
   }
 
   #app {
@@ -246,8 +273,4 @@
     display: none;
   }
 
-  .user-profile #btn-logout {
-    padding: 0.35rem 0.5rem;
-    font-size: 0.75rem;
-  }
 }
