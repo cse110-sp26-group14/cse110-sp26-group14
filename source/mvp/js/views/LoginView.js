@@ -76,38 +76,68 @@ export function mountLoginPage(root, handlers) {
         panel.classList.toggle('hidden', panel.dataset.panel !== target);
       });
       errorEl.textContent = '';
+      errorEl.classList.remove('auth-error-visible');
     });
   });
 
+  /**
+   * @param {string} message
+   */
+  function showAuthError(message) {
+    errorEl.textContent = message;
+    errorEl.classList.add('auth-error-visible');
+    errorEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
   root.querySelector('#login-form').addEventListener('submit', async (event) => {
     event.preventDefault();
-    const { login } = await import('../services/authService.js');
-    const formData = new FormData(event.target);
-    const result = await login({
-      email: formData.get('email'),
-      password: formData.get('password'),
-    });
-    if (!result.ok) {
-      errorEl.textContent = result.error;
-      return;
+    errorEl.textContent = '';
+    errorEl.classList.remove('auth-error-visible');
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    submitBtn?.setAttribute('disabled', 'true');
+    try {
+      const { login } = await import('../services/authService.js');
+      const formData = new FormData(event.target);
+      const result = await login({
+        email: formData.get('email'),
+        password: formData.get('password'),
+      });
+      if (!result.ok) {
+        showAuthError(result.error || 'Invalid email or password.');
+        return;
+      }
+      handlers.onSuccess(result.user);
+    } catch (err) {
+      showAuthError(err.message || 'Login failed. Please try again.');
+    } finally {
+      submitBtn?.removeAttribute('disabled');
     }
-    handlers.onSuccess(result.user);
   });
 
   root.querySelector('#signup-form').addEventListener('submit', async (event) => {
     event.preventDefault();
-    const { signUp } = await import('../services/authService.js');
-    const formData = new FormData(event.target);
-    const result = await signUp({
-      name: formData.get('name'),
-      email: formData.get('email'),
-      password: formData.get('password'),
-      role: formData.get('role'),
-    });
-    if (!result.ok) {
-      errorEl.textContent = result.error;
-      return;
+    errorEl.textContent = '';
+    errorEl.classList.remove('auth-error-visible');
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    submitBtn?.setAttribute('disabled', 'true');
+    try {
+      const { signUp } = await import('../services/authService.js');
+      const formData = new FormData(event.target);
+      const result = await signUp({
+        name: formData.get('name'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        role: formData.get('role'),
+      });
+      if (!result.ok) {
+        showAuthError(result.error || 'Sign up failed.');
+        return;
+      }
+      handlers.onSuccess(result.user);
+    } catch (err) {
+      showAuthError(err.message || 'Sign up failed. Please try again.');
+    } finally {
+      submitBtn?.removeAttribute('disabled');
     }
-    handlers.onSuccess(result.user);
   });
 }

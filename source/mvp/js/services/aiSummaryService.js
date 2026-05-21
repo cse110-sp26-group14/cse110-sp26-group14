@@ -7,6 +7,9 @@ import { useRemoteData } from '../config/appConfig.js';
 import { postAiTeamSummary, postAiSuggestTasks } from './apiClient.js';
 import { createId } from '../utils/ids.js';
 import { currentTimestamp, todayISO } from '../utils/dates.js';
+import { buildTeamContextForAi } from '../utils/teamContext.js';
+import { applyAiTaskSuggestions, pickOwnerForTaskTitle } from '../utils/aiAssignment.js';
+import { defaultDueForSprint } from '../utils/taskHelpers.js';
 
 /**
  * Build a short team summary from sprint reports (local fallback).
@@ -81,29 +84,48 @@ export async function generateTeamSummaryRemote(store) {
 }
 
 /**
- * Simulated admin task suggestions (local fallback).
+ * Simulated admin task suggestions using team context (local fallback).
  * @param {string} goalsText
+ * @param {import('../utils/teamContext.js').TeamContext} teamContext
  * @returns {object[]}
  */
-export function suggestSprintTasks(goalsText) {
+export function suggestSprintTasks(goalsText, teamContext) {
   const base = goalsText?.trim() || 'Sprint goals';
-  return [
-    { title: `${base} — design review`, priority: 'high' },
-    { title: `${base} — implementation spike`, priority: 'medium' },
-    { title: `${base} — QA pass`, priority: 'medium' },
+  const due = defaultDueForSprint(teamContext.sprint);
+  const members = teamContext.members || [];
+  const drafts = [
+    { title: `${base} — API / backend spike`, priority: 'high' },
+    { title: `${base} — frontend integration`, priority: 'medium' },
+    { title: `${base} — QA regression pass`, priority: 'medium' },
   ];
+  return drafts.map((d) => ({
+    ...d,
+    due,
+    owner: pickOwnerForTaskTitle(d.title, members),
+  }));
 }
 
 /**
+ * Request AI task suggestions with team check-in & availability context.
+ * @param {import('../core/store.js').Store} store
  * @param {string} goals
  * @param {number} [sprintId]
- * @returns {Promise<{ tasks: object[], log: object }>}
+ * @returns {Promise<{ suggestions: object[], tasks: object[], log: object }>}
  */
-export async function suggestSprintTasksRemote(goals, sprintId = 2) {
+export async function suggestSprintTasksRemote(store, goals, sprintId = 2) {
+  const teamContext = buildTeamContextForAi(store.getState(), sprintId);
+
   if (useRemoteData()) {
-    return postAiSuggestTasks(goals, sprintId);
+    const result = await postAiSuggestTasks(goals, sprintId, teamContext);
+    const suggestions = applyAiTaskSuggestions(
+      result.suggestions || result.tasks || [],
+      teamContext,
+    );
+    return { ...result, suggestions, tasks: suggestions };
   }
-  const tasks = suggestSprintTasks(goals);
+
+  let tasks = suggestSprintTasks(goals, teamContext);
+  tasks = applyAiTaskSuggestions(tasks, teamContext);
   const log = {
     id: createId(),
     type: 'Suggestion',
@@ -111,7 +133,7 @@ export async function suggestSprintTasksRemote(goals, sprintId = 2) {
     status: 'pending',
     content: `Review ${tasks.length} task suggestion(s) (local simulation)`,
     timestamp: currentTimestamp(),
-    details: { input: goals, suggestions: tasks },
+    details: { input: goals, suggestions: tasks, teamContext },
   };
   return { suggestions: tasks, tasks, log };
 }

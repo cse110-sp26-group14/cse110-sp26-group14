@@ -41,6 +41,7 @@ import { useRemoteData } from './config/appConfig.js';
 import { mountLoginPage } from './views/LoginView.js';
 import { bindModalForm } from './utils/modalForm.js';
 import { loadHtmlTemplates } from './utils/templateEngine.js';
+import { normalizeTasksInStore } from './utils/taskHelpers.js';
 
 const loginRoot = document.getElementById('login-root');
 const appShell = document.getElementById('app-shell');
@@ -107,6 +108,9 @@ async function startApp(authUser) {
 
   try {
     await hydrateStoreFromApi(store);
+    if (normalizeTasksInStore(store)) {
+      store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);
+    }
     syncHeaderFromStore();
   } catch (err) {
     console.error('Failed to load shared data from API', err);
@@ -226,13 +230,13 @@ function wireAddNote() {
  */
 function wireTaskModal(authUser) {
   window.addEventListener('sitrep:open-task-modal', () => {
-    modal.show('Add Task', TaskForm());
+    modal.show('Add Task', TaskForm(store));
     bindModalForm('task-form', async (formData) => {
       await createTaskRemote(store, {
         title: formData.get('title'),
         priority: formData.get('priority'),
-        due: formData.get('due') || null,
-        owner: authUser.name,
+        due: formData.get('due'),
+        owner: formData.get('owner') || authUser.name,
         sprintId: store.getSelectedSprint()?.id ?? 2,
         status: 'open',
       });
@@ -265,16 +269,19 @@ function wireMeetingModal() {
 
 function wireCreateIssue() {
   document.getElementById('btn-create-issue').addEventListener('click', () => {
-    modal.show('Create Issue', IssueForm());
+    modal.show('Create Issue', IssueForm(store));
     bindModalForm('issue-form', async (formData) => {
       const sprintId = store.getSelectedSprint()?.id ?? 2;
+      const assignee = formData.get('assignee');
+      const due = formData.get('due');
       await createIssueRemote(store, {
         title: formData.get('title'),
         severity: formData.get('severity'),
         status: 'open',
         tags: ['User Reported'],
         author: store.currentAuthUser?.name || 'Team Member',
-        assignee: null,
+        assignee,
+        due,
         sprintId,
         description: formData.get('description'),
       });
@@ -285,7 +292,8 @@ function wireCreateIssue() {
           priority: formData.get('severity') === 'critical' || formData.get('severity') === 'high'
             ? 'high'
             : 'medium',
-          owner: store.currentAuthUser?.name,
+          owner: assignee,
+          due,
           sprintId,
           status: 'open',
         });
@@ -331,12 +339,12 @@ function wireAiActions(authUser) {
 
       try {
         const sprintId = store.getSelectedSprint()?.id ?? 2;
-        const result = await suggestSprintTasksRemote(goals, sprintId);
+        const result = await suggestSprintTasksRemote(store, goals, sprintId);
         const suggestions = result.suggestions || result.tasks || [];
         mergeAiLogFromApi(store, result.log);
         if (useRemoteData()) await refreshStoreFromApi(store);
 
-        modal.show('Review AI task suggestions', AiTaskReviewForm(suggestions));
+        modal.show('Review AI task suggestions', AiTaskReviewForm(suggestions, store));
         const form = document.getElementById('ai-task-review-form');
         document.getElementById('ai-review-reject-all')?.addEventListener('click', () => {
           modal.close();
@@ -344,19 +352,31 @@ function wireAiActions(authUser) {
         form?.addEventListener('submit', async (ev) => {
           ev.preventDefault();
           const fd = new FormData(form);
+          const alsoIssues = fd.get('createIssues') === '1';
           const picked = suggestions
             .map((_, i) => (fd.get(`pick-${i}`) ? {
               title: fd.get(`title-${i}`),
               priority: fd.get(`priority-${i}`) || 'medium',
+              owner: fd.get(`owner-${i}`) || authUser.name,
+              due: fd.get(`due-${i}`),
+              sprintId,
+              status: 'open',
             } : null))
             .filter(Boolean);
           for (const t of picked) {
-            await createTaskRemote(store, {
-              ...t,
-              owner: authUser.name,
-              sprintId,
-              status: 'open',
-            });
+            await createTaskRemote(store, t, { fromAi: true });
+            if (alsoIssues && (t.priority === 'critical' || t.priority === 'high')) {
+              await createIssueRemote(store, {
+                title: t.title,
+                severity: t.priority === 'critical' ? 'critical' : 'high',
+                assignee: t.owner,
+                due: t.due,
+                sprintId,
+                tags: ['AI Suggested'],
+                author: authUser.name,
+                description: `Tracking issue for AI-suggested task: ${t.title}`,
+              });
+            }
           }
           if (result.log?.id) {
             await updateAiLogStatusRemote(store, result.log.id, picked.length ? 'applied' : 'rejected');

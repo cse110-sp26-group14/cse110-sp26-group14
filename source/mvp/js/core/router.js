@@ -1,7 +1,20 @@
 /**
  * Hash-based client router for view classes.
+ * @module core/router
+ */
+
+/**
+ * @typedef {typeof import('./store.js').Store} Store
+ */
+
+/**
+ * Client-side hash router.
  */
 export class Router {
+  /**
+   * @param {Record<string, typeof import('../views/BaseView.js').BaseView>} routes
+   * @param {Store} store
+   */
     constructor(routes, store) {
         this.routes = routes;
         this.store = store;

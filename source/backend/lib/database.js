@@ -73,7 +73,8 @@ function migrate() {
       sprint_id INTEGER,
       priority TEXT,
       status TEXT,
-      due TEXT
+      due TEXT,
+      source TEXT
     );
     CREATE TABLE IF NOT EXISTS issues (
       id INTEGER PRIMARY KEY,
@@ -114,6 +115,25 @@ function migrate() {
       slots_json TEXT,
       PRIMARY KEY (date, user_id)
     );
+  `);
+  try {
+    getDb().exec('ALTER TABLE tasks ADD COLUMN source TEXT');
+  } catch {
+    /* column exists */
+  }
+  try {
+    getDb().exec('ALTER TABLE issues ADD COLUMN due TEXT');
+  } catch {
+    /* column exists */
+  }
+  getDb().exec(`
+    UPDATE tasks
+    SET due = (
+      SELECT end_date FROM sprints WHERE sprints.id = tasks.sprint_id
+    )
+    WHERE (due IS NULL OR due = '')
+      AND sprint_id IS NOT NULL
+      AND EXISTS (SELECT 1 FROM sprints WHERE sprints.id = tasks.sprint_id AND end_date IS NOT NULL)
   `);
 }
 
@@ -240,9 +260,14 @@ export function getFullState() {
     users,
     sprints: d.prepare('SELECT id, name, start_date AS start, end_date AS end, status FROM sprints').all(),
     meetings: d.prepare('SELECT id, sprint_id AS sprintId, title, date, time, format, location, zoom_link AS zoomLink, goal FROM meetings').all(),
-    tasks: d.prepare('SELECT id, title, owner, sprint_id AS sprintId, priority, status, due FROM tasks').all(),
-    issues: d.prepare('SELECT id, title, severity, status, tags_json, author, assignee, sprint_id AS sprintId, created, description FROM issues').all()
-      .map((i) => ({ ...i, tags: JSON.parse(i.tags_json || '[]'), tags_json: undefined })),
+    tasks: d.prepare('SELECT id, title, owner, sprint_id AS sprintId, priority, status, due, source FROM tasks').all(),
+    issues: d.prepare('SELECT id, title, severity, status, tags_json, author, assignee, sprint_id AS sprintId, created, description, due FROM issues').all()
+      .map((i) => ({
+        ...i,
+        tags: JSON.parse(i.tags_json || '[]'),
+        tags_json: undefined,
+        due: i.due || i.created,
+      })),
     reports: d.prepare('SELECT id, user_id AS userId, date, status, mood, progress, blockers, notes, timestamp FROM reports ORDER BY timestamp DESC').all(),
     aiLogs: d.prepare('SELECT id, type, title, status, content, timestamp, details_json FROM ai_logs ORDER BY id DESC').all()
       .map((l) => ({ ...l, details: JSON.parse(l.details_json || '{}'), details_json: undefined })),
@@ -283,6 +308,13 @@ export function listIssues() {
  */
 export function createIssue(input) {
   const id = (getDb().prepare('SELECT MAX(id) AS m FROM issues').get().m || 0) + 1;
+  const created = input.created || new Date().toISOString().slice(0, 10);
+  const sprintId = input.sprintId ?? 2;
+  let due = input.due ?? null;
+  if (!due) {
+    const sprint = getDb().prepare('SELECT end_date FROM sprints WHERE id = ?').get(sprintId);
+    due = sprint?.end_date ?? created;
+  }
   const issue = {
     id,
     title: input.title,
@@ -291,13 +323,14 @@ export function createIssue(input) {
     tags: input.tags || [],
     author: input.author,
     assignee: input.assignee ?? null,
-    sprintId: input.sprintId ?? 2,
-    created: input.created || new Date().toISOString().slice(0, 10),
+    sprintId,
+    created,
     description: input.description || '',
+    due,
   };
   getDb().prepare(`
-    INSERT INTO issues (id, title, severity, status, tags_json, author, assignee, sprint_id, created, description)
-    VALUES (@id, @title, @severity, @status, @tags, @author, @assignee, @sprintId, @created, @description)
+    INSERT INTO issues (id, title, severity, status, tags_json, author, assignee, sprint_id, created, description, due)
+    VALUES (@id, @title, @severity, @status, @tags, @author, @assignee, @sprintId, @created, @description, @due)
   `).run({ ...issue, tags: JSON.stringify(issue.tags) });
   return issue;
 }
@@ -379,18 +412,25 @@ export function updateAiLog(id, patch) {
 
 export function createTask(input) {
   const id = (getDb().prepare('SELECT MAX(id) AS m FROM tasks').get().m || 0) + 1;
+  const sprintId = input.sprintId ?? 2;
+  let due = input.due ?? null;
+  if (!due) {
+    const sprint = getDb().prepare('SELECT end_date FROM sprints WHERE id = ?').get(sprintId);
+    due = sprint?.end_date ?? null;
+  }
   const task = {
     id,
     title: input.title,
     owner: input.owner ?? null,
-    sprintId: input.sprintId ?? 2,
+    sprintId,
     priority: input.priority || 'medium',
     status: input.status || 'open',
-    due: input.due ?? null,
+    due,
+    source: input.source ?? null,
   };
   getDb().prepare(`
-    INSERT INTO tasks (id, title, owner, sprint_id, priority, status, due)
-    VALUES (@id, @title, @owner, @sprintId, @priority, @status, @due)
+    INSERT INTO tasks (id, title, owner, sprint_id, priority, status, due, source)
+    VALUES (@id, @title, @owner, @sprintId, @priority, @status, @due, @source)
   `).run(task);
   return task;
 }

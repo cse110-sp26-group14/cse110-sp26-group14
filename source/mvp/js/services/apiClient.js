@@ -48,25 +48,90 @@ async function request(path, init = {}, auth = true) {
 }
 
 /**
+ * Parse JSON error body from auth API responses.
+ * @param {string} raw
+ * @param {number} status
+ * @returns {string}
+ */
+export function parseAuthApiError(raw, status) {
+  const trimmed = (raw || '').trim();
+  if (trimmed.startsWith('{')) {
+    try {
+      const data = JSON.parse(trimmed);
+      if (data.error) return String(data.error);
+    } catch {
+      /* ignore */
+    }
+  }
+  const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const data = JSON.parse(jsonMatch[0]);
+      if (data.error) return String(data.error);
+    } catch {
+      /* ignore */
+    }
+  }
+  if (status === 401) return 'Invalid email or password.';
+  if (status >= 500) return 'Server error. Please try again later.';
+  return 'Could not reach the server. Check your connection.';
+}
+
+/**
+ * Auth POST — returns JSON without throwing on 4xx (login/signup show UI errors).
+ * @param {string} path
+ * @param {object} body
+ * @returns {Promise<object>}
+ */
+async function postAuthJson(path, body) {
+  const base = appConfig.apiBaseUrl.replace(/\/$/, '');
+  const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return { ok: false, error: 'Could not reach the server. Check apiBaseUrl and that Render is running.' };
+  }
+
+  const text = await response.text();
+  let data = {};
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = {};
+    }
+  }
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      error: data.error || parseAuthApiError(text, response.status),
+      ...data,
+    };
+  }
+
+  return { ok: data.ok !== false, ...data };
+}
+
+/**
  * @param {{ email: string, password: string }} payload
+ * @returns {Promise<{ ok: boolean, error?: string, user?: object, token?: string }>}
  */
 export async function apiLogin(payload) {
-  const res = await request('/api/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }, false);
-  return res.json();
+  return postAuthJson('/api/auth/login', payload);
 }
 
 /**
  * @param {object} payload
+ * @returns {Promise<{ ok: boolean, error?: string, user?: object, token?: string }>}
  */
 export async function apiSignUp(payload) {
-  const res = await request('/api/auth/signup', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }, false);
-  return res.json();
+  return postAuthJson('/api/auth/signup', payload);
 }
 
 export async function apiLogout() {
@@ -184,12 +249,15 @@ export async function postAiTeamSummary() {
 }
 
 /**
- * @param {string} goals
+ * @param {string} goals Sprint goals text
+ * @param {number} [sprintId] Target sprint id
+ * @param {object} [teamContext] Roster, check-ins, availability for assignment
+ * @returns {Promise<{ suggestions: object[], tasks: object[], log: object }>}
  */
-export async function postAiSuggestTasks(goals, sprintId = 2) {
+export async function postAiSuggestTasks(goals, sprintId = 2, teamContext = null) {
   const res = await request('/api/ai/suggest-tasks', {
     method: 'POST',
-    body: JSON.stringify({ goals, sprintId }),
+    body: JSON.stringify({ goals, sprintId, teamContext }),
   });
   return res.json();
 }

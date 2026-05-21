@@ -24,4 +24,19 @@ describe('activityTimeline', () => {
     expect(items.some((i) => i.kind === 'issue')).toBe(true);
     expect(items.some((i) => i.kind === 'task')).toBe(true);
   });
+
+  test('buildActivityTimeline includes tasks without due date', () => {
+    const store = new Store({
+      sprints: [{ id: 2, name: 'S2', status: 'active', start: '2026-05-01', end: '2026-05-20' }],
+      users: [{ id: 1, name: 'A' }],
+      reports: [],
+      issues: [],
+      tasks: [{ id: 1, title: 'Undated', sprintId: 2, owner: 'A', priority: 'medium' }],
+      aiLogs: [],
+      meetings: [],
+      availability: {},
+    });
+    const items = buildActivityTimeline(store, 2);
+    expect(items.some((i) => i.kind === 'task' && i.title.includes('Undated'))).toBe(true);
+  });
 });
