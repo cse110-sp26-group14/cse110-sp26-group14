@@ -21,6 +21,7 @@ Team **14** course repository: planning docs, meeting notes, branding, and (late
 | `source/prototype-02/` | Earlier prototype baseline + CI |
 | `docs/DEPLOY.md` | **GitHub Pages** (frontend) + **Render** (backend) via Actions |
 
+
 ## Project
 
 *Product details will go here as we define and build the app for CSE 110.*
