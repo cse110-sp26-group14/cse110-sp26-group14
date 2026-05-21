@@ -46,3 +46,27 @@ test('SQLite seed and auth', async () => {
   const state = getFullState();
   assert.ok(state.issues.some((i) => i.title === 'Test issue'));
 });
+
+test('createMeeting and updateAiLog', async () => {
+  const mod = await import(`../lib/database.js?meet=${Date.now()}`);
+  const { createMeeting, createAiLog, updateAiLog } = mod;
+
+  const meeting = createMeeting({
+    title: 'API Test Meeting',
+    date: '2026-06-01',
+    time: '10:00 AM',
+    sprintId: 2,
+  });
+  assert.equal(meeting.title, 'API Test Meeting');
+  assert.equal(meeting.sprintId, 2);
+
+  const log = createAiLog({
+    type: 'Suggestion',
+    title: 'Review tasks',
+    status: 'pending',
+    content: '2 suggestions',
+  });
+  const updated = updateAiLog(log.id, { status: 'approved' });
+  assert.ok(updated);
+  assert.equal(updated.status, 'approved');
+});
