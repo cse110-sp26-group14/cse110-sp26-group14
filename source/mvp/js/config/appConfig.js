@@ -12,7 +12,7 @@ const defaults = {
    * Google OAuth Web client ID (Calendar API). Create in Google Cloud Console.
    * Set in `index.html` `SITREP_CONFIG` when needed.
    */
-  googleClientId: 'http://127.0.0.1:5500/source/mvp/index.html?dataMode=local&googleClientId=736502651505-7i3bu30t7b2djm1rq9v62ds6bsmsihrd.apps.googleusercontent.com',
+  googleClientId: '736502651505-7i3bu30t7b2djm1rq9v62ds6bsmsihrd.apps.googleusercontent.com',
 };
 
 /**
