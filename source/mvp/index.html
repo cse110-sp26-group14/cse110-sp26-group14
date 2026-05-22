@@ -406,7 +406,7 @@
         window.SITREP_CONFIG = {
           dataMode: p.get('dataMode') || 'api',
           apiBaseUrl: p.get('apiBaseUrl') || '__API_BASE_URL__',
-          googleClientId: p.get('googleClientId') || '',
+          googleClientId: p.get('googleClientId') || ' http://127.0.0.1:5500/source/mvp/index.html?dataMode=local',
           sitrepToday: p.get('sitrepToday') || '',
         };
       })();
