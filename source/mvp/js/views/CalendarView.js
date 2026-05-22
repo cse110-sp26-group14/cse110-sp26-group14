@@ -10,6 +10,7 @@ import {
   connectAndFetchGoogleEvents,
   formatGoogleEvent,
   isGoogleCalendarConnected,
+  listUpcomingEvents,
 } from '../services/googleCalendarService.js';
 import { useGoogleCalendar } from '../config/appConfig.js';
 import { todayISO } from '../utils/dates.js';
@@ -218,6 +219,22 @@ export class CalendarView extends BaseView {
       } finally {
         if (btn) btn.disabled = false;
       }
+
+      container.querySelector('#btn-sync-gcal')?.addEventListener('click', async () => {
+        const btnSync = container.querySelector('#btn-sync-gcal');
+        if (btnSync) btnSync.disabled = true;
+        try {
+          showToast('Syncing with Google Calendar…', 'info', 2200);
+          const events = await listUpcomingEvents(15);
+          this.store.setGoogleEvents(events);
+          rerender();
+          showToast(`Synced ${events.length} upcoming event(s).`, 'success', 4200);
+        } catch (err) {
+          showToast(err.message || 'Google Calendar sync failed.', 'error', 6000);
+        } finally {
+          if (btnSync) btnSync.disabled = false;
+        }
+      });
     });
 
     container.querySelectorAll('[data-cal-date]').forEach((btn) => {
