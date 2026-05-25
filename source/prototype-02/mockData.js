@@ -29,6 +29,8 @@ const INITIAL_DATA = {
         { id: 1, userId: 1, date: '2026-05-13', mood: 'Good', progress: 'Lead standup', blockers: 'None', timestamp: '2026-05-13T09:00:00' },
         { id: 2, userId: 2, date: '2026-05-13', mood: 'Neutral', progress: 'OAuth work', blockers: 'Staging down', timestamp: '2026-05-13T09:30:00' }
     ],
+    availabilityLogs: [],
+    weeklyAvailabilityChecks: {},
     aiLogs: [
         { id: 1, type: 'Summary', title: 'AI Summary Generated', status: 'approved', content: 'Team mostly on track; 1 blocker on staging env.', timestamp: '2026-05-13T09:30:00', details: { input: '3 check-ins', reviewer: 'Maya Patel' } },
         { id: 2, type: 'Suggestion', title: 'AI Sprint Tasks Suggested', status: 'applied', content: '5 tasks generated, 3 added to backlog.', timestamp: '2026-05-12T17:10:00', details: { input: 'Sprint planning notes' } },

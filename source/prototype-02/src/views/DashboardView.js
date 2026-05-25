@@ -6,6 +6,7 @@ export class DashboardView extends BaseView {
         const sprintTasks = this.store.getTasksBySprint(activeSprint.id);
         const issues = this.store.getIssues();
         const urgentIssues = issues.filter(i => i.severity === 'critical' || i.severity === 'high');
+        const availabilityDue = this.store.needsWeeklyAvailabilityPrompt();
 
         return `
             <div class="view-header">
@@ -122,10 +123,10 @@ export class DashboardView extends BaseView {
                         </li>
                         <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
                             <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem;">
-                                ${this.getBadgeHTML('resolved', 'Resolved')}
+                                ${availabilityDue ? '<span class="badge" style="background: var(--warning-light); color: var(--warning);">Due</span>' : this.getBadgeHTML('resolved', 'Resolved')}
                                 <span>Complete availability survey</span>
                             </div>
-                            <span style="font-size: 0.75rem; color: var(--text-light);">Open</span>
+                            <span style="font-size: 0.75rem; color: var(--text-light);">${availabilityDue ? 'Open' : 'Done'}</span>
                         </li>
                         <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
                             <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem;">
