@@ -1,6 +1,6 @@
-# 052126-week9-sprint3-planning.md
+# 052126-week8-sprint3-planning.md
 
-# Meeting Notes: Week 9 Sprint 3 Planning
+# Meeting Notes: Week 8 Sprint 3 Planning
 
 ## Team information
 
@@ -13,9 +13,9 @@
 
 ---
 
-## Sprint 3 objective (Week 9)
+## Sprint 3 objective (Week 8)
 
-- **Get Week 9 work done correctly** on top of the existing **MVP** (polish, align, and document — not rebuild from scratch).
+- **Get Sprint 3 work done correctly** on top of the existing **MVP** (polish, align, and document — not rebuild from scratch).
 
 ---
 
@@ -34,7 +34,7 @@
 
 ## Sprint Goal
 
-Complete Week 9 work by:
+Complete Sprint 3 (Week 8) work by:
 
 - Updating the **design/UI** (MVP frontend) — especially **time availability**
 - **Frontend** implements design changes on the MVP
@@ -96,7 +96,7 @@ Complete Week 9 work by:
 
 ## Deadlines / cadence
 
-- **Week 9:** Execute Sprint 3 scope above; use **weekly Wednesday** standup + collaborative work session (per retrospective incorporation).
+- **Week 8 (Sprint 3):** Execute Sprint 3 scope above; use **weekly Wednesday** standup + collaborative work session (per retrospective incorporation).
 - **Ongoing:** Async updates in Slack/GitHub when unable to attend Wednesday session.
 
 ---
@@ -117,9 +117,9 @@ Complete Week 9 work by:
 
 ## Decisions
 
-- Sprint 3 is explicitly a **polish + alignment sprint**: MVP exists; Week 9 improves UX/integration and code health.
+- Sprint 3 is explicitly a **polish + alignment sprint**: MVP exists; **Week 8** improves UX/integration and code health.
 - **Wednesday collaborative meetings** are the default integration mechanism for Sprint 3 (see `052126-week8-sprint-review-retrospective.md`).
-- **Calendar** fix remains a backend priority carried from Week 8 into Sprint 3.
+- **Calendar** fix remains a backend priority carried from prior Week 8 work into Sprint 3.
 
 ---
 

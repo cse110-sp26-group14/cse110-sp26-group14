@@ -68,7 +68,7 @@
 |----------------------|----------------------------|
 | Need more **synchronous, in-person collaboration** | Schedule **weekly Wednesday** team session: **standup-style check-in + collaborative work block** (not notes-only). |
 | Async updates alone are insufficient | If unable to attend Wednesday session, members **must** post progress + blockers in **Slack/GitHub**; owners respond same week. |
-| Align sub-teams before Week 9 push | **Backend** fixes **Calendar**; **Design** updates MVP UI (e.g., time availability); **Frontend** adapts to design changes. |
+| Align sub-teams for Sprint 3 (Week 8) | **Backend** fixes **Calendar**; **Design** updates MVP UI (e.g., time availability); **Frontend** adapts to design changes. See `052126-week8-sprint3-planning.md`. |
 
 ### Decisions (process improvements)
 
