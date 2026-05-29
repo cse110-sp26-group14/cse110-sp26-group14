@@ -8,6 +8,7 @@ import * as auth from './auth.js';
 import * as db from './db.js';
 import { isOpenAiConfigured, generateTeamSummary, generateTaskSuggestions } from './openai.js';
 import { buildTeamContextForAi, formatTeamContextForPrompt } from './teamContext.js';
+import { syncSprintStatusesInDb } from './sprintLifecycle.js';
 
 /**
  * @param {Request} request
@@ -96,9 +97,60 @@ export async function handleApi(request, env) {
       return json(report, 201);
     }
 
+    if (method === 'GET' && pathname === '/api/tasks') {
+      await syncSprintStatusesInDb(env.DB);
+      const rows = (await env.DB.prepare('SELECT * FROM tasks ORDER BY id').all()).results;
+      return json(rows.map((r) => ({
+        id: r.id, title: r.title, owner: r.owner, sprintId: r.sprint_id,
+        priority: r.priority, status: r.status, due: r.due, source: r.source,
+        assignees: JSON.parse(r.assignees_json || '[]'),
+        parentTaskId: r.parent_task_id ?? null,
+        updatedAt: r.updated_at ?? null,
+        subtaskReviewStatus: r.subtask_review_status ?? null,
+      })));
+    }
+
     if (method === 'POST' && pathname === '/api/tasks') {
       const task = await db.createTask(env.DB, body);
       return json(task, 201);
+    }
+
+    const taskMatch = pathname.match(/^\/api\/tasks\/(\d+)$/);
+    if (method === 'PATCH' && taskMatch) {
+      const id = Number(taskMatch[1]);
+      const result = await db.updateTask(env.DB, id, body, body.expectedUpdatedAt ?? null);
+      if (!result.ok) {
+        return json({ error: result.error, conflict: result.conflict ?? false, serverTask: result.serverTask ?? null }, result.conflict ? 409 : 404);
+      }
+      return json(result.task);
+    }
+
+    const subtasksPostMatch = pathname.match(/^\/api\/tasks\/(\d+)\/subtasks$/);
+    if (method === 'POST' && subtasksPostMatch) {
+      const parentId = Number(subtasksPostMatch[1]);
+      const subtask = await db.createSubtask(env.DB, parentId, body);
+      if (!subtask) return json({ error: 'Parent task not found' }, 404);
+      return json(subtask, 201);
+    }
+
+    const subtasksGetMatch = pathname.match(/^\/api\/tasks\/(\d+)\/subtasks$/);
+    if (method === 'GET' && subtasksGetMatch) {
+      const parentId = Number(subtasksGetMatch[1]);
+      const subtasks = await db.getSubtasks(env.DB, parentId);
+      return json(subtasks);
+    }
+
+    const completeMatch = pathname.match(/^\/api\/subtasks\/(\d+)\/complete$/);
+    if (method === 'PATCH' && completeMatch) {
+      const id = Number(completeMatch[1]);
+      const result = await db.completeSubtask(env.DB, id, user.name);
+      if (!result.ok) return json({ error: result.error }, 403);
+      return json(result.task);
+    }
+
+    if (method === 'GET' && pathname === '/api/active-users') {
+      const activeUsers = await db.getActiveUsers(env.DB);
+      return json(activeUsers);
     }
 
     if (method === 'POST' && pathname === '/api/meetings') {

@@ -76,6 +76,32 @@ export class Store {
         return log;
     }
 
+    setTasks(tasks) {
+        this.state.tasks = tasks;
+        this.publish(EVENTS.TASKS_CHANGED, tasks);
+    }
+
+    addTask(task) {
+        this.state.tasks.unshift(task);
+        this.publish(EVENTS.TASKS_CHANGED, this.state.tasks);
+        return task;
+    }
+
+    patchTask(updatedTask) {
+        const idx = this.state.tasks.findIndex((t) => t.id === updatedTask.id);
+        if (idx >= 0) {
+            this.state.tasks[idx] = updatedTask;
+        } else {
+            this.state.tasks.unshift(updatedTask);
+        }
+        this.publish(EVENTS.TASKS_CHANGED, this.state.tasks);
+    }
+
+    setUsers(users) {
+        this.state.users = users;
+        this.publish(EVENTS.USERS_CHANGED, users);
+    }
+
     needsWeeklyAvailabilityPrompt(date = new Date()) {
         const weekKey = getISOWeekKey(date);
         return this.state.weeklyAvailabilityChecks[weekKey]?.status !== 'submitted';

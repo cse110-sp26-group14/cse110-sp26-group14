@@ -33,6 +33,8 @@ const moduleLoadOrder = [
   "src/components/forms/AvailabilityCheckForm.js",
   "src/services/aiLogService.js",
   "src/services/googleCalendarService.js",
+  "src/services/apiClient.js",
+  "src/services/syncService.js",
   "src/app.js",
 ];
 

@@ -43,7 +43,20 @@ CREATE TABLE IF NOT EXISTS tasks (
   priority TEXT,
   status TEXT,
   due TEXT,
-  source TEXT
+  source TEXT,
+  assignees_json TEXT DEFAULT '[]',
+  parent_task_id INTEGER DEFAULT NULL,
+  updated_at TEXT,
+  subtask_review_status TEXT DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS task_reviews (
+  id INTEGER PRIMARY KEY,
+  parent_task_id INTEGER NOT NULL,
+  status TEXT DEFAULT 'pending',
+  reviewer TEXT,
+  created TEXT,
+  notes TEXT
 );
 
 CREATE TABLE IF NOT EXISTS issues (
