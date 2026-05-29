@@ -345,12 +345,20 @@
       </svg>
     </button>
 
+    <!-- API URL config: set window.SITREP_API_URL before the module loads,
+         OR leave blank to run in local mode. GitHub Actions injects __API_BASE_URL__. -->
+    <script>
+      window.SITREP_API_URL = '__API_BASE_URL__';
+    </script>
+
     <!-- Scripts -->
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://accounts.google.com/gsi/client"></script>
     <script src="mockData.js"></script>
     <script src="storage.js"></script>
     <script src="taskService.js"></script>
+    <!-- IMPORTANT: only src/app.js (ES module) runs the app.
+         The legacy app.js is kept for reference only and is NOT loaded here. -->
     <script type="module" src="src/app.js"></script>
   </body>
 </html>

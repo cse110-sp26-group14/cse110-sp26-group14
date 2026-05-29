@@ -44,9 +44,10 @@ export async function getFullState(db) {
     'SELECT id, sprint_id AS sprintId, title, date, time, format, location, zoom_link AS zoomLink, goal FROM meetings',
   ).all()).results;
 
-  const tasks = (await db.prepare(
-    'SELECT id, title, owner, sprint_id AS sprintId, priority, status, due, source FROM tasks',
+  const taskRows = (await db.prepare(
+    'SELECT * FROM tasks ORDER BY id',
   ).all()).results;
+  const tasks = taskRows.map(rowToTask);
 
   const issues = (await db.prepare(
     'SELECT id, title, severity, status, tags_json, author, assignee, sprint_id AS sprintId, created, description, due FROM issues',
@@ -186,21 +187,170 @@ export async function createTask(db, input) {
     const sprint = await db.prepare('SELECT end_date FROM sprints WHERE id = ?').bind(sprintId).first();
     due = sprint?.end_date ?? null;
   }
+  const assignees = input.assignees ?? (input.owner ? [input.owner] : []);
+  const owner = input.owner ?? assignees[0] ?? null;
+  const now = new Date().toISOString();
   const task = {
     id,
     title: input.title,
-    owner: input.owner ?? null,
+    owner,
     sprintId,
     priority: input.priority || 'medium',
     status: input.status || 'open',
     due,
     source: input.source ?? null,
+    assignees,
+    parentTaskId: input.parentTaskId ?? null,
+    updatedAt: now,
+    subtaskReviewStatus: null,
   };
   await db.prepare(`
-    INSERT INTO tasks (id, title, owner, sprint_id, priority, status, due, source)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(id, task.title, task.owner, sprintId, task.priority, task.status, due, task.source).run();
+    INSERT INTO tasks (id, title, owner, sprint_id, priority, status, due, source,
+      assignees_json, parent_task_id, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    id, task.title, task.owner, sprintId, task.priority, task.status, due, task.source,
+    JSON.stringify(assignees), task.parentTaskId, now,
+  ).run();
   return task;
+}
+
+/**
+ * @param {D1Database} db
+ * @param {number} id
+ * @param {object} patch
+ * @param {string|null} [expectedUpdatedAt] - conflict detection: reject if server timestamp differs
+ */
+export async function updateTask(db, id, patch, expectedUpdatedAt = null) {
+  const row = await db.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first();
+  if (!row) return { ok: false, error: 'Task not found' };
+
+  if (expectedUpdatedAt && row.updated_at && row.updated_at !== expectedUpdatedAt) {
+    return {
+      ok: false,
+      conflict: true,
+      error: 'Task was modified by another user. Reload to see latest version.',
+      serverTask: rowToTask(row),
+    };
+  }
+
+  const now = new Date().toISOString();
+  const assignees = patch.assignees ?? JSON.parse(row.assignees_json || '[]');
+  const owner = patch.owner ?? (assignees[0] || row.owner);
+  const status = patch.status ?? row.status;
+  const priority = patch.priority ?? row.priority;
+  const title = patch.title ?? row.title;
+  const due = patch.due ?? row.due;
+  const subtaskReviewStatus = patch.subtaskReviewStatus ?? row.subtask_review_status ?? null;
+
+  await db.prepare(`
+    UPDATE tasks SET title=?, owner=?, priority=?, status=?, due=?,
+      assignees_json=?, updated_at=?, subtask_review_status=?
+    WHERE id=?
+  `).bind(title, owner, priority, status, due, JSON.stringify(assignees), now, subtaskReviewStatus, id).run();
+
+  const updated = await db.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first();
+  return { ok: true, task: rowToTask(updated) };
+}
+
+/**
+ * @param {D1Database} db
+ * @param {number} parentId
+ * @param {object} input
+ */
+export async function createSubtask(db, parentId, input) {
+  const parent = await db.prepare('SELECT * FROM tasks WHERE id = ?').bind(parentId).first();
+  if (!parent) return null;
+  return createTask(db, {
+    ...input,
+    parentTaskId: parentId,
+    sprintId: parent.sprint_id,
+    due: input.due ?? parent.due,
+    source: 'subtask',
+  });
+}
+
+/**
+ * @param {D1Database} db
+ * @param {number} parentId
+ */
+export async function getSubtasks(db, parentId) {
+  const rows = (await db.prepare(
+    'SELECT * FROM tasks WHERE parent_task_id = ? ORDER BY id',
+  ).bind(parentId).all()).results;
+  return rows.map(rowToTask);
+}
+
+/**
+ * @param {D1Database} db
+ * @param {number} subtaskId
+ * @param {string} completedBy
+ */
+export async function completeSubtask(db, subtaskId, completedBy) {
+  const row = await db.prepare('SELECT * FROM tasks WHERE id = ?').bind(subtaskId).first();
+  if (!row) return { ok: false, error: 'Subtask not found' };
+  const assignees = JSON.parse(row.assignees_json || '[]');
+  if (assignees.length > 0 && !assignees.includes(completedBy)) {
+    return { ok: false, error: 'Only the assigned person can complete this subtask.' };
+  }
+
+  const now = new Date().toISOString();
+  await db.prepare(
+    `UPDATE tasks SET status='resolved', updated_at=? WHERE id=?`,
+  ).bind(now, subtaskId).run();
+
+  if (row.parent_task_id) {
+    const siblings = (await db.prepare(
+      `SELECT status FROM tasks WHERE parent_task_id = ?`,
+    ).bind(row.parent_task_id).all()).results;
+    const allDone = siblings.every((s) => s.status === 'resolved');
+    if (allDone) {
+      await db.prepare(
+        `UPDATE tasks SET subtask_review_status='pending', updated_at=? WHERE id=?`,
+      ).bind(now, row.parent_task_id).run();
+      const maxR = await db.prepare('SELECT MAX(id) AS m FROM task_reviews').first();
+      await db.prepare(
+        `INSERT INTO task_reviews (id, parent_task_id, status, created) VALUES (?, ?, 'pending', ?)`,
+      ).bind((maxR?.m || 0) + 1, row.parent_task_id, now).run();
+    }
+  }
+
+  const updated = await db.prepare('SELECT * FROM tasks WHERE id = ?').bind(subtaskId).first();
+  return { ok: true, task: rowToTask(updated) };
+}
+
+/**
+ * @param {D1Database} db
+ */
+export async function getActiveUsers(db) {
+  const rows = (await db.prepare(`
+    SELECT u.id, u.name, u.role, u.avatar
+    FROM users u
+    JOIN sessions s ON s.user_id = u.id
+    WHERE s.expires_at > ?
+    GROUP BY u.id
+  `).bind(new Date().toISOString()).all()).results;
+  return rows;
+}
+
+/**
+ * @param {object} row
+ */
+function rowToTask(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    owner: row.owner,
+    sprintId: row.sprint_id,
+    priority: row.priority,
+    status: row.status,
+    due: row.due,
+    source: row.source,
+    assignees: JSON.parse(row.assignees_json || '[]'),
+    parentTaskId: row.parent_task_id ?? null,
+    updatedAt: row.updated_at ?? null,
+    subtaskReviewStatus: row.subtask_review_status ?? null,
+  };
 }
 
 /**
