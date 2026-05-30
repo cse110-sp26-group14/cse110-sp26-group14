@@ -117,6 +117,42 @@ export async function createIssue(db, input) {
 
 /**
  * @param {D1Database} db
+ * @param {number} id
+ * @param {object} patch
+ */
+export async function updateIssue(db, id, patch) {
+  const row = await db.prepare('SELECT * FROM issues WHERE id = ?').bind(id).first();
+  if (!row) return null;
+
+  const tags = patch.tags ?? JSON.parse(row.tags_json || '[]');
+  const issue = {
+    id: row.id,
+    title: patch.title ?? row.title,
+    severity: patch.severity ?? row.severity,
+    status: patch.status ?? row.status,
+    tags,
+    author: row.author,
+    assignee: patch.assignee ?? row.assignee,
+    sprintId: patch.sprintId ?? row.sprint_id,
+    created: row.created,
+    description: patch.description ?? row.description,
+    due: patch.due ?? row.due,
+  };
+
+  await db.prepare(`
+    UPDATE issues
+    SET title=?, severity=?, status=?, tags_json=?, assignee=?, sprint_id=?, description=?, due=?
+    WHERE id=?
+  `).bind(
+    issue.title, issue.severity, issue.status, JSON.stringify(issue.tags), issue.assignee,
+    issue.sprintId, issue.description, issue.due, id,
+  ).run();
+
+  return issue;
+}
+
+/**
+ * @param {D1Database} db
  * @param {object} input
  */
 export async function createReport(db, input) {
@@ -142,6 +178,39 @@ export async function createReport(db, input) {
     id, report.userId, report.sprintId, report.date, report.status, report.mood,
     report.progress, report.blockers, report.notes, report.timestamp,
   ).run();
+  return report;
+}
+
+/**
+ * @param {D1Database} db
+ * @param {number} id
+ * @param {object} patch
+ */
+export async function updateReport(db, id, patch) {
+  const row = await db.prepare('SELECT * FROM reports WHERE id = ?').bind(id).first();
+  if (!row) return null;
+
+  const report = {
+    id: row.id,
+    userId: row.user_id,
+    sprintId: row.sprint_id,
+    date: row.date,
+    status: patch.status ?? row.status,
+    mood: patch.mood ?? row.mood,
+    progress: patch.progress ?? row.progress,
+    blockers: patch.blockers ?? row.blockers,
+    notes: patch.notes ?? row.notes,
+    timestamp: row.timestamp,
+  };
+
+  await db.prepare(`
+    UPDATE reports
+    SET status=?, mood=?, progress=?, blockers=?, notes=?
+    WHERE id=?
+  `).bind(
+    report.status, report.mood, report.progress, report.blockers, report.notes, id,
+  ).run();
+
   return report;
 }
 
@@ -415,14 +484,19 @@ export async function createAiLog(db, log) {
 export async function updateAiLog(db, id, patch) {
   const row = await db.prepare('SELECT * FROM ai_logs WHERE id = ?').bind(id).first();
   if (!row) return null;
+  const title = patch.title ?? row.title;
+  const type = patch.type ?? row.type;
   const status = patch.status ?? row.status;
-  await db.prepare('UPDATE ai_logs SET status = ? WHERE id = ?').bind(status, id).run();
+  const content = patch.content ?? row.content;
+  await db.prepare(`
+    UPDATE ai_logs SET title = ?, type = ?, status = ?, content = ? WHERE id = ?
+  `).bind(title, type, status, content, id).run();
   return {
     id: row.id,
-    type: row.type,
-    title: row.title,
+    type,
+    title,
     status,
-    content: row.content,
+    content,
     timestamp: row.timestamp,
     details: JSON.parse(row.details_json || '{}'),
   };

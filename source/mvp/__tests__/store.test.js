@@ -3,6 +3,7 @@ import { EVENTS } from '../js/core/events.js';
 import { INITIAL_DATA } from '../js/data/initialData.js';
 
 function freshStore() {
+  localStorage.removeItem('se-sitrep-mvp-state');
   return new Store(JSON.parse(JSON.stringify(INITIAL_DATA)));
 }
 
@@ -38,6 +39,31 @@ describe('Store — sprint & meetings', () => {
     const id = store.getAiLogs()[0].id;
     store.updateAiLogStatus(id, 'pending');
     expect(store.getAiLogs().find((l) => l.id === id)?.status).toBe('pending');
+  });
+
+  test('inline update methods patch existing records and publish events', () => {
+    const store = freshStore();
+    const published = [];
+    store.subscribe(EVENTS.ISSUES_CHANGED, () => published.push(EVENTS.ISSUES_CHANGED));
+    store.subscribe(EVENTS.TASKS_CHANGED, () => published.push(EVENTS.TASKS_CHANGED));
+    store.subscribe(EVENTS.REPORTS_CHANGED, () => published.push(EVENTS.REPORTS_CHANGED));
+    store.subscribe(EVENTS.AI_LOGS_CHANGED, () => published.push(EVENTS.AI_LOGS_CHANGED));
+
+    const issue = store.updateIssue(1, { title: 'Edited issue' });
+    const task = store.updateTask(1, { title: 'Edited task' });
+    const report = store.updateReport(1, { progress: 'Edited progress' });
+    const log = store.updateAiLog(1, { content: 'Edited log' });
+
+    expect(issue.title).toBe('Edited issue');
+    expect(task.title).toBe('Edited task');
+    expect(report.progress).toBe('Edited progress');
+    expect(log.content).toBe('Edited log');
+    expect(published).toEqual(expect.arrayContaining([
+      EVENTS.ISSUES_CHANGED,
+      EVENTS.TASKS_CHANGED,
+      EVENTS.REPORTS_CHANGED,
+      EVENTS.AI_LOGS_CHANGED,
+    ]));
   });
 
   test('addReport includes notes and sprintId', () => {

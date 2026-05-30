@@ -23,6 +23,9 @@ describe('activityTimeline', () => {
     expect(items.some((i) => i.kind === 'report')).toBe(true);
     expect(items.some((i) => i.kind === 'issue')).toBe(true);
     expect(items.some((i) => i.kind === 'task')).toBe(true);
+    expect(items.find((i) => i.kind === 'report')).toMatchObject({ sourceKind: 'report', sourceId: 1 });
+    expect(items.find((i) => i.kind === 'issue')).toMatchObject({ sourceKind: 'issue', sourceId: 1 });
+    expect(items.find((i) => i.kind === 'task')).toMatchObject({ sourceKind: 'task', sourceId: 1 });
   });
 
   test('buildActivityTimeline includes tasks without due date', () => {

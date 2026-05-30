@@ -187,6 +187,18 @@ export async function patchIssue(id, patch) {
 }
 
 /**
+ * @param {number} id
+ * @param {object} patch
+ */
+export async function patchTask(id, patch) {
+  const res = await request(`/api/tasks/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+  return res.json();
+}
+
+/**
  * @returns {Promise<object>}
  */
 export async function fetchAppState() {
@@ -202,6 +214,18 @@ export async function postReport(report) {
   const res = await request('/api/reports', {
     method: 'POST',
     body: JSON.stringify(report),
+  });
+  return res.json();
+}
+
+/**
+ * @param {number} id
+ * @param {object} patch
+ */
+export async function patchReport(id, patch) {
+  const res = await request(`/api/reports/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
   });
   return res.json();
 }

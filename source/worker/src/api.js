@@ -77,16 +77,9 @@ export async function handleApi(request, env) {
     const issuePatch = pathname.match(/^\/api\/issues\/(\d+)$/);
     if (method === 'PATCH' && issuePatch) {
       const id = Number(issuePatch[1]);
-      const status = body.status || 'resolved';
-      await env.DB.prepare('UPDATE issues SET status = ? WHERE id = ?').bind(status, id).run();
-      const row = await env.DB.prepare('SELECT * FROM issues WHERE id = ?').bind(id).first();
-      if (!row) return json({ error: 'Issue not found' }, 404);
-      return json({
-        ...row,
-        tags: JSON.parse(row.tags_json || '[]'),
-        sprintId: row.sprint_id,
-        due: row.due || row.created,
-      });
+      const updated = await db.updateIssue(env.DB, id, body);
+      if (!updated) return json({ error: 'Issue not found' }, 404);
+      return json(updated);
     }
 
     if (method === 'POST' && pathname === '/api/reports') {
@@ -95,6 +88,13 @@ export async function handleApi(request, env) {
         userId: body.userId ?? user.profileUserId,
       });
       return json(report, 201);
+    }
+
+    const reportPatch = pathname.match(/^\/api\/reports\/(\d+)$/);
+    if (method === 'PATCH' && reportPatch) {
+      const updated = await db.updateReport(env.DB, Number(reportPatch[1]), body);
+      if (!updated) return json({ error: 'Report not found' }, 404);
+      return json(updated);
     }
 
     if (method === 'GET' && pathname === '/api/tasks') {

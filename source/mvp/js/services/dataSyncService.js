@@ -10,7 +10,9 @@ import {
   postIssue,
   postReport,
   patchIssue,
+  patchReport,
   postTask,
+  patchTask,
   postSprint,
   postMeeting,
   postAiLog,
@@ -83,6 +85,20 @@ export async function resolveIssueRemote(store, issueId) {
 
 /**
  * @param {import('../core/store.js').Store} store
+ * @param {number} issueId
+ * @param {object} patch
+ * @returns {Promise<object|null>}
+ */
+export async function updateIssueRemote(store, issueId, patch) {
+  if (!useRemoteData()) {
+    return store.updateIssue(issueId, patch);
+  }
+  const updated = await patchIssue(issueId, patch);
+  return store.updateIssue(issueId, updated);
+}
+
+/**
+ * @param {import('../core/store.js').Store} store
  * @param {object} reportInput
  * @returns {Promise<object>}
  */
@@ -117,6 +133,20 @@ export async function createReportRemote(store, reportInput) {
 
 /**
  * @param {import('../core/store.js').Store} store
+ * @param {number} reportId
+ * @param {object} patch
+ * @returns {Promise<object|null>}
+ */
+export async function updateReportRemote(store, reportId, patch) {
+  if (!useRemoteData()) {
+    return store.updateReport(reportId, patch);
+  }
+  const updated = await patchReport(reportId, patch);
+  return store.updateReport(reportId, updated);
+}
+
+/**
+ * @param {import('../core/store.js').Store} store
  * @param {object} taskInput
  */
 /**
@@ -142,16 +172,7 @@ export async function createMeetingRemote(store, meetingInput) {
  * @param {string} status
  */
 export async function updateAiLogStatusRemote(store, logId, status) {
-  if (!useRemoteData()) {
-    store.updateAiLogStatus(logId, status);
-    return;
-  }
-  const { log } = await patchAiLog(logId, { status });
-  const entry = store.state.aiLogs.find((l) => l.id === logId);
-  if (entry) {
-    entry.status = log.status;
-    store.publish(EVENTS.AI_LOGS_CHANGED, store.state.aiLogs);
-  }
+  return updateAiLogRemote(store, logId, { status });
 }
 
 export async function createTaskRemote(store, taskInput, opts = {}) {
@@ -163,6 +184,34 @@ export async function createTaskRemote(store, taskInput, opts = {}) {
   store.state.tasks.push(created);
   store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);
   return created;
+}
+
+/**
+ * @param {import('../core/store.js').Store} store
+ * @param {number} taskId
+ * @param {object} patch
+ * @returns {Promise<object|null>}
+ */
+export async function updateTaskRemote(store, taskId, patch) {
+  if (!useRemoteData()) {
+    return store.updateTask(taskId, patch);
+  }
+  const updated = await patchTask(taskId, patch);
+  return store.updateTask(taskId, updated);
+}
+
+/**
+ * @param {import('../core/store.js').Store} store
+ * @param {number} logId
+ * @param {object} patch
+ * @returns {Promise<object|null>}
+ */
+export async function updateAiLogRemote(store, logId, patch) {
+  if (!useRemoteData()) {
+    return store.updateAiLog(logId, patch);
+  }
+  const { log } = await patchAiLog(logId, patch);
+  return store.updateAiLog(logId, log);
 }
 
 /**

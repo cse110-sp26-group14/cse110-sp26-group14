@@ -280,6 +280,58 @@ export class Store {
 
   /**
    * @param {number} issueId
+   * @param {object} patch
+   * @returns {object|null}
+   */
+  updateIssue(issueId, patch) {
+    const issue = this.state.issues.find((i) => Number(i.id) === Number(issueId));
+    if (!issue) return null;
+    Object.assign(issue, patch);
+    this.publish(EVENTS.ISSUES_CHANGED, this.state.issues);
+    return issue;
+  }
+
+  /**
+   * @param {number} taskId
+   * @param {object} patch
+   * @returns {object|null}
+   */
+  updateTask(taskId, patch) {
+    const task = this.state.tasks.find((t) => Number(t.id) === Number(taskId));
+    if (!task) return null;
+    Object.assign(task, patch);
+    this.publish(EVENTS.TASKS_CHANGED, this.state.tasks);
+    return task;
+  }
+
+  /**
+   * @param {number} reportId
+   * @param {object} patch
+   * @returns {object|null}
+   */
+  updateReport(reportId, patch) {
+    const report = this.state.reports.find((r) => Number(r.id) === Number(reportId));
+    if (!report) return null;
+    Object.assign(report, patch);
+    this.publish(EVENTS.REPORTS_CHANGED, this.state.reports);
+    return report;
+  }
+
+  /**
+   * @param {number} logId
+   * @param {object} patch
+   * @returns {object|null}
+   */
+  updateAiLog(logId, patch) {
+    const log = this.state.aiLogs.find((l) => Number(l.id) === Number(logId));
+    if (!log) return null;
+    Object.assign(log, patch);
+    this.publish(EVENTS.AI_LOGS_CHANGED, this.state.aiLogs);
+    return log;
+  }
+
+  /**
+   * @param {number} issueId
    */
   resolveIssue(issueId) {
     const issue = this.state.issues.find((i) => i.id === issueId);
