@@ -152,7 +152,7 @@ export class BacklogView extends BaseView {
   }
 
   render() {
-    const allFiltered = this.getFilteredTasks();
+    const allFiltered = this.getFilteredTasks().slice().reverse();
     const total = allFiltered.length;
     const totalPages = Math.max(1, Math.ceil(total / this.pageSize));
     if (this.page > totalPages) this.page = totalPages;
@@ -172,7 +172,7 @@ export class BacklogView extends BaseView {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;">
         <div>
           <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-            <h1 style="font-size:1.75rem;font-weight:700;margin:0;">Backlog</h1>
+            <h1 class="view-title" style="font-size:1.75rem;font-weight:700;margin:0;">Backlog</h1>
             ${onlineUsers.length ? `
               <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#dcfce7;color:#15803d;
                 font-size:0.78rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:999px;">

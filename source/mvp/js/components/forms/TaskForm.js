@@ -212,7 +212,7 @@ export function TaskForm(store) {
         <button type="submit" style="
           padding:0.55rem 1.4rem;border-radius:8px;border:none;
           background:#4f46e5;color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;
-        ">Create Task</button>
+        ">Add task</button>
       </div>
     </form>
   `;
