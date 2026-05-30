@@ -4,9 +4,67 @@
  */
 
 import { BaseView } from './BaseView.js';
-import { resolveIssueRemote } from '../services/dataSyncService.js';
+import {
+  resolveIssueRemote,
+  updateAiLogRemote,
+  updateIssueRemote,
+  updateReportRemote,
+  updateInlineTaskRemote,
+} from '../services/dataSyncService.js';
 import { buildActivityTimeline } from '../utils/activityTimeline.js';
-import { renderActivityCard, renderReportCard, renderTabButton, renderTaskCard } from './renderers/issuesRenderer.js';
+import { renderTabButton } from './renderers/issuesRenderer.js';
+import { escapeHtml } from '../utils/templateEngine.js';
+
+const ISSUE_SEVERITIES = ['critical', 'high', 'medium', 'low'];
+const ISSUE_STATUSES = [
+  { value: 'open', label: 'Open' },
+  { value: 'progress', label: 'In progress' },
+  { value: 'blocked', label: 'Blocked' },
+  { value: 'resolved', label: 'Done' },
+];
+const TASK_PRIORITIES = ['critical', 'high', 'medium', 'low'];
+const TASK_STATUSES = ['open', 'progress', 'blocked', 'resolved', 'done'];
+const REPORT_STATUSES = ['Completed', 'In Progress', 'Blocked', 'Not Started'];
+const REPORT_MOODS = ['Good', 'Neutral', 'Stressed'];
+const AI_STATUSES = ['pending', 'approved', 'applied', 'rejected'];
+
+function editableAttrs(kind, id, field, value) {
+  return `data-kind="${kind}" data-id="${id}" data-field="${field}" data-original="${escapeHtml(value ?? '')}"`;
+}
+
+function editableInput(kind, id, field, value, label, type = 'text', className = '') {
+  return `<input class="inline-edit ${className}" type="${type}" value="${escapeHtml(value ?? '')}" aria-label="${escapeHtml(label)}" ${editableAttrs(kind, id, field, value)} />`;
+}
+
+function editableTextarea(kind, id, field, value, label, className = '') {
+  return `<textarea class="inline-edit ${className}" aria-label="${escapeHtml(label)}" ${editableAttrs(kind, id, field, value)}>${escapeHtml(value ?? '')}</textarea>`;
+}
+
+function editableSelect(kind, id, field, value, label, options, className = '') {
+  const current = String(value ?? '');
+  return `
+    <select class="inline-edit ${className}" aria-label="${escapeHtml(label)}" ${editableAttrs(kind, id, field, value)}>
+      ${options.map((option) => {
+    const optionValue = typeof option === 'string' ? option : option.value;
+    const optionLabel = typeof option === 'string' ? option : option.label;
+    return `<option value="${escapeHtml(optionValue)}" ${String(optionValue) === current ? 'selected' : ''}>${escapeHtml(optionLabel)}</option>`;
+  }).join('')}
+    </select>
+  `;
+}
+
+function saveStatus(kind, id) {
+  return `<span class="inline-save-status" data-save-status="${kind}:${id}" aria-live="polite"></span>`;
+}
+
+function editableTitle(kind, id, field, value, label, className = '') {
+  return `
+    <h3 class="issue-title inline-edit-title-wrap">
+      <span class="sr-only">${escapeHtml(value ?? '')}</span>
+      ${editableInput(kind, id, field, value, label, 'text', `inline-edit-title ${className}`)}
+    </h3>
+  `;
+}
 
 /**
  * @extends BaseView
@@ -61,7 +119,7 @@ export class IssuesView extends BaseView {
 
     return reports.map((r) => {
       const user = this.store.getUsers().find((u) => Number(u.id) === Number(r.userId));
-      return renderReportCard(r, user?.name || 'Member', (type, label) => this.getBadgeHTML(type, label));
+      return this.renderReportCard(r, user?.name || 'Member');
     }).join('');
   }
 
@@ -73,7 +131,7 @@ export class IssuesView extends BaseView {
     if (!items.length) {
       return '<p class="empty-hint">No activity yet.</p>';
     }
-    return items.slice(0, 40).map(renderActivityCard).join('');
+    return items.slice(0, 40).map((item) => this.renderActivityCard(item)).join('');
   }
 
   /**
@@ -89,7 +147,150 @@ export class IssuesView extends BaseView {
       return '<p class="empty-hint">No sprint tasks yet. Add tasks from Backlog or accept AI suggestions.</p>';
     }
 
-    return `<div class="issues-list">${tasks.map((t) => renderTaskCard(t, (type, label) => this.getBadgeHTML(type, label))).join('')}</div>`;
+    return `<div class="issues-list">${tasks.map((t) => this.renderTaskCard(t)).join('')}</div>`;
+  }
+
+  /**
+   * @param {object} issue
+   * @returns {string}
+   */
+  renderIssueCard(issue) {
+    const users = [{ value: '', label: 'Unassigned' }, ...this.store.getUsers().map((u) => ({
+      value: u.name,
+      label: `${u.name} — ${u.role}`,
+    }))];
+    return `
+      <div class="card issue-card editable-card" data-edit-card data-kind="issue" data-id="${issue.id}" data-title="${escapeHtml(String(issue.title || '').toLowerCase())}">
+        <div class="issue-card-header">
+          <div class="issue-card-title-row">
+            ${editableTitle('issue', issue.id, 'title', issue.title, 'Issue title')}
+            ${editableSelect('issue', issue.id, 'severity', issue.severity || 'medium', 'Issue priority', ISSUE_SEVERITIES, 'inline-edit-select')}
+            ${editableSelect('issue', issue.id, 'status', issue.status || 'open', 'Issue status', ISSUE_STATUSES, 'inline-edit-select')}
+            ${this.getBadgeHTML(issue.status || 'open', (issue.status || 'open').toUpperCase())}
+            ${(issue.tags || []).map((t) => `<span class="badge badge-muted">${escapeHtml(t)}</span>`).join('')}
+          </div>
+          <div class="inline-card-actions">
+            ${saveStatus('issue', issue.id)}
+            ${issue.status !== 'resolved'
+              ? `<button type="button" class="action-btn resolve-issue-btn" data-issue-id="${issue.id}">Mark resolved</button>`
+              : ''}
+          </div>
+        </div>
+        ${editableTextarea('issue', issue.id, 'description', issue.description || '', 'Issue description', 'inline-edit-description issue-description')}
+        <div class="issue-meta inline-edit-grid">
+          <span>By ${escapeHtml(issue.author || 'Team Member')}</span>
+          <label>Assignee ${editableSelect('issue', issue.id, 'assignee', issue.assignee || '', 'Issue assignee', users, 'inline-edit-select')}</label>
+          <label>Due ${editableInput('issue', issue.id, 'due', issue.due || issue.created || '', 'Issue due date', 'date', 'inline-edit-date')}</label>
+          <span>Sprint ${escapeHtml(issue.sprintId ?? '—')}</span>
+          <span>created ${escapeHtml(issue.created || '—')}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {object} task
+   * @returns {string}
+   */
+  renderTaskCard(task) {
+    const users = [{ value: '', label: 'Unassigned' }, ...this.store.getUsers().map((u) => ({
+      value: u.name,
+      label: `${u.name} — ${u.role}`,
+    }))];
+    const aiTag = (task.tags || []).includes('AI Suggested') || task.source === 'ai'
+      ? '<span class="badge badge-muted">AI Suggested</span>'
+      : '';
+    return `
+      <div class="card issue-card task-card editable-card" data-edit-card data-kind="task" data-id="${task.id}">
+        <div class="issue-card-header">
+          <div class="issue-card-title-row">
+            ${editableTitle('task', task.id, 'title', task.title, 'Task title')}
+            ${editableSelect('task', task.id, 'priority', task.priority || 'medium', 'Task priority', TASK_PRIORITIES, 'inline-edit-select')}
+            ${editableSelect('task', task.id, 'status', task.status || 'open', 'Task status', TASK_STATUSES, 'inline-edit-select')}
+            ${aiTag}
+          </div>
+          ${saveStatus('task', task.id)}
+        </div>
+        <div class="issue-meta inline-edit-grid">
+          <label>Owner ${editableSelect('task', task.id, 'owner', task.owner || '', 'Task owner', users, 'inline-edit-select')}</label>
+          <span>Sprint ${escapeHtml(task.sprintId ?? '—')}</span>
+          <label>Due ${editableInput('task', task.id, 'due', task.due || '', 'Task due date', 'date', 'inline-edit-date')}</label>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {object} report
+   * @param {string} userName
+   * @returns {string}
+   */
+  renderReportCard(report, userName) {
+    return `
+      <div class="card issue-card report-card editable-card" data-edit-card data-kind="report" data-id="${report.id}">
+        <div class="issue-card-header">
+          <div class="issue-card-title-row">
+            <h3 class="issue-title">${escapeHtml(userName)} — ${escapeHtml(report.date || '')}</h3>
+            ${editableSelect('report', report.id, 'status', report.status || 'In Progress', 'Report status', REPORT_STATUSES, 'inline-edit-select')}
+            ${editableSelect('report', report.id, 'mood', report.mood || 'Neutral', 'Report mood', REPORT_MOODS, 'inline-edit-select')}
+          </div>
+          ${saveStatus('report', report.id)}
+        </div>
+        ${editableTextarea('report', report.id, 'progress', report.progress || '', 'Report progress', 'inline-edit-description issue-description')}
+        <div class="inline-edit-grid issue-meta">
+          <label>Blockers ${editableInput('report', report.id, 'blockers', report.blockers || 'None', 'Report blockers', 'text')}</label>
+          <label>Notes ${editableTextarea('report', report.id, 'notes', report.notes || '', 'Report notes', 'inline-edit-small-textarea')}</label>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {object} log
+   * @param {object} item
+   * @returns {string}
+   */
+  renderAiActivityCard(log, item) {
+    return `
+      <div class="card activity-card editable-card" data-edit-card data-kind="ai" data-id="${log.id}">
+        <div class="activity-card-top">
+          <span class="badge badge-muted">ai</span>
+          <span class="activity-card-time">${escapeHtml((item.ts || '').replace('T', ' ').slice(0, 16))}</span>
+          ${saveStatus('ai', log.id)}
+        </div>
+        ${editableInput('ai', log.id, 'title', log.title || '', 'AI log title', 'text', 'inline-edit-title activity-card-title')}
+        ${editableTextarea('ai', log.id, 'content', log.content || '', 'AI log content', 'inline-edit-description activity-card-body')}
+        <div class="issue-meta inline-edit-grid">
+          <label>Status ${editableSelect('ai', log.id, 'status', log.status || 'pending', 'AI log status', AI_STATUSES, 'inline-edit-select')}</label>
+          <span>${escapeHtml(log.type || 'Log')}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * @param {object} item
+   * @returns {string}
+   */
+  renderActivityCard(item) {
+    if (item.sourceKind === 'issue') {
+      const issue = this.store.getIssues().find((i) => Number(i.id) === Number(item.sourceId));
+      return issue ? this.renderIssueCard(issue) : '';
+    }
+    if (item.sourceKind === 'task') {
+      const task = this.store.getState().tasks.find((t) => Number(t.id) === Number(item.sourceId));
+      return task ? this.renderTaskCard(task) : '';
+    }
+    if (item.sourceKind === 'report') {
+      const report = this.store.getReports().find((r) => Number(r.id) === Number(item.sourceId));
+      const user = this.store.getUsers().find((u) => Number(u.id) === Number(report?.userId));
+      return report ? this.renderReportCard(report, user?.name || 'Member') : '';
+    }
+    if (item.sourceKind === 'ai') {
+      const log = this.store.getAiLogs().find((l) => Number(l.id) === Number(item.sourceId));
+      return log ? this.renderAiActivityCard(log, item) : '';
+    }
+    return '';
   }
 
   /**
@@ -111,29 +312,7 @@ export class IssuesView extends BaseView {
       </div>
       <div class="issues-list">
         ${issues.length === 0 ? '<p class="empty-hint">No issues match this filter.</p>' : ''}
-        ${issues.map((issue) => `
-          <div class="card issue-card" data-title="${issue.title.toLowerCase()}">
-            <div class="issue-card-header">
-              <div class="issue-card-title-row">
-                <h3 class="issue-title">${issue.title}</h3>
-                ${this.getBadgeHTML(issue.severity, issue.severity.toUpperCase())}
-                ${this.getBadgeHTML(issue.status, issue.status.toUpperCase())}
-                ${(issue.tags || []).map((t) => `<span class="badge badge-muted">${t}</span>`).join('')}
-              </div>
-              ${issue.status !== 'resolved'
-                ? `<button type="button" class="action-btn resolve-issue-btn" data-issue-id="${issue.id}">Mark resolved</button>`
-                : ''}
-            </div>
-            <p class="issue-description">${issue.description || ''}</p>
-            <div class="issue-meta">
-              <span>By ${issue.author}</span>
-              <span>Assignee ${issue.assignee || 'Unassigned'}</span>
-              <span>Due ${issue.due || issue.created || '—'}</span>
-              <span>Sprint ${issue.sprintId}</span>
-              <span>created ${issue.created}</span>
-            </div>
-          </div>
-        `).join('')}
+        ${issues.map((issue) => this.renderIssueCard(issue)).join('')}
       </div>
     `;
   }
@@ -222,5 +401,53 @@ export class IssuesView extends BaseView {
         this.mount(container);
       });
     });
+
+    container.querySelectorAll('.inline-edit').forEach((field) => {
+      const eventName = field.matches('select, input[type="date"]') ? 'change' : 'blur';
+      field.addEventListener(eventName, () => this.saveInlineEdit(field, container));
+    });
+  }
+
+  /**
+   * @param {HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement} field
+   * @param {HTMLElement} container
+   */
+  async saveInlineEdit(field, container) {
+    const { kind, id, field: fieldName } = field.dataset;
+    if (!kind || !id || !fieldName) return;
+    const value = field.value.trim();
+    if (value === (field.dataset.original || '')) return;
+
+    const card = field.closest('[data-edit-card]');
+    const status = card?.querySelector(`[data-save-status="${kind}:${id}"]`);
+    if (status) {
+      status.textContent = 'Saving...';
+      status.classList.remove('inline-save-error');
+    }
+
+    try {
+      const patch = { [fieldName]: value };
+      const numericId = Number(id);
+      if (kind === 'issue') await updateIssueRemote(this.store, numericId, patch);
+      if (kind === 'task') await updateInlineTaskRemote(this.store, numericId, patch);
+      if (kind === 'report') await updateReportRemote(this.store, numericId, patch);
+      if (kind === 'ai') await updateAiLogRemote(this.store, numericId, patch);
+      field.dataset.original = value;
+      const freshStatus = container.querySelector(`[data-save-status="${kind}:${id}"]`);
+      if (freshStatus) {
+        freshStatus.textContent = 'Saved';
+        window.setTimeout(() => {
+          const laterStatus = container.querySelector(`[data-save-status="${kind}:${id}"]`);
+          if (laterStatus?.textContent === 'Saved') laterStatus.textContent = '';
+        }, 1600);
+      }
+    } catch (err) {
+      if (status) {
+        status.textContent = 'Could not save';
+        status.classList.add('inline-save-error');
+      }
+      field.value = field.dataset.original || '';
+      console.error('[IssuesView] Inline edit failed', err);
+    }
   }
 }

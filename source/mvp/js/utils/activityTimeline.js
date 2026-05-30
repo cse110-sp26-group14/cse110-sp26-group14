@@ -10,6 +10,8 @@
  * @property {string} title
  * @property {string} body
  * @property {string} meta
+ * @property {'report'|'issue'|'task'|'ai'} sourceKind
+ * @property {number} sourceId
  */
 
 /**
@@ -26,6 +28,8 @@ export function buildActivityTimeline(store, sprintId) {
     const user = store.getUsers().find((u) => Number(u.id) === Number(r.userId));
     items.push({
       kind: 'report',
+      sourceKind: 'report',
+      sourceId: r.id,
       ts: r.timestamp || `${r.date}T12:00:00`,
       title: `Check-in: ${user?.name || 'Member'}`,
       body: `${r.status} — ${(r.progress || '').slice(0, 120)}`,
@@ -38,6 +42,8 @@ export function buildActivityTimeline(store, sprintId) {
     const issueDue = i.due || i.created || '2026-01-01';
     items.push({
       kind: 'issue',
+      sourceKind: 'issue',
+      sourceId: i.id,
       ts: `${issueDue}T09:00:00`,
       title: i.title,
       body: `${i.assignee || 'Unassigned'} — ${(i.description || '').slice(0, 100)}`,
@@ -51,6 +57,8 @@ export function buildActivityTimeline(store, sprintId) {
     const due = t.due || sprintRow?.end || '2026-01-01';
     items.push({
       kind: 'task',
+      sourceKind: 'task',
+      sourceId: t.id,
       ts: `${due}T08:00:00`,
       title: t.due ? `Task due: ${t.title}` : `Task: ${t.title}`,
       body: `${t.owner || 'Unassigned'} • ${t.priority}${t.source === 'ai' ? ' • AI' : ''}`,
@@ -61,6 +69,8 @@ export function buildActivityTimeline(store, sprintId) {
   store.getAiLogs().forEach((l) => {
     items.push({
       kind: 'ai',
+      sourceKind: 'ai',
+      sourceId: l.id,
       ts: l.timestamp || '',
       title: l.title,
       body: (l.content || '').slice(0, 160),
