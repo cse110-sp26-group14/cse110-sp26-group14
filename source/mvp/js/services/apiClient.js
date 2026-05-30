@@ -305,3 +305,66 @@ export async function putUserProfile(payload) {
   });
   return res.json();
 }
+
+/**
+ * Update a task (with optional conflict detection via expectedUpdatedAt).
+ * Returns { ok, task } or throws with err.conflict = true on 409.
+ * @param {number} id
+ * @param {object} patch
+ * @returns {Promise<object>}
+ */
+export async function patchTask(id, patch) {
+  const base = appConfig.apiBaseUrl.replace(/\/$/, '');
+  const url = `${base}/api/tasks/${id}`;
+  const token = getApiToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(url, { method: 'PATCH', headers, body: JSON.stringify(patch) });
+  const text = await response.text();
+  let data = {};
+  try { data = JSON.parse(text); } catch { /* ignore */ }
+  if (!response.ok) {
+    const err = new Error(`API ${response.status}: ${text || response.statusText}`);
+    err.status = response.status;
+    err.conflict = response.status === 409;
+    err.body = data;
+    throw err;
+  }
+  return data;
+}
+
+/**
+ * Create a sub-task under a parent task.
+ * @param {number} parentId
+ * @param {object} subtask
+ * @returns {Promise<object>}
+ */
+export async function postSubtask(parentId, subtask) {
+  const res = await request(`/api/tasks/${parentId}/subtasks`, {
+    method: 'POST',
+    body: JSON.stringify(subtask),
+  });
+  return res.json();
+}
+
+/**
+ * Mark a sub-task complete (server enforces assignee-only rule).
+ * @param {number} subtaskId
+ * @returns {Promise<object>}
+ */
+export async function completeSubtask(subtaskId) {
+  const res = await request(`/api/subtasks/${subtaskId}/complete`, {
+    method: 'PATCH',
+    body: '{}',
+  });
+  return res.json();
+}
+
+/**
+ * Get currently active users (users with live sessions).
+ * @returns {Promise<object[]>}
+ */
+export async function fetchActiveUsers() {
+  const res = await request('/api/active-users');
+  return res.json();
+}

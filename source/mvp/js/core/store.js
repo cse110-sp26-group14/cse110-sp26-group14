@@ -309,4 +309,36 @@ export class Store {
     this.publish(EVENTS.TASKS_CHANGED, this.state.tasks);
     return newTask;
   }
+
+  /**
+   * Update one task in-place (from server response or optimistic update).
+   * @param {object} updatedTask
+   */
+  patchTask(updatedTask) {
+    const idx = this.state.tasks.findIndex((t) => Number(t.id) === Number(updatedTask.id));
+    if (idx >= 0) {
+      this.state.tasks[idx] = { ...this.state.tasks[idx], ...updatedTask };
+    } else {
+      this.state.tasks.push(updatedTask);
+    }
+    this.publish(EVENTS.TASKS_CHANGED, this.state.tasks);
+  }
+
+  /**
+   * Replace the full task list (used by live sync).
+   * @param {object[]} tasks
+   */
+  setTasks(tasks) {
+    this.state.tasks = tasks;
+    this.publish(EVENTS.TASKS_CHANGED, tasks);
+  }
+
+  /**
+   * Replace the user list (used by live sync).
+   * @param {object[]} users
+   */
+  setUsers(users) {
+    this.state.users = users;
+    this.save();
+  }
 }

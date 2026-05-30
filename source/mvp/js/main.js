@@ -36,6 +36,11 @@ import {
   saveAvailabilityRemote,
   hydrateStoreFromApi,
   refreshStoreFromApi,
+  createSubtaskRemote,
+  updateTaskRemote,
+  completeSubtaskRemote,
+  startLiveSync,
+  stopLiveSync,
 } from './services/dataSyncService.js';
 import { initGoogleCalendar } from './services/googleCalendarService.js';
 import { useRemoteData } from './config/appConfig.js';
@@ -188,6 +193,7 @@ async function startApp(authUser) {
     wireAvailability();
     wireAddNote();
     wireTaskModal();
+    wireSubtaskEvents();
     wireAiActions();
     wireHeader();
     wireUserMenu();
@@ -195,6 +201,8 @@ async function startApp(authUser) {
     wireLogout();
     subscribeToStoreEvents();
   }
+
+  startLiveSync(store, router);
 
   if (!window.location.hash || window.location.hash === '#login') {
     window.location.hash = '#dashboard';
@@ -292,20 +300,86 @@ function wireTaskModal() {
   window.addEventListener('sitrep:open-task-modal', () => {
     modal.show('Add Task', TaskForm(store));
     bindModalForm('task-form', async (formData) => {
-      await createTaskRemote(store, {
+      const assignees = formData.getAll('assignees').filter(Boolean);
+      const sprintId = store.getSelectedSprint()?.id ?? 2;
+      const task = await createTaskRemote(store, {
         title: formData.get('title'),
         priority: formData.get('priority'),
         due: formData.get('due'),
-        owner: formData.get('owner') || store.currentAuthUser?.name || 'Team Member',
-        sprintId: store.getSelectedSprint()?.id ?? 2,
+        assignees,
+        owner: assignees[0] || store.currentAuthUser?.name || 'Team Member',
+        sprintId,
         status: 'open',
       });
+
+      // If 2+ assignees, auto-create one sub-task per person
+      if (assignees.length >= 2 && task?.id) {
+        for (const [i, person] of assignees.entries()) {
+          await createSubtaskRemote(store, task.id, {
+            title: `${formData.get('title')} — Part ${i + 1} (${person})`,
+            assignees: [person],
+            owner: person,
+            priority: formData.get('priority'),
+            due: formData.get('due'),
+            status: 'open',
+          });
+        }
+        showToast(`Task created with ${assignees.length} sub-tasks, one per assignee.`, 'success', 4000);
+      }
+
       rerenderIfCurrentRoute(['#backlog', '#dashboard', '#calendar']);
     }, {
       onClose: () => modal.close(),
       pendingToast: 'Task submitted — saving…',
-      successToast: 'Task added to sprint.',
+      successToast: assignees => assignees?.length >= 2 ? false : 'Task added to sprint.',
     });
+  });
+}
+
+/** Wire sub-task events dispatched from BacklogView. */
+function wireSubtaskEvents() {
+  if (window.__sitrepSubtaskWired) return;
+  window.__sitrepSubtaskWired = true;
+
+  window.addEventListener('sitrep:complete-subtask', async (e) => {
+    const { subtaskId } = e.detail || {};
+    if (!subtaskId) return;
+    try {
+      await completeSubtaskRemote(store, subtaskId);
+      showToast('Sub-task marked complete.', 'success', 3000);
+      rerenderIfCurrentRoute(['#backlog', '#dashboard']);
+    } catch (err) {
+      showToast(err?.message || 'Could not complete sub-task.', 'error', 5000);
+    }
+  });
+
+  window.addEventListener('sitrep:split-task', async (e) => {
+    const { taskId } = e.detail || {};
+    if (!taskId) return;
+    const task = store.state.tasks.find((t) => Number(t.id) === Number(taskId));
+    if (!task) return;
+    const assignees = task.assignees?.length >= 2 ? task.assignees : [];
+    if (assignees.length < 2) {
+      showToast('Task needs 2+ assignees to split into sub-tasks.', 'warning', 4000);
+      return;
+    }
+    try {
+      for (const [i, person] of assignees.entries()) {
+        await createSubtaskRemote(store, taskId, {
+          title: `${task.title} — Part ${i + 1} (${person})`,
+          assignees: [person],
+          owner: person,
+          priority: task.priority,
+          due: task.due,
+          status: 'open',
+        });
+      }
+      await updateTaskRemote(store, taskId, { status: 'progress' }, task.updatedAt);
+      showToast(`Split into ${assignees.length} sub-tasks.`, 'success', 3500);
+      rerenderIfCurrentRoute(['#backlog', '#dashboard']);
+    } catch (err) {
+      showToast(err?.message || 'Could not split task.', 'error', 5000);
+    }
   });
 }
 
@@ -647,6 +721,7 @@ document.addEventListener('click', async (e) => {
   e.preventDefault();
   e.stopPropagation();
   closeUserMenu();
+  stopLiveSync();
   await logout();
   window.location.hash = '';
   showLogin();

@@ -17,6 +17,10 @@ import {
   patchAiLog,
   putAvailability,
   putUserProfile,
+  patchTask,
+  postSubtask,
+  completeSubtask,
+  fetchActiveUsers,
 } from './apiClient.js';
 import { createNoteLog } from './aiLogService.js';
 import { todayISO } from '../utils/dates.js';
@@ -282,4 +286,151 @@ export function mergeTasksFromApi(store, tasks) {
     }
   });
   store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);
+}
+
+/**
+ * Update a task on the server. Handles 409 conflicts by showing the user
+ * the server version instead of silently overwriting.
+ * @param {import('../core/store.js').Store} store
+ * @param {number} taskId
+ * @param {object} patch
+ * @param {string|null} [expectedUpdatedAt]
+ * @returns {Promise<{ ok: boolean, task?: object, conflict?: boolean, serverTask?: object }>}
+ */
+export async function updateTaskRemote(store, taskId, patch, expectedUpdatedAt = null) {
+  if (!useRemoteData()) {
+    store.patchTask({ id: taskId, ...patch });
+    return { ok: true, task: patch };
+  }
+  try {
+    const updated = await patchTask(taskId, { ...patch, expectedUpdatedAt });
+    store.patchTask(updated);
+    return { ok: true, task: updated };
+  } catch (err) {
+    if (err.conflict) {
+      return { ok: false, conflict: true, serverTask: err.body?.serverTask || null };
+    }
+    throw err;
+  }
+}
+
+/**
+ * Create a sub-task under a parent task. If 2+ assignees on a new task,
+ * call this once per assignee.
+ * @param {import('../core/store.js').Store} store
+ * @param {number} parentId
+ * @param {object} input
+ * @returns {Promise<object>}
+ */
+export async function createSubtaskRemote(store, parentId, input) {
+  if (!useRemoteData()) {
+    const sub = store.addTask({ ...input, parentTaskId: parentId, source: 'subtask' });
+    return sub;
+  }
+  const sub = await postSubtask(parentId, input);
+  store.state.tasks.push(sub);
+  store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);
+  return sub;
+}
+
+/**
+ * Mark a sub-task complete. Server enforces that only the assigned person can do this.
+ * When all sub-tasks are complete the parent is automatically flagged for review.
+ * @param {import('../core/store.js').Store} store
+ * @param {number} subtaskId
+ * @returns {Promise<object>}
+ */
+export async function completeSubtaskRemote(store, subtaskId) {
+  if (!useRemoteData()) {
+    store.patchTask({ id: subtaskId, status: 'resolved' });
+    return store.state.tasks.find((t) => t.id === subtaskId);
+  }
+  const updated = await completeSubtask(subtaskId);
+  store.patchTask(updated);
+  await refreshStoreFromApi(store);
+  return updated;
+}
+
+// ─── Live Polling ────────────────────────────────────────────────────────────
+
+const POLL_MS = 10_000;
+let _pollTimer = null;
+let _lastTasksHash = '';
+let _lastUsersHash = '';
+
+function _hashTasks(tasks) {
+  return JSON.stringify((tasks || []).map((t) => `${t.id}:${t.status}:${t.updatedAt}`));
+}
+
+function _hashUsers(users) {
+  return JSON.stringify((users || []).map((u) => `${u.id}:${u.isOnline}`));
+}
+
+function _showSyncBanner(msg) {
+  const existing = document.getElementById('sitrep-sync-banner');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'sitrep-sync-banner';
+  el.textContent = `🔄 ${msg}`;
+  el.style.cssText = [
+    'position:fixed', 'bottom:1.5rem', 'left:50%', 'transform:translateX(-50%)',
+    'background:#1d4ed8', 'color:white', 'padding:0.6rem 1.4rem',
+    'border-radius:999px', 'font-size:0.875rem', 'font-weight:500',
+    'z-index:9999', 'box-shadow:0 4px 12px rgba(0,0,0,0.2)',
+  ].join(';');
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+/**
+ * Start polling the API every 10s and refresh the store when data changes.
+ * Call once after the app shell is authenticated.
+ * @param {import('../core/store.js').Store} store
+ * @param {{ handleRoute: () => void }} router
+ */
+export function startLiveSync(store, router) {
+  if (!useRemoteData()) return;
+  if (_pollTimer) clearInterval(_pollTimer);
+
+  _lastTasksHash = _hashTasks(store.state.tasks);
+  _lastUsersHash = _hashUsers(store.state.users);
+
+  _pollTimer = setInterval(async () => {
+    try {
+      const state = await fetchAppState();
+      let changed = false;
+
+      const newTasksHash = _hashTasks(state.tasks);
+      if (newTasksHash !== _lastTasksHash) {
+        store.setTasks(state.tasks || []);
+        _showSyncBanner('Tasks updated by a team member.');
+        changed = true;
+      }
+      _lastTasksHash = newTasksHash;
+
+      const newUsersHash = _hashUsers(state.users);
+      if (newUsersHash !== _lastUsersHash) {
+        store.setUsers(state.users || []);
+        changed = true;
+      }
+      _lastUsersHash = newUsersHash;
+
+      if (changed && router) {
+        const hash = window.location.hash || '#dashboard';
+        if (['#backlog', '#dashboard', '#team-availability'].includes(hash)) {
+          router.handleRoute();
+        }
+      }
+    } catch (err) {
+      console.warn('[LiveSync] Poll failed:', err.message);
+    }
+  }, POLL_MS);
+}
+
+/**
+ * Stop live polling (e.g. on logout).
+ */
+export function stopLiveSync() {
+  if (_pollTimer) clearInterval(_pollTimer);
+  _pollTimer = null;
 }
