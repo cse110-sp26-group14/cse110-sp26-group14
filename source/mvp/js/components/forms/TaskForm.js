@@ -1,5 +1,5 @@
 /**
- * Create sprint task form.
+ * Create sprint task form (supports multiple assignees → auto sub-tasks).
  * @module components/forms/TaskForm
  */
 
@@ -21,8 +21,13 @@ export function TaskForm(store) {
         <input id="task-title" name="title" type="text" required />
       </div>
       <div class="form-field">
-        <label for="task-owner">Assignee</label>
-        <select id="task-owner" name="owner" required>
+        <label for="task-assignees">
+          Assignees
+          <span style="font-size:0.75rem;color:var(--text-muted);font-weight:400;">
+            — hold Ctrl/Cmd to select multiple. 2+ assignees creates sub-tasks automatically.
+          </span>
+        </label>
+        <select id="task-assignees" name="assignees" multiple size="${Math.min(users.length, 5)}" style="height:auto;">
           ${users.map((u) => `
             <option value="${u.name}" ${u.name === store.currentAuthUser?.name ? 'selected' : ''}>${u.name} — ${u.role}</option>
           `).join('')}
