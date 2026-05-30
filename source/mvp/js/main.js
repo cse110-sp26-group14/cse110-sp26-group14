@@ -194,6 +194,7 @@ async function startApp(authUser) {
     wireAddNote();
     wireTaskModal();
     wireSubtaskEvents();
+    wireTaskDetail();
     wireAiActions();
     wireHeader();
     wireUserMenu();
@@ -337,6 +338,127 @@ function wireTaskModal() {
       pendingToast: 'Task submitted — saving…',
       successToast: assignees => assignees?.length >= 2 ? false : 'Task added to sprint.',
     });
+  });
+}
+
+/** Wire task detail modal (click on a backlog row). */
+function wireTaskDetail() {
+  if (window.__sitrepTaskDetailWired) return;
+  window.__sitrepTaskDetailWired = true;
+
+  window.addEventListener('sitrep:open-task-detail', (e) => {
+    const { taskId } = e.detail || {};
+    const task = store.getState().tasks.find((t) => Number(t.id) === Number(taskId));
+    if (!task) return;
+
+    const sprints = store.getState().sprints || [];
+    const sprintName = sprints.find((s) => s.id === task.sprintId)?.name || `Sprint ${task.sprintId}`;
+    const assignees = task.assignees?.length ? task.assignees : (task.owner ? [task.owner] : []);
+
+    const priorityColors = {
+      critical: { bg: '#fee2e2', color: '#dc2626' },
+      high:     { bg: '#fef9c3', color: '#ca8a04' },
+      medium:   { bg: '#dbeafe', color: '#2563eb' },
+      low:      { bg: '#f3f4f6', color: '#6b7280' },
+    };
+    const statusColors = {
+      blocked:  { bg: '#fee2e2', color: '#dc2626' },
+      progress: { bg: '#ede9fe', color: '#7c3aed' },
+      open:     { bg: '#f3f4f6', color: '#374151' },
+      resolved: { bg: '#dcfce7', color: '#15803d' },
+      done:     { bg: '#dcfce7', color: '#15803d' },
+    };
+    const pStyle = priorityColors[task.priority] || priorityColors.low;
+    const sStyle = statusColors[task.status] || statusColors.open;
+
+    const subtasks = store.getState().tasks.filter((t) => Number(t.parentTaskId) === Number(taskId));
+
+    const avatarColor = (name) => {
+      const palette = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6'];
+      let hash = 0;
+      for (const c of (name || '')) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+      return palette[hash % palette.length];
+    };
+    const initials = (name) => {
+      const p = (name || '').trim().split(/\s+/);
+      return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : (p[0]||'?')[0].toUpperCase();
+    };
+
+    const html = `
+      <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+        <!-- Badges row -->
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <span style="background:${pStyle.bg};color:${pStyle.color};font-size:0.75rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:999px;">
+            ${(task.priority || 'medium').charAt(0).toUpperCase() + (task.priority || 'medium').slice(1)}
+          </span>
+          <span style="background:${sStyle.bg};color:${sStyle.color};font-size:0.75rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:6px;">
+            ${task.status === 'progress' ? 'In Progress' : (task.status || 'open').charAt(0).toUpperCase() + (task.status || 'open').slice(1)}
+          </span>
+          ${task.type ? `<span style="background:#f3f4f6;color:#374151;font-size:0.75rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:6px;">${task.type}</span>` : ''}
+        </div>
+
+        <!-- Meta grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div style="background:#f9fafb;border-radius:8px;padding:0.75rem;">
+            <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.3rem;">Sprint</div>
+            <div style="font-size:0.875rem;font-weight:500;">${sprintName}</div>
+          </div>
+          <div style="background:#f9fafb;border-radius:8px;padding:0.75rem;">
+            <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.3rem;">Due Date</div>
+            <div style="font-size:0.875rem;font-weight:500;">${task.due || '—'}</div>
+          </div>
+        </div>
+
+        <!-- Assignees -->
+        <div>
+          <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.5rem;">Assignees</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+            ${assignees.length
+              ? assignees.map((a) => `
+                <div style="display:flex;align-items:center;gap:0.5rem;background:#f3f4f6;border-radius:999px;padding:0.25rem 0.75rem 0.25rem 0.3rem;">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;
+                    width:24px;height:24px;border-radius:50%;background:${avatarColor(a)};color:#fff;font-size:0.65rem;font-weight:700;">
+                    ${initials(a)}
+                  </span>
+                  <span style="font-size:0.85rem;font-weight:500;">${a}</span>
+                </div>`).join('')
+              : '<span style="color:#9ca3af;font-size:0.875rem;">Unassigned</span>'}
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.5rem;">Description</div>
+          <div style="background:#f9fafb;border-radius:8px;padding:0.875rem;font-size:0.875rem;color:#374151;min-height:60px;line-height:1.6;">
+            ${task.description ? task.description.replace(/\n/g, '<br>') : '<span style="color:#9ca3af;">No description provided.</span>'}
+          </div>
+        </div>
+
+        <!-- Sub-tasks -->
+        ${subtasks.length ? `
+        <div>
+          <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.5rem;">
+            Sub-tasks (${subtasks.filter(s=>s.status==='resolved').length}/${subtasks.length} done)
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;">
+            ${subtasks.map((sub) => {
+              const done = sub.status === 'resolved';
+              const subA = sub.assignees?.length ? sub.assignees : (sub.owner ? [sub.owner] : []);
+              return `
+                <div style="display:flex;align-items:center;gap:0.75rem;background:#f9fafb;border-radius:8px;padding:0.6rem 0.875rem;">
+                  <span style="font-size:1rem;${done ? 'color:#15803d;' : 'color:#d1d5db;'}">${done ? '✓' : '○'}</span>
+                  <span style="font-size:0.85rem;flex:1;${done ? 'text-decoration:line-through;color:#9ca3af;' : ''}">${sub.title}</span>
+                  ${subA.length ? `<span style="font-size:0.75rem;color:#6b7280;">${subA[0]}</span>` : ''}
+                </div>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
+
+      </div>
+    `;
+
+    modal.show(task.title, html);
   });
 }
 
