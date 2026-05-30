@@ -5,28 +5,21 @@
 
 import { BaseView } from './BaseView.js';
 import {
-  resolveIssueRemote,
   updateAiLogRemote,
-  updateIssueRemote,
   updateReportRemote,
   updateInlineTaskRemote,
 } from '../services/dataSyncService.js';
 import { buildActivityTimeline } from '../utils/activityTimeline.js';
 import { renderTabButton } from './renderers/issuesRenderer.js';
 import { escapeHtml } from '../utils/templateEngine.js';
+import { todayISO } from '../utils/dates.js';
 
-const ISSUE_SEVERITIES = ['critical', 'high', 'medium', 'low'];
-const ISSUE_STATUSES = [
-  { value: 'open', label: 'Open' },
-  { value: 'progress', label: 'In progress' },
-  { value: 'blocked', label: 'Blocked' },
-  { value: 'resolved', label: 'Done' },
-];
 const TASK_PRIORITIES = ['critical', 'high', 'medium', 'low'];
 const TASK_STATUSES = ['open', 'progress', 'blocked', 'resolved', 'done'];
 const REPORT_STATUSES = ['Completed', 'In Progress', 'Blocked', 'Not Started'];
 const REPORT_MOODS = ['Good', 'Neutral', 'Stressed'];
 const AI_STATUSES = ['pending', 'approved', 'applied', 'rejected'];
+const ISSUE_FILTERS = ['All', 'Open', 'High Priority', 'Assigned to Me', 'Created by Me', 'Resolved'];
 
 function editableAttrs(kind, id, field, value) {
   return `data-kind="${kind}" data-id="${id}" data-field="${field}" data-original="${escapeHtml(value ?? '')}"`;
@@ -66,6 +59,63 @@ function editableTitle(kind, id, field, value, label, className = '') {
   `;
 }
 
+function titleCase(value) {
+  return String(value || '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function issueNumber(id) {
+  return `ISS-${String(id ?? 0).padStart(4, '0')}`;
+}
+
+function initials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  return (parts[0]?.[0] || '?').toUpperCase();
+}
+
+function formatIssueDate(value) {
+  if (!value) return 'No date';
+  const raw = String(value);
+  const datePart = raw.slice(0, 10);
+  const parsed = new Date(raw.includes('T') ? raw : `${datePart}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return raw;
+
+  const dateText = datePart === todayISO()
+    ? 'Today'
+    : parsed.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+  const timeMatch = raw.match(/T(\d{2}):(\d{2})/);
+  if (!timeMatch) return dateText;
+  let hour = Number(timeMatch[1]);
+  const minute = timeMatch[2];
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12 || 12;
+  return `${dateText}, ${hour}:${minute} ${suffix}`;
+}
+
+function resolvedDate(issue) {
+  return issue.resolvedOn || issue.resolvedAt || issue.updatedAt || issue.due || issue.created || '';
+}
+
+function issueTone(issue) {
+  if (issue.status === 'resolved') return 'resolved';
+  if (issue.severity === 'critical') return 'critical';
+  if (issue.severity === 'high') return 'high';
+  if (issue.severity === 'medium') return 'medium';
+  return 'low';
+}
+
+function isDueUrgent(issue) {
+  if (issue.status === 'resolved' || !issue.due) return false;
+  return String(issue.due).slice(0, 10) <= todayISO();
+}
+
 /**
  * @extends BaseView
  */
@@ -79,29 +129,46 @@ export class IssuesView extends BaseView {
     this.filter = 'All';
     /** @type {'issues'|'tasks'|'reports'|'activity'} */
     this.panel = 'issues';
+    /** @type {string} */
+    this.searchQuery = '';
   }
 
   /**
    * @returns {object[]}
    */
   getFilteredIssues() {
-    const issues = this.store.getIssues();
     const me = this.store.currentAuthUser?.name;
+    let issues = this.store.getIssues();
 
     switch (this.filter) {
       case 'Created by Me':
-        return issues.filter((i) => i.author === me);
+        issues = issues.filter((i) => i.author === me);
+        break;
       case 'Assigned to Me':
-        return issues.filter((i) => i.assignee === me);
+        issues = issues.filter((i) => i.assignee === me);
+        break;
       case 'Open':
-        return issues.filter((i) => i.status === 'open');
+        issues = issues.filter((i) => i.status === 'open');
+        break;
       case 'Resolved':
-        return issues.filter((i) => i.status === 'resolved');
+        issues = issues.filter((i) => i.status === 'resolved');
+        break;
       case 'High Priority':
-        return issues.filter((i) => i.severity === 'critical' || i.severity === 'high');
+        issues = issues.filter((i) => i.severity === 'critical' || i.severity === 'high');
+        break;
       default:
-        return issues;
+        break;
     }
+
+    const q = this.searchQuery.trim().toLowerCase();
+    if (!q) return issues;
+    return issues.filter((i) => [
+      i.title,
+      i.description,
+      i.author,
+      i.assignee,
+      ...(i.tags || []),
+    ].some((value) => String(value || '').toLowerCase().includes(q)));
   }
 
   /**
@@ -155,36 +222,48 @@ export class IssuesView extends BaseView {
    * @returns {string}
    */
   renderIssueCard(issue) {
-    const users = [{ value: '', label: 'Unassigned' }, ...this.store.getUsers().map((u) => ({
-      value: u.name,
-      label: `${u.name} — ${u.role}`,
-    }))];
+    const tone = issueTone(issue);
+    const assignee = issue.assignee || 'Unassigned';
+    const primaryBadge = issue.status === 'resolved' ? 'RESOLVED' : (issue.severity || 'medium').toUpperCase();
+    const dateLabel = issue.status === 'resolved' ? 'Resolved On' : 'Due Date';
+    const dateValue = issue.status === 'resolved' ? resolvedDate(issue) : (issue.due || issue.created || '');
+    const extraBadges = issue.status === 'resolved'
+      ? [titleCase(issue.severity || 'medium'), ...(issue.tags || [])]
+      : (issue.tags || []);
+
     return `
-      <div class="card issue-card editable-card" data-edit-card data-kind="issue" data-id="${issue.id}" data-title="${escapeHtml(String(issue.title || '').toLowerCase())}">
-        <div class="issue-card-header">
-          <div class="issue-card-title-row">
-            ${editableTitle('issue', issue.id, 'title', issue.title, 'Issue title')}
-            ${editableSelect('issue', issue.id, 'severity', issue.severity || 'medium', 'Issue priority', ISSUE_SEVERITIES, 'inline-edit-select')}
-            ${editableSelect('issue', issue.id, 'status', issue.status || 'open', 'Issue status', ISSUE_STATUSES, 'inline-edit-select')}
-            ${this.getBadgeHTML(issue.status || 'open', (issue.status || 'open').toUpperCase())}
-            ${(issue.tags || []).map((t) => `<span class="badge badge-muted">${escapeHtml(t)}</span>`).join('')}
+      <article class="issue-card issue-list-card issue-list-card-${tone}" data-title="${escapeHtml(String(issue.title || '').toLowerCase())}">
+        <div class="issue-card-content">
+          <div class="issue-card-main">
+            <div class="issue-card-metadata">
+              <span class="issue-priority-badge issue-priority-badge-${tone}">${escapeHtml(primaryBadge)}</span>
+              ${extraBadges.map((tag) => `<span class="issue-tag-badge">${escapeHtml(tag)}</span>`).join('')}
+              <span class="issue-id">${escapeHtml(issueNumber(issue.id))}</span>
+            </div>
+            <h3 class="issue-display-title ${issue.status === 'resolved' ? 'issue-display-title-resolved' : ''}">${escapeHtml(issue.title || 'Untitled issue')}</h3>
+            <p class="issue-display-description">${escapeHtml(issue.description || 'No description provided.')}</p>
           </div>
-          <div class="inline-card-actions">
-            ${saveStatus('issue', issue.id)}
-            ${issue.status !== 'resolved'
-              ? `<button type="button" class="action-btn resolve-issue-btn" data-issue-id="${issue.id}">Mark resolved</button>`
-              : ''}
+
+          <div class="issue-card-side">
+            <div class="issue-side-column issue-assignee-column">
+              <span class="issue-side-label">Assignee</span>
+              <div class="issue-assignee">
+                <span class="issue-avatar" aria-hidden="true">${escapeHtml(initials(assignee))}</span>
+                <span class="issue-assignee-name">${escapeHtml(assignee)}</span>
+              </div>
+            </div>
+            <div class="issue-side-column issue-date-column">
+              <span class="issue-side-label">${dateLabel}</span>
+              <span class="issue-date-value ${isDueUrgent(issue) ? 'issue-date-urgent' : ''}">${escapeHtml(formatIssueDate(dateValue))}</span>
+            </div>
+            <span class="issue-chevron" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </span>
           </div>
         </div>
-        ${editableTextarea('issue', issue.id, 'description', issue.description || '', 'Issue description', 'inline-edit-description issue-description')}
-        <div class="issue-meta inline-edit-grid">
-          <span>By ${escapeHtml(issue.author || 'Team Member')}</span>
-          <label>Assignee ${editableSelect('issue', issue.id, 'assignee', issue.assignee || '', 'Issue assignee', users, 'inline-edit-select')}</label>
-          <label>Due ${editableInput('issue', issue.id, 'due', issue.due || issue.created || '', 'Issue due date', 'date', 'inline-edit-date')}</label>
-          <span>Sprint ${escapeHtml(issue.sprintId ?? '—')}</span>
-          <span>created ${escapeHtml(issue.created || '—')}</span>
-        </div>
-      </div>
+      </article>
     `;
   }
 
@@ -195,7 +274,7 @@ export class IssuesView extends BaseView {
   renderTaskCard(task) {
     const users = [{ value: '', label: 'Unassigned' }, ...this.store.getUsers().map((u) => ({
       value: u.name,
-      label: `${u.name} — ${u.role}`,
+      label: `${u.name} - ${u.role}`,
     }))];
     const aiTag = (task.tags || []).includes('AI Suggested') || task.source === 'ai'
       ? '<span class="badge badge-muted">AI Suggested</span>'
@@ -213,7 +292,7 @@ export class IssuesView extends BaseView {
         </div>
         <div class="issue-meta inline-edit-grid">
           <label>Owner ${editableSelect('task', task.id, 'owner', task.owner || '', 'Task owner', users, 'inline-edit-select')}</label>
-          <span>Sprint ${escapeHtml(task.sprintId ?? '—')}</span>
+          <span>Sprint ${escapeHtml(task.sprintId ?? '-')}</span>
           <label>Due ${editableInput('task', task.id, 'due', task.due || '', 'Task due date', 'date', 'inline-edit-date')}</label>
         </div>
       </div>
@@ -230,7 +309,7 @@ export class IssuesView extends BaseView {
       <div class="card issue-card report-card editable-card" data-edit-card data-kind="report" data-id="${report.id}">
         <div class="issue-card-header">
           <div class="issue-card-title-row">
-            <h3 class="issue-title">${escapeHtml(userName)} — ${escapeHtml(report.date || '')}</h3>
+            <h3 class="issue-title">${escapeHtml(userName)} - ${escapeHtml(report.date || '')}</h3>
             ${editableSelect('report', report.id, 'status', report.status || 'In Progress', 'Report status', REPORT_STATUSES, 'inline-edit-select')}
             ${editableSelect('report', report.id, 'mood', report.mood || 'Neutral', 'Report mood', REPORT_MOODS, 'inline-edit-select')}
           </div>
@@ -299,16 +378,10 @@ export class IssuesView extends BaseView {
   renderIssuesPanel() {
     const issues = this.getFilteredIssues();
     return `
-      <div class="card issues-filters-card">
-        <div class="search-box issues-search">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="Search issues..." id="issues-search-input">
-        </div>
-        <div class="filter-chips" id="issues-filter-chips">
-          ${['All', 'Open', 'High Priority', 'Assigned to Me', 'Created by Me', 'Resolved'].map((tag) => `
-            <button type="button" class="badge filter-chip ${tag === this.filter ? 'filter-chip-active' : ''}" data-filter="${tag}">${tag}</button>
-          `).join('')}
-        </div>
+      <div class="issues-filter-row" id="issues-filter-chips">
+        ${ISSUE_FILTERS.map((tag) => `
+          <button type="button" class="issues-filter-chip filter-chip ${tag === this.filter ? 'filter-chip-active' : ''}" data-filter="${tag}">${tag}</button>
+        `).join('')}
       </div>
       <div class="issues-list">
         ${issues.length === 0 ? '<p class="empty-hint">No issues match this filter.</p>' : ''}
@@ -322,6 +395,7 @@ export class IssuesView extends BaseView {
    */
   render() {
     const modeNote = this.store.dataModeLabel || '';
+    const activeIssues = this.store.getIssues().filter((issue) => issue.status !== 'resolved').length;
     const tabs = [
       { id: 'issues', label: 'Issues' },
       { id: 'tasks', label: 'Tasks' },
@@ -332,11 +406,31 @@ export class IssuesView extends BaseView {
     return `
       <div class="view-header issues-header">
         <div>
-          <h1 class="view-title">Issues &amp; Reports</h1>
+          <div class="issues-title-row">
+            <h1 class="view-title issues-page-title">Issues &amp; Reports</h1>
+            <span class="issues-active-count"><strong>${activeIssues}</strong> Active</span>
+          </div>
           <p class="view-subtitle">Team issues, check-ins, and activity. ${modeNote}</p>
         </div>
+        <div class="issues-header-actions">
+          <button type="button" class="issues-export-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <path d="M7 10l5 5 5-5" />
+              <path d="M12 15V3" />
+            </svg>
+            Export
+          </button>
+          <button type="button" class="issues-create-btn" id="issues-create-issue">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 5v14" />
+              <path d="M5 12h14" />
+            </svg>
+            Create Issue
+          </button>
+        </div>
       </div>
-      <div class="filter-chips issues-tabs">${tabs}</div>
+      <div class="issues-tabs">${tabs}</div>
       ${this.panel === 'issues' ? this.renderIssuesPanel() : ''}
       ${this.panel === 'tasks' ? this.renderTasksPanel() : ''}
       ${this.panel === 'reports' ? `<div class="reports-list">${this.renderReportsPanel()}</div>` : ''}
@@ -356,15 +450,12 @@ export class IssuesView extends BaseView {
     }
 
     const savedSearch = sessionStorage.getItem('sitrep:search');
-    const search = container.querySelector('#issues-search-input');
-    if (savedSearch && search) {
-      search.value = savedSearch;
+    if (savedSearch) {
+      this.searchQuery = savedSearch;
       sessionStorage.removeItem('sitrep:search');
-      const q = savedSearch.trim().toLowerCase();
-      container.querySelectorAll('.issue-card').forEach((card) => {
-        const title = card.dataset.title || '';
-        card.style.display = !q || title.includes(q) ? '' : 'none';
-      });
+      container.innerHTML = this.render();
+      this.mount(container);
+      return;
     }
 
     container.querySelectorAll('[data-panel]').forEach((btn) => {
@@ -383,23 +474,8 @@ export class IssuesView extends BaseView {
       });
     });
 
-    if (search) {
-      search.addEventListener('input', () => {
-        const q = search.value.trim().toLowerCase();
-        container.querySelectorAll('.issue-card').forEach((card) => {
-          const title = card.dataset.title || '';
-          card.style.display = !q || title.includes(q) ? '' : 'none';
-        });
-      });
-    }
-
-    container.querySelectorAll('.resolve-issue-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = Number(btn.dataset.issueId);
-        await resolveIssueRemote(this.store, id);
-        container.innerHTML = this.render();
-        this.mount(container);
-      });
+    container.querySelector('#issues-create-issue')?.addEventListener('click', () => {
+      document.getElementById('btn-create-issue')?.click();
     });
 
     container.querySelectorAll('.inline-edit').forEach((field) => {
@@ -428,7 +504,6 @@ export class IssuesView extends BaseView {
     try {
       const patch = { [fieldName]: value };
       const numericId = Number(id);
-      if (kind === 'issue') await updateIssueRemote(this.store, numericId, patch);
       if (kind === 'task') await updateInlineTaskRemote(this.store, numericId, patch);
       if (kind === 'report') await updateReportRemote(this.store, numericId, patch);
       if (kind === 'ai') await updateAiLogRemote(this.store, numericId, patch);

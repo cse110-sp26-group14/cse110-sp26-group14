@@ -10,8 +10,8 @@ import { escapeHtml, renderTemplate } from '../../utils/templateEngine.js';
  * @returns {string}
  */
 export function renderTabButton(tab) {
-  const active = tab.active ? 'filter-chip-active' : '';
-  return `<button type="button" class="badge filter-chip ${active}" data-panel="${tab.id}">${tab.label}</button>`;
+  const active = tab.active ? 'issues-tab-active' : '';
+  return `<button type="button" class="issues-tab ${active}" data-panel="${tab.id}">${tab.label}</button>`;
 }
 
 /**
