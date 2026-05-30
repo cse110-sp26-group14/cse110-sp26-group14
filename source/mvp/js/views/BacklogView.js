@@ -419,10 +419,17 @@ export class BacklogView extends BaseView {
       });
     });
 
-    // Row hover effect
+    // Row hover effect + click to open task detail
     container.querySelectorAll('.backlog-task-row').forEach((row) => {
       row.addEventListener('mouseenter', () => { row.style.background = '#f9fafb'; });
       row.addEventListener('mouseleave', () => { row.style.background = ''; });
+      row.addEventListener('click', (e) => {
+        // Don't open if clicking a button inside the row
+        if (e.target.closest('button')) return;
+        const taskId = Number(row.dataset.taskId);
+        window.dispatchEvent(new CustomEvent('sitrep:open-task-detail', { detail: { taskId } }));
+      });
+      row.style.cursor = 'pointer';
     });
   }
 }
