@@ -3,9 +3,9 @@
  * @module services/apiClient
  */
 
-import { appConfig } from '../config/appConfig.js';
+import { appConfig } from "../config/appConfig.js";
 
-const TOKEN_KEY = 'se-sitrep-api-token';
+const TOKEN_KEY = "se-sitrep-api-token";
 
 /**
  * @returns {string|null}
@@ -29,10 +29,10 @@ export function setApiToken(token) {
  * @returns {Promise<Response>}
  */
 async function request(path, init = {}, auth = true) {
-  const base = appConfig.apiBaseUrl.replace(/\/$/, '');
-  const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  const base = appConfig.apiBaseUrl.replace(/\/$/, "");
+  const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
   const headers = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(init.headers || {}),
   };
   if (auth) {
@@ -54,8 +54,8 @@ async function request(path, init = {}, auth = true) {
  * @returns {string}
  */
 export function parseAuthApiError(raw, status) {
-  const trimmed = (raw || '').trim();
-  if (trimmed.startsWith('{')) {
+  const trimmed = (raw || "").trim();
+  if (trimmed.startsWith("{")) {
     try {
       const data = JSON.parse(trimmed);
       if (data.error) return String(data.error);
@@ -72,9 +72,9 @@ export function parseAuthApiError(raw, status) {
       /* ignore */
     }
   }
-  if (status === 401) return 'Invalid email or password.';
-  if (status >= 500) return 'Server error. Please try again later.';
-  return 'Could not reach the server. Check your connection.';
+  if (status === 401) return "Invalid email or password.";
+  if (status >= 500) return "Server error. Please try again later.";
+  return "Could not reach the server. Check your connection.";
 }
 
 /**
@@ -84,17 +84,21 @@ export function parseAuthApiError(raw, status) {
  * @returns {Promise<object>}
  */
 async function postAuthJson(path, body) {
-  const base = appConfig.apiBaseUrl.replace(/\/$/, '');
-  const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  const base = appConfig.apiBaseUrl.replace(/\/$/, "");
+  const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
   let response;
   try {
     response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
   } catch {
-    return { ok: false, error: 'Could not reach the server. Check apiBaseUrl and that the Cloudflare Worker is deployed.' };
+    return {
+      ok: false,
+      error:
+        "Could not reach the server. Check apiBaseUrl and that the Cloudflare Worker is deployed.",
+    };
   }
 
   const text = await response.text();
@@ -123,7 +127,7 @@ async function postAuthJson(path, body) {
  * @returns {Promise<{ ok: boolean, error?: string, user?: object, token?: string }>}
  */
 export async function apiLogin(payload) {
-  return postAuthJson('/api/auth/login', payload);
+  return postAuthJson("/api/auth/login", payload);
 }
 
 /**
@@ -131,12 +135,12 @@ export async function apiLogin(payload) {
  * @returns {Promise<{ ok: boolean, error?: string, user?: object, token?: string }>}
  */
 export async function apiSignUp(payload) {
-  return postAuthJson('/api/auth/signup', payload);
+  return postAuthJson("/api/auth/signup", payload);
 }
 
 export async function apiLogout() {
   try {
-    await request('/api/auth/logout', { method: 'POST' });
+    await request("/api/auth/logout", { method: "POST" });
   } catch {
     /* ignore */
   }
@@ -149,7 +153,7 @@ export async function apiLogout() {
 export async function apiMe() {
   const token = getApiToken();
   if (!token) return null;
-  const res = await request('/api/auth/me');
+  const res = await request("/api/auth/me");
   const data = await res.json();
   return data.user || null;
 }
@@ -158,7 +162,7 @@ export async function apiMe() {
  * @returns {Promise<object[]>}
  */
 export async function fetchIssues() {
-  const res = await request('/api/issues');
+  const res = await request("/api/issues");
   return res.json();
 }
 
@@ -167,8 +171,8 @@ export async function fetchIssues() {
  * @returns {Promise<object>}
  */
 export async function postIssue(issue) {
-  const res = await request('/api/issues', {
-    method: 'POST',
+  const res = await request("/api/issues", {
+    method: "POST",
     body: JSON.stringify(issue),
   });
   return res.json();
@@ -180,7 +184,7 @@ export async function postIssue(issue) {
  */
 export async function patchIssue(id, patch) {
   const res = await request(`/api/issues/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     body: JSON.stringify(patch),
   });
   return res.json();
@@ -192,7 +196,7 @@ export async function patchIssue(id, patch) {
  */
 export async function patchInlineTask(id, patch) {
   const res = await request(`/api/tasks/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     body: JSON.stringify(patch),
   });
   return res.json();
@@ -202,7 +206,7 @@ export async function patchInlineTask(id, patch) {
  * @returns {Promise<object>}
  */
 export async function fetchAppState() {
-  const res = await request('/api/state');
+  const res = await request("/api/state");
   return res.json();
 }
 
@@ -211,8 +215,8 @@ export async function fetchAppState() {
  * @returns {Promise<object>}
  */
 export async function postReport(report) {
-  const res = await request('/api/reports', {
-    method: 'POST',
+  const res = await request("/api/reports", {
+    method: "POST",
     body: JSON.stringify(report),
   });
   return res.json();
@@ -224,7 +228,7 @@ export async function postReport(report) {
  */
 export async function patchReport(id, patch) {
   const res = await request(`/api/reports/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     body: JSON.stringify(patch),
   });
   return res.json();
@@ -234,8 +238,8 @@ export async function patchReport(id, patch) {
  * @param {object} task
  */
 export async function postTask(task) {
-  const res = await request('/api/tasks', {
-    method: 'POST',
+  const res = await request("/api/tasks", {
+    method: "POST",
     body: JSON.stringify(task),
   });
   return res.json();
@@ -245,8 +249,8 @@ export async function postTask(task) {
  * @param {{ name: string, start: string, end: string, status?: string }} sprint
  */
 export async function postSprint(sprint) {
-  const res = await request('/api/sprints', {
-    method: 'POST',
+  const res = await request("/api/sprints", {
+    method: "POST",
     body: JSON.stringify(sprint),
   });
   return res.json();
@@ -256,8 +260,8 @@ export async function postSprint(sprint) {
  * @param {object} meeting
  */
 export async function postMeeting(meeting) {
-  const res = await request('/api/meetings', {
-    method: 'POST',
+  const res = await request("/api/meetings", {
+    method: "POST",
     body: JSON.stringify(meeting),
   });
   return res.json();
@@ -269,7 +273,7 @@ export async function postMeeting(meeting) {
  */
 export async function patchAiLog(id, patch) {
   const res = await request(`/api/ai/logs/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     body: JSON.stringify(patch),
   });
   return res.json();
@@ -279,7 +283,10 @@ export async function patchAiLog(id, patch) {
  * @param {object} payload
  */
 export async function postAiTeamSummary() {
-  const res = await request('/api/ai/team-summary', { method: 'POST', body: '{}' });
+  const res = await request("/api/ai/team-summary", {
+    method: "POST",
+    body: "{}",
+  });
   return res.json();
 }
 
@@ -289,9 +296,13 @@ export async function postAiTeamSummary() {
  * @param {object} [teamContext] Roster, check-ins, availability for assignment
  * @returns {Promise<{ suggestions: object[], tasks: object[], log: object }>}
  */
-export async function postAiSuggestTasks(goals, sprintId = 2, teamContext = null) {
-  const res = await request('/api/ai/suggest-tasks', {
-    method: 'POST',
+export async function postAiSuggestTasks(
+  goals,
+  sprintId = 2,
+  teamContext = null,
+) {
+  const res = await request("/api/ai/suggest-tasks", {
+    method: "POST",
     body: JSON.stringify({ goals, sprintId, teamContext }),
   });
   return res.json();
@@ -301,8 +312,8 @@ export async function postAiSuggestTasks(goals, sprintId = 2, teamContext = null
  * @param {{ title: string, content: string, type?: string }} payload
  */
 export async function postAiLog(payload) {
-  const res = await request('/api/ai/logs', {
-    method: 'POST',
+  const res = await request("/api/ai/logs", {
+    method: "POST",
     body: JSON.stringify(payload),
   });
   return res.json();
@@ -312,8 +323,8 @@ export async function postAiLog(payload) {
  * @param {object} payload
  */
 export async function putAvailability(payload) {
-  const res = await request('/api/availability', {
-    method: 'PUT',
+  const res = await request("/api/availability", {
+    method: "PUT",
     body: JSON.stringify(payload),
   });
   return res.json();
@@ -323,8 +334,8 @@ export async function putAvailability(payload) {
  * @param {{ name?: string, role?: string }} payload
  */
 export async function putUserProfile(payload) {
-  const res = await request('/api/users/me', {
-    method: 'PUT',
+  const res = await request("/api/users/me", {
+    method: "PUT",
     body: JSON.stringify(payload),
   });
   return res.json();
@@ -338,17 +349,27 @@ export async function putUserProfile(payload) {
  * @returns {Promise<object>}
  */
 export async function patchTask(id, patch) {
-  const base = appConfig.apiBaseUrl.replace(/\/$/, '');
+  const base = appConfig.apiBaseUrl.replace(/\/$/, "");
   const url = `${base}/api/tasks/${id}`;
   const token = getApiToken();
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const response = await fetch(url, { method: 'PATCH', headers, body: JSON.stringify(patch) });
+  const response = await fetch(url, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(patch),
+  });
   const text = await response.text();
   let data = {};
-  try { data = JSON.parse(text); } catch { /* ignore */ }
+  try {
+    data = JSON.parse(text);
+  } catch {
+    /* ignore */
+  }
   if (!response.ok) {
-    const err = new Error(`API ${response.status}: ${text || response.statusText}`);
+    const err = new Error(
+      `API ${response.status}: ${text || response.statusText}`,
+    );
     err.status = response.status;
     err.conflict = response.status === 409;
     err.body = data;
@@ -365,7 +386,7 @@ export async function patchTask(id, patch) {
  */
 export async function postSubtask(parentId, subtask) {
   const res = await request(`/api/tasks/${parentId}/subtasks`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(subtask),
   });
   return res.json();
@@ -378,8 +399,8 @@ export async function postSubtask(parentId, subtask) {
  */
 export async function completeSubtask(subtaskId) {
   const res = await request(`/api/subtasks/${subtaskId}/complete`, {
-    method: 'PATCH',
-    body: '{}',
+    method: "PATCH",
+    body: "{}",
   });
   return res.json();
 }
@@ -389,6 +410,38 @@ export async function completeSubtask(subtaskId) {
  * @returns {Promise<object[]>}
  */
 export async function fetchActiveUsers() {
-  const res = await request('/api/active-users');
+  const res = await request("/api/active-users");
+  return res.json();
+}
+
+/**
+ * Fetch current user's weekly availability slots.
+ * @returns {Promise<string[]>} Array of slot keys like "Mon_09:00"
+ */
+export async function fetchWeeklyAvailability() {
+  const res = await request("/api/availability/weekly");
+  const data = await res.json();
+  return data.slots || [];
+}
+
+/**
+ * Save current user's weekly availability slots.
+ * @param {string[]} slots Array of slot keys like "Mon_09:00"
+ * @returns {Promise<object>}
+ */
+export async function putWeeklyAvailability(slots) {
+  const res = await request("/api/availability/weekly", {
+    method: "PUT",
+    body: JSON.stringify({ slots }),
+  });
+  return res.json();
+}
+
+/**
+ * Fetch team heatmap aggregating all users' weekly availability.
+ * @returns {Promise<{ heatmap: object, teamSize: number, users: object[] }>}
+ */
+export async function fetchTeamHeatmap() {
+  const res = await request("/api/availability/team-heatmap");
   return res.json();
 }
