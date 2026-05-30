@@ -38,6 +38,9 @@ export class Store {
    * @param {import('../services/authService.js').AuthUser|null} authUser
    */
   setCurrentAuthUser(authUser) {
+    if (authUser?.id !== this.currentAuthUser?.id) {
+      this.googleEvents = [];
+    }
     this.currentAuthUser = authUser;
   }
 
