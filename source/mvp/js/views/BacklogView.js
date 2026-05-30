@@ -1,5 +1,5 @@
 /**
- * Backlog view — tasks with multi-assign, sub-tasks, live sync indicator.
+ * Backlog view — redesigned UI with avatar assignees, pagination, and new filters.
  * @module views/BacklogView
  */
 
@@ -9,21 +9,46 @@ function esc(s) {
   return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function initials(name) {
+  const parts = (name || '').trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return (parts[0] || '?')[0].toUpperCase();
+}
+
+function avatarColor(name) {
+  const palette = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#14b8a6'];
+  let hash = 0;
+  for (const c of (name || '')) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+  return palette[hash % palette.length];
+}
+
+function avatarHTML(name, size = 28) {
+  const bg = avatarColor(name);
+  return `<span style="
+    display:inline-flex;align-items:center;justify-content:center;
+    width:${size}px;height:${size}px;border-radius:50%;
+    background:${bg};color:#fff;font-size:${Math.round(size * 0.38)}px;
+    font-weight:600;flex-shrink:0;border:2px solid #fff;
+  " title="${esc(name)}">${esc(initials(name))}</span>`;
+}
+
 export class BacklogView extends BaseView {
   constructor(store) {
     super(store);
     this.filter = 'All';
     this.searchQuery = '';
+    this.sprintFilter = '';
+    this.statusFilter = '';
+    this.page = 1;
+    this.pageSize = 7;
   }
 
-  /** Top-level tasks only (no sub-tasks). */
   _rootTasks() {
     return this.store.getState().tasks.filter(
       (t) => !t.parentTaskId && t.parentTaskId !== 0,
     );
   }
 
-  /** Sub-tasks of a given parent id. */
   _subtasksOf(parentId) {
     return this.store.getState().tasks.filter(
       (t) => Number(t.parentTaskId) === Number(parentId),
@@ -32,29 +57,20 @@ export class BacklogView extends BaseView {
 
   getFilteredTasks() {
     const activeId = this.store.getSelectedSprint()?.id;
+    const me = this.store.currentAuthUser?.name;
     let tasks = this._rootTasks();
 
     switch (this.filter) {
+      case 'My Tasks':
+        tasks = tasks.filter((t) =>
+          (t.assignees || []).includes(me) || t.owner === me,
+        );
+        break;
       case 'High Priority':
         tasks = tasks.filter((t) => t.priority === 'critical' || t.priority === 'high');
         break;
-      case 'Unassigned':
-        tasks = tasks.filter((t) => !t.owner && !(t.assignees?.length));
-        break;
-      case 'This Sprint':
-        tasks = tasks.filter((t) => t.sprintId === activeId);
-        break;
-      case 'Future Sprint':
-        tasks = tasks.filter((t) => t.sprintId > activeId);
-        break;
-      case 'AI Suggested':
-        tasks = tasks.filter((t) => (t.tags || []).includes('AI Suggested') || t.source === 'ai');
-        break;
       case 'Blocked':
         tasks = tasks.filter((t) => t.status === 'blocked');
-        break;
-      case 'Completed':
-        tasks = tasks.filter((t) => t.status === 'resolved' || t.status === 'done');
         break;
       case 'Multi-Assigned':
         tasks = tasks.filter((t) => (t.assignees || []).length >= 2);
@@ -69,6 +85,14 @@ export class BacklogView extends BaseView {
         break;
     }
 
+    if (this.sprintFilter) {
+      tasks = tasks.filter((t) => String(t.sprintId) === String(this.sprintFilter));
+    }
+
+    if (this.statusFilter) {
+      tasks = tasks.filter((t) => t.status === this.statusFilter);
+    }
+
     const q = this.searchQuery.trim().toLowerCase();
     if (q) {
       tasks = tasks.filter(
@@ -81,74 +105,180 @@ export class BacklogView extends BaseView {
     return tasks;
   }
 
-  _assigneeBadges(task) {
+  _priorityBadge(priority) {
+    const map = {
+      critical: { bg: '#fee2e2', color: '#dc2626', label: 'Critical' },
+      high:     { bg: '#fef9c3', color: '#ca8a04', label: 'High' },
+      medium:   { bg: '#dbeafe', color: '#2563eb', label: 'Medium' },
+      low:      { bg: '#f3f4f6', color: '#6b7280', label: 'Low' },
+    };
+    const s = map[priority] || { bg: '#f3f4f6', color: '#6b7280', label: priority || '—' };
+    return `<span style="
+      display:inline-flex;align-items:center;gap:0.3rem;
+      background:${s.bg};color:${s.color};
+      font-size:0.75rem;font-weight:600;padding:0.2rem 0.6rem;
+      border-radius:999px;white-space:nowrap;
+    ">${s.label}</span>`;
+  }
+
+  _statusBadge(status) {
+    const map = {
+      blocked:  { bg: '#fee2e2', color: '#dc2626', label: 'Blocked' },
+      progress: { bg: '#ede9fe', color: '#7c3aed', label: 'In Progress' },
+      open:     { bg: '#f3f4f6', color: '#374151', label: 'Open' },
+      resolved: { bg: '#dcfce7', color: '#15803d', label: 'Resolved' },
+      done:     { bg: '#dcfce7', color: '#15803d', label: 'Done' },
+      pending:  { bg: '#fef3c7', color: '#b45309', label: 'Pending' },
+    };
+    const s = map[status] || { bg: '#f3f4f6', color: '#374151', label: status || '—' };
+    return `<span style="
+      background:${s.bg};color:${s.color};
+      font-size:0.75rem;font-weight:600;padding:0.2rem 0.65rem;
+      border-radius:6px;white-space:nowrap;
+    ">${s.label}</span>`;
+  }
+
+  _assigneeCell(task) {
     const assignees = task.assignees?.length ? task.assignees : (task.owner ? [task.owner] : []);
     if (!assignees.length) return '<span style="color:var(--text-muted);">—</span>';
-    return assignees
-      .map((a) => `<span class="badge" style="background:var(--primary-light);color:var(--primary);font-size:0.72rem;margin-right:0.2rem;">${esc(a)}</span>`)
-      .join('');
+    const primary = assignees[0];
+    const extra = assignees.length - 1;
+    return `
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        ${avatarHTML(primary)}
+        <span style="font-size:0.875rem;font-weight:500;">${esc(primary)}</span>
+        ${extra > 0 ? `<span style="font-size:0.75rem;color:var(--text-muted);">+${extra}</span>` : ''}
+      </div>`;
   }
 
   render() {
-    const tasks = this.getFilteredTasks();
-    const filters = [
-      'All', 'High Priority', 'Unassigned', 'This Sprint', 'Future Sprint',
-      'AI Suggested', 'Blocked', 'Completed', 'Multi-Assigned', 'Has Sub-Tasks', 'Needs Review',
-    ];
-    const onlineUsers = this.store.getUsers().filter((u) => u.isOnline).map((u) => u.name);
+    const allFiltered = this.getFilteredTasks().slice().reverse();
+    const total = allFiltered.length;
+    const totalPages = Math.max(1, Math.ceil(total / this.pageSize));
+    if (this.page > totalPages) this.page = totalPages;
+    const start = (this.page - 1) * this.pageSize;
+    const tasks = allFiltered.slice(start, start + this.pageSize);
+
+    const onlineUsers = this.store.getUsers().filter((u) => u.isOnline);
+    const sprints = this.store.getState().sprints || [];
+    const statuses = ['open', 'progress', 'blocked', 'resolved'];
+
+    const chipFilters = ['All', 'My Tasks', 'High Priority', 'Blocked'];
+
+    const onlineAvatars = onlineUsers.slice(0, 4).map((u) => avatarHTML(u.name, 26)).join('');
+    const extraOnline = onlineUsers.length > 4 ? `<span style="font-size:0.75rem;color:var(--text-muted);">+${onlineUsers.length - 4}</span>` : '';
 
     return `
-      <div class="view-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;">
         <div>
-          <h1 class="view-title">
-            Backlog
-            ${onlineUsers.length ? `<span style="font-size:0.8rem;color:var(--success);margin-left:0.75rem;">● ${onlineUsers.length} online: ${onlineUsers.join(', ')}</span>` : ''}
-          </h1>
-          <p class="view-subtitle">
-            ${tasks.length} task${tasks.length !== 1 ? 's' : ''} shown · Live synced every 10s
-          </p>
+          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <h1 class="view-title" style="font-size:1.75rem;font-weight:700;margin:0;">Backlog</h1>
+            ${onlineUsers.length ? `
+              <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#dcfce7;color:#15803d;
+                font-size:0.78rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:999px;">
+                ● ${onlineUsers.length} online
+              </span>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-top:0.4rem;flex-wrap:wrap;">
+            <span style="font-size:0.85rem;color:var(--text-muted);">${total} task${total !== 1 ? 's' : ''} shown · Live synced every 10s</span>
+            ${onlineUsers.length ? `<div style="display:flex;align-items:center;gap:2px;">${onlineAvatars}${extraOnline}</div>` : ''}
+          </div>
         </div>
-        <button type="button" class="primary-btn" id="backlog-add-task">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <button type="button" id="backlog-add-task" style="
+          display:inline-flex;align-items:center;gap:0.4rem;
+          background:#4f46e5;color:#fff;border:none;cursor:pointer;
+          padding:0.6rem 1.2rem;border-radius:8px;font-size:0.9rem;font-weight:600;
+          white-space:nowrap;
+        ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
           Add Task
         </button>
       </div>
 
-      <div class="card" style="padding: 0;">
-        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; gap: 1rem; align-items: center;">
-          <div class="search-box" style="flex: 1; border: 1px solid var(--border);">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="backlog-search" placeholder="Search tasks…" value="${esc(this.searchQuery)}" />
+      <div class="card" style="padding:0;border-radius:12px;overflow:hidden;">
+
+        <!-- Search + Filters -->
+        <div style="padding:1rem 1.25rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);">
+          <!-- Search -->
+          <div style="display:flex;align-items:center;gap:0.5rem;border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.75rem;flex:1;min-width:200px;background:#fff;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="backlog-search" placeholder="Search tasks..." value="${esc(this.searchQuery)}"
+              style="border:none;outline:none;font-size:0.875rem;width:100%;background:transparent;" />
           </div>
-        </div>
-        <div style="padding: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;" id="backlog-filters">
-          ${filters.map((tag) => `
-            <button type="button" class="badge backlog-filter-chip ${tag === this.filter ? 'filter-chip-active' : ''}" data-filter="${esc(tag)}"
-              style="cursor:pointer;border:none;${tag === this.filter ? 'background:var(--primary);color:white;' : 'background:var(--primary-light);color:var(--primary);'}">
-              ${esc(tag)}
-            </button>
+
+          <!-- Chip filters -->
+          ${chipFilters.map((f) => `
+            <button type="button" class="backlog-filter-chip" data-filter="${esc(f)}" style="
+              border:none;cursor:pointer;padding:0.4rem 0.9rem;border-radius:999px;
+              font-size:0.82rem;font-weight:500;white-space:nowrap;
+              ${f === this.filter
+                ? 'background:#4f46e5;color:#fff;'
+                : 'background:#f3f4f6;color:#374151;'}
+            ">${esc(f)}</button>
           `).join('')}
+
+          <!-- Sprint dropdown -->
+          <select id="backlog-sprint-filter" style="
+            border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.75rem;
+            font-size:0.82rem;color:#374151;background:#fff;cursor:pointer;outline:none;
+          ">
+            <option value="">Sprint</option>
+            ${sprints.map((s) => `<option value="${s.id}" ${String(this.sprintFilter) === String(s.id) ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
+          </select>
+
+          <!-- Status dropdown -->
+          <select id="backlog-status-filter" style="
+            border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.75rem;
+            font-size:0.82rem;color:#374151;background:#fff;cursor:pointer;outline:none;
+          ">
+            <option value="">Status</option>
+            ${statuses.map((s) => `<option value="${s}" ${this.statusFilter === s ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
+          </select>
         </div>
-        <div class="table-scroll">
-          <table>
+
+        <!-- Table -->
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;">
             <thead>
-              <tr>
-                <th style="width:28px;"></th>
-                <th>Task</th>
-                <th>Assignees</th>
-                <th>Sprint</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Due</th>
-                <th style="width:100px;"></th>
+              <tr style="background:#f9fafb;border-bottom:1px solid var(--border);">
+                <th style="width:32px;padding:0.75rem 0.5rem;"></th>
+                <th style="text-align:left;padding:0.75rem 1rem;font-size:0.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Task</th>
+                <th style="text-align:left;padding:0.75rem 1rem;font-size:0.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Assignee</th>
+                <th style="text-align:left;padding:0.75rem 1rem;font-size:0.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Sprint</th>
+                <th style="text-align:left;padding:0.75rem 1rem;font-size:0.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Priority</th>
+                <th style="text-align:left;padding:0.75rem 1rem;font-size:0.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Status</th>
+                <th style="text-align:left;padding:0.75rem 1rem;font-size:0.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Due Date</th>
               </tr>
             </thead>
             <tbody id="backlog-tbody">
               ${tasks.length === 0
-                ? '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2rem;">No tasks match this filter.</td></tr>'
+                ? `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:3rem;">No tasks match this filter.</td></tr>`
                 : tasks.map((task) => this._taskRow(task)).join('')}
             </tbody>
           </table>
+        </div>
+
+        <!-- Pagination -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.875rem 1.25rem;border-top:1px solid var(--border);">
+          <span style="font-size:0.82rem;color:#6b7280;">
+            Showing ${total === 0 ? 0 : start + 1} to ${Math.min(start + this.pageSize, total)} of ${total} result${total !== 1 ? 's' : ''}
+          </span>
+          <div style="display:flex;gap:0.5rem;">
+            <button type="button" id="backlog-prev" ${this.page <= 1 ? 'disabled' : ''} style="
+              padding:0.35rem 0.85rem;border-radius:6px;border:1px solid var(--border);
+              background:#fff;font-size:0.82rem;cursor:${this.page <= 1 ? 'default' : 'pointer'};
+              color:${this.page <= 1 ? '#d1d5db' : '#374151'};
+            ">Previous</button>
+            <button type="button" id="backlog-next" ${this.page >= totalPages ? 'disabled' : ''} style="
+              padding:0.35rem 0.85rem;border-radius:6px;border:1px solid var(--border);
+              background:#fff;font-size:0.82rem;cursor:${this.page >= totalPages ? 'default' : 'pointer'};
+              color:${this.page >= totalPages ? '#d1d5db' : '#374151'};
+            ">Next</button>
+          </div>
         </div>
       </div>
     `;
@@ -160,32 +290,30 @@ export class BacklogView extends BaseView {
     const assignees = task.assignees?.length ? task.assignees : (task.owner ? [task.owner] : []);
     const needsReview = task.subtaskReviewStatus === 'pending';
     const doneCount = subs.filter((s) => s.status === 'resolved').length;
+    const sprintName = this.store.getState().sprints?.find((s) => s.id === task.sprintId)?.name || `Sprint ${task.sprintId}`;
 
     return `
-      <tr data-task-id="${task.id}">
-        <td>
+      <tr data-task-id="${task.id}" style="border-bottom:1px solid #f3f4f6;" class="backlog-task-row">
+        <td style="padding:0.875rem 0.5rem;color:#d1d5db;text-align:center;font-size:1rem;">
           ${hasSubs
-            ? `<button type="button" class="action-btn backlog-toggle-sub" data-parent="${task.id}"
-                style="padding:0.15rem 0.4rem;font-size:0.7rem;border:1px solid var(--border);"
-                aria-expanded="false">▶</button>`
-            : ''}
+            ? `<button type="button" class="backlog-toggle-sub" data-parent="${task.id}" aria-expanded="false"
+                style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:0.8rem;padding:0.1rem 0.3rem;">▶</button>`
+            : '⠿'}
         </td>
-        <td style="font-weight:500;">
-          ${esc(task.title)}
-          ${needsReview ? '<span class="badge badge-warning" style="margin-left:0.5rem;font-size:0.7rem;">Needs Review</span>' : ''}
-          ${hasSubs ? `<span style="font-size:0.7rem;color:var(--text-muted);margin-left:0.4rem;">(${doneCount}/${subs.length} done)</span>` : ''}
-        </td>
-        <td>${this._assigneeBadges(task)}</td>
-        <td>Sprint ${esc(task.sprintId)}</td>
-        <td>${this.getBadgeHTML(task.priority, (task.priority || '').toUpperCase())}</td>
-        <td>${this.getBadgeHTML(task.status, (task.status || '').toUpperCase())}</td>
-        <td style="color:var(--text-muted);">${esc(task.due || '—')}</td>
-        <td style="text-align:right;white-space:nowrap;">
+        <td style="padding:0.875rem 1rem;">
+          <span style="font-size:0.9rem;font-weight:500;color:#111827;">${esc(task.title)}</span>
+          ${needsReview ? '<span style="margin-left:0.5rem;background:#fef3c7;color:#b45309;font-size:0.7rem;font-weight:600;padding:0.1rem 0.4rem;border-radius:4px;">Needs Review</span>' : ''}
+          ${hasSubs ? `<span style="font-size:0.72rem;color:#9ca3af;margin-left:0.4rem;">(${doneCount}/${subs.length} done)</span>` : ''}
           ${assignees.length >= 2 && !hasSubs
-            ? `<button type="button" class="action-btn backlog-split-btn" data-task-id="${task.id}"
-                style="font-size:0.7rem;padding:0.2rem 0.5rem;margin-right:0.25rem;" title="Split into sub-tasks">⚡ Split</button>`
+            ? `<button type="button" class="backlog-split-btn" data-task-id="${task.id}"
+                style="margin-left:0.5rem;font-size:0.7rem;padding:0.1rem 0.4rem;background:#ede9fe;color:#7c3aed;border:none;border-radius:4px;cursor:pointer;">⚡ Split</button>`
             : ''}
         </td>
+        <td style="padding:0.875rem 1rem;">${this._assigneeCell(task)}</td>
+        <td style="padding:0.875rem 1rem;font-size:0.875rem;color:#6b7280;">${esc(sprintName)}</td>
+        <td style="padding:0.875rem 1rem;">${this._priorityBadge(task.priority)}</td>
+        <td style="padding:0.875rem 1rem;">${this._statusBadge(task.status)}</td>
+        <td style="padding:0.875rem 1rem;font-size:0.875rem;color:#6b7280;">${esc(task.due || '—')}</td>
       </tr>
       ${hasSubs ? subs.map((sub) => this._subtaskRow(sub, task.id)).join('') : ''}
     `;
@@ -195,21 +323,24 @@ export class BacklogView extends BaseView {
     const subAssignees = sub.assignees?.length ? sub.assignees : (sub.owner ? [sub.owner] : []);
     const done = sub.status === 'resolved';
     return `
-      <tr class="backlog-subtask-row" data-subtask-parent="${parentId}" style="display:none;background:var(--bg-main);">
-        <td></td>
-        <td style="padding-left:2rem;font-size:0.875rem;color:var(--text-muted);">
+      <tr class="backlog-subtask-row" data-subtask-parent="${parentId}"
+        style="display:none;background:#fafafa;border-bottom:1px solid #f3f4f6;">
+        <td style="padding:0.6rem 0.5rem;"></td>
+        <td style="padding:0.6rem 1rem;padding-left:2.5rem;font-size:0.85rem;color:#6b7280;">
           ↳ ${esc(sub.title)}
         </td>
-        <td>
-          ${subAssignees.map((a) => `<span class="badge" style="background:#f0fdf4;color:#15803d;font-size:0.7rem;">${esc(a)}</span>`).join('')}
+        <td style="padding:0.6rem 1rem;">
+          <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
+            ${subAssignees.map((a) => `<div style="display:flex;align-items:center;gap:0.3rem;">${avatarHTML(a, 22)}<span style="font-size:0.8rem;">${esc(a)}</span></div>`).join('')}
+          </div>
         </td>
-        <td colspan="3">${this.getBadgeHTML(sub.status, (sub.status || '').toUpperCase())}</td>
-        <td style="color:var(--text-muted);font-size:0.8rem;">${esc(sub.due || '—')}</td>
-        <td style="text-align:right;">
+        <td colspan="2" style="padding:0.6rem 1rem;">${this._statusBadge(sub.status)}</td>
+        <td style="padding:0.6rem 1rem;font-size:0.8rem;color:#9ca3af;">${esc(sub.due || '—')}</td>
+        <td style="padding:0.6rem 1rem;text-align:right;">
           ${done
-            ? '<span style="font-size:0.75rem;color:var(--success);">✓ Done</span>'
-            : `<button type="button" class="action-btn backlog-complete-sub" data-subtask-id="${sub.id}"
-                style="font-size:0.7rem;padding:0.2rem 0.5rem;background:var(--success-light);color:var(--success);">✓ Complete</button>`}
+            ? '<span style="font-size:0.75rem;color:#15803d;font-weight:500;">✓ Done</span>'
+            : `<button type="button" class="backlog-complete-sub" data-subtask-id="${sub.id}"
+                style="font-size:0.75rem;padding:0.2rem 0.6rem;background:#dcfce7;color:#15803d;border:none;border-radius:6px;cursor:pointer;font-weight:500;">✓ Complete</button>`}
         </td>
       </tr>
     `;
@@ -227,14 +358,37 @@ export class BacklogView extends BaseView {
 
     container.querySelector('#backlog-search')?.addEventListener('input', (e) => {
       this.searchQuery = e.target.value;
+      this.page = 1;
       rerender();
     });
 
     container.querySelectorAll('.backlog-filter-chip').forEach((chip) => {
       chip.addEventListener('click', () => {
         this.filter = chip.dataset.filter || 'All';
+        this.page = 1;
         rerender();
       });
+    });
+
+    container.querySelector('#backlog-sprint-filter')?.addEventListener('change', (e) => {
+      this.sprintFilter = e.target.value;
+      this.page = 1;
+      rerender();
+    });
+
+    container.querySelector('#backlog-status-filter')?.addEventListener('change', (e) => {
+      this.statusFilter = e.target.value;
+      this.page = 1;
+      rerender();
+    });
+
+    container.querySelector('#backlog-prev')?.addEventListener('click', () => {
+      if (this.page > 1) { this.page--; rerender(); }
+    });
+
+    container.querySelector('#backlog-next')?.addEventListener('click', () => {
+      const total = this.getFilteredTasks().length;
+      if (this.page < Math.ceil(total / this.pageSize)) { this.page++; rerender(); }
     });
 
     // Expand/collapse sub-tasks
@@ -263,6 +417,12 @@ export class BacklogView extends BaseView {
         const taskId = Number(btn.dataset.taskId);
         window.dispatchEvent(new CustomEvent('sitrep:split-task', { detail: { taskId } }));
       });
+    });
+
+    // Row hover effect
+    container.querySelectorAll('.backlog-task-row').forEach((row) => {
+      row.addEventListener('mouseenter', () => { row.style.background = '#f9fafb'; });
+      row.addEventListener('mouseleave', () => { row.style.background = ''; });
     });
   }
 }

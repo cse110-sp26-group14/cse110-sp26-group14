@@ -11,7 +11,7 @@ import { Modal } from './components/Modal.js';
 import { DailyCheckInForm } from './components/forms/DailyCheckInForm.js';
 import { IssueForm } from './components/forms/IssueForm.js';
 import { AvailabilityForm } from './components/forms/AvailabilityForm.js';
-import { TaskForm } from './components/forms/TaskForm.js';
+import { TaskForm, mountTaskForm } from './components/forms/TaskForm.js';
 import { NoteForm } from './components/forms/NoteForm.js';
 import { MeetingForm } from './components/forms/MeetingForm.js';
 import { AiGoalsForm } from './components/forms/AiGoalsForm.js';
@@ -298,14 +298,18 @@ function wireTaskModal() {
   if (window.__sitrepTaskModalWired) return;
   window.__sitrepTaskModalWired = true;
   window.addEventListener('sitrep:open-task-modal', () => {
-    modal.show('Add Task', TaskForm(store));
+    modal.show('Add New Task', TaskForm(store));
+    const modalContainer = document.querySelector('.modal-body') || document.querySelector('#modal-content') || document.body;
+    mountTaskForm(modalContainer, store, () => modal.close());
     bindModalForm('task-form', async (formData) => {
       const assignees = formData.getAll('assignees').filter(Boolean);
-      const sprintId = store.getSelectedSprint()?.id ?? 2;
+      const sprintId = Number(formData.get('sprintId')) || store.getSelectedSprint()?.id || 2;
       const task = await createTaskRemote(store, {
         title: formData.get('title'),
         priority: formData.get('priority'),
         due: formData.get('due'),
+        description: formData.get('description') || '',
+        type: formData.get('type') || 'feature',
         assignees,
         owner: assignees[0] || store.currentAuthUser?.name || 'Team Member',
         sprintId,
