@@ -205,33 +205,26 @@ export class CalendarView extends BaseView {
 
     container.querySelector('#btn-connect-gcal')?.addEventListener('click', async () => {
       const btn = container.querySelector('#btn-connect-gcal');
+      if (btn) btn.disabled = true;
       try {
-        showToast('Connecting to Google Calendar…', 'info', 2200);
-        const events = await connectAndFetchGoogleEvents();
-        this.store.setGoogleEvents(events);
-        rerender();
-        showToast(`Loaded ${events.length} upcoming event(s).`, 'success', 4200);
-      } catch (err) {
-        showToast(err.message || 'Google Calendar connection failed.', 'error', 6000);
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-
-      container.querySelector('#btn-sync-gcal')?.addEventListener('click', async () => {
-        const btnSync = container.querySelector('#btn-sync-gcal');
-        if (btnSync) btnSync.disabled = true;
-        try {
+        if (isGoogleCalendarConnected()) {
           showToast('Syncing with Google Calendar…', 'info', 2200);
           const events = await listUpcomingEvents(15);
           this.store.setGoogleEvents(events);
           rerender();
           showToast(`Synced ${events.length} upcoming event(s).`, 'success', 4200);
-        } catch (err) {
-          showToast(err.message || 'Google Calendar sync failed.', 'error', 6000);
-        } finally {
-          if (btnSync) btnSync.disabled = false;
+        } else {
+          showToast('Connecting to Google Calendar…', 'info', 2200);
+          const events = await connectAndFetchGoogleEvents();
+          this.store.setGoogleEvents(events);
+          rerender();
+          showToast(`Loaded ${events.length} upcoming event(s).`, 'success', 4200);
         }
-      });
+      } catch (err) {
+        showToast(err.message || 'Google Calendar connection failed.', 'error', 6000);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     });
 
     container.querySelectorAll('[data-cal-date]').forEach((btn) => {

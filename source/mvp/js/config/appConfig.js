@@ -19,12 +19,14 @@ const defaults = {
  * @returns {typeof defaults}
  */
 function readConfig() {
-  return {
-    ...defaults,
-    ...(typeof window !== 'undefined' && window.SITREP_CONFIG
-      ? window.SITREP_CONFIG
-      : {}),
-  };
+  const result = { ...defaults };
+  const overrides = typeof window !== 'undefined' && window.SITREP_CONFIG ? window.SITREP_CONFIG : {};
+  for (const [k, v] of Object.entries(overrides)) {
+    if (v !== '' && v !== null && v !== undefined) {
+      result[k] = v;
+    }
+  }
+  return result;
 }
 
 /** @type {typeof defaults} */
