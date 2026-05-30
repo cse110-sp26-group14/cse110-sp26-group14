@@ -190,7 +190,7 @@ export async function patchIssue(id, patch) {
  * @param {number} id
  * @param {object} patch
  */
-export async function patchTask(id, patch) {
+export async function patchInlineTask(id, patch) {
   const res = await request(`/api/tasks/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(patch),

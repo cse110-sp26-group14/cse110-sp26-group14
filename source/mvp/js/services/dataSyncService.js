@@ -12,7 +12,7 @@ import {
   patchIssue,
   patchReport,
   postTask,
-  patchTask,
+  patchInlineTask,
   postSprint,
   postMeeting,
   postAiLog,
@@ -196,7 +196,7 @@ export async function updateTaskRemote(store, taskId, patch) {
   if (!useRemoteData()) {
     return store.updateTask(taskId, patch);
   }
-  const updated = await patchTask(taskId, patch);
+  const updated = await patchInlineTask(taskId, patch);
   return store.updateTask(taskId, updated);
 }
 
