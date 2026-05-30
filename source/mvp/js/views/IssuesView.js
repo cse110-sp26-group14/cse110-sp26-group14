@@ -9,7 +9,7 @@ import {
   updateAiLogRemote,
   updateIssueRemote,
   updateReportRemote,
-  updateTaskRemote,
+  updateInlineTaskRemote,
 } from '../services/dataSyncService.js';
 import { buildActivityTimeline } from '../utils/activityTimeline.js';
 import { renderTabButton } from './renderers/issuesRenderer.js';
@@ -429,7 +429,7 @@ export class IssuesView extends BaseView {
       const patch = { [fieldName]: value };
       const numericId = Number(id);
       if (kind === 'issue') await updateIssueRemote(this.store, numericId, patch);
-      if (kind === 'task') await updateTaskRemote(this.store, numericId, patch);
+      if (kind === 'task') await updateInlineTaskRemote(this.store, numericId, patch);
       if (kind === 'report') await updateReportRemote(this.store, numericId, patch);
       if (kind === 'ai') await updateAiLogRemote(this.store, numericId, patch);
       field.dataset.original = value;

@@ -192,7 +192,7 @@ export async function createTaskRemote(store, taskInput, opts = {}) {
  * @param {object} patch
  * @returns {Promise<object|null>}
  */
-export async function updateTaskRemote(store, taskId, patch) {
+export async function updateInlineTaskRemote(store, taskId, patch) {
   if (!useRemoteData()) {
     return store.updateTask(taskId, patch);
   }
