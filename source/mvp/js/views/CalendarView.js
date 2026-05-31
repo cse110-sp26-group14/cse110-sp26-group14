@@ -36,6 +36,8 @@ import {
  */
 export class CalendarView extends BaseView {
   /**
+   * Initializes the selected date to today and the visible month to the
+   * selected sprint's start month (falling back to the current month).
    * @param {import('../core/store.js').Store} store
    */
   constructor(store) {
@@ -74,6 +76,11 @@ export class CalendarView extends BaseView {
   }
 
   /**
+   * Renders the calendar sidebar body for the selected day: meetings (including
+   * Google events), tasks due, any undated sprint tasks, and per-user team
+   * check-ins.
+   * @param {object} selected
+   * @param {object} dayContext
    * @returns {string}
    */
   renderSidebarBody(selected, dayContext) {
@@ -136,6 +143,8 @@ export class CalendarView extends BaseView {
   }
 
   /**
+   * Renders the full calendar view: the month grid (with per-day event chips),
+   * the Google Calendar toolbar, and the sidebar for the selected day.
    * @returns {string} HTML for route mount
    */
   render() {

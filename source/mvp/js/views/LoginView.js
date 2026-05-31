@@ -4,6 +4,7 @@
  */
 
 /**
+ * Renders the authentication screen markup with login and sign-up tabs/forms.
  * @returns {string} HTML for auth UI
  */
 export function renderLoginPage() {
@@ -81,6 +82,8 @@ export function mountLoginPage(root, handlers) {
   });
 
   /**
+   * Displays an auth error message, making the error element visible and
+   * scrolling it into view.
    * @param {string} message
    */
   function showAuthError(message) {

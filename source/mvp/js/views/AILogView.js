@@ -7,7 +7,18 @@ import { BaseView } from './BaseView.js';
 import { escapeHtml } from '../utils/templateEngine.js';
 import { updateAiLogStatusRemote } from '../services/dataSyncService.js';
 
+/**
+ * View for the AI action log: lists log entries with search and type filters,
+ * shows details for the selected entry, and supports approving pending
+ * suggestion logs.
+ * @extends BaseView
+ */
 export class AILogView extends BaseView {
+  /**
+   * Initializes the view's search query, type filter, and the initially
+   * selected log (the first available log, if any).
+   * @param {import('../core/store.js').Store} store
+   */
   constructor(store) {
     super(store);
     this.searchQuery = '';
@@ -16,6 +27,11 @@ export class AILogView extends BaseView {
     this.selectedLogId = logs[0]?.id ?? null;
   }
 
+  /**
+   * Returns the AI logs filtered by the current type filter and (case-insensitive)
+   * search query against title and content.
+   * @returns {object[]}
+   */
   getFilteredLogs() {
     let logs = this.store.getAiLogs();
     if (this.typeFilter !== 'All') {
@@ -32,6 +48,13 @@ export class AILogView extends BaseView {
     return logs;
   }
 
+  /**
+   * Renders the suggestion-specific detail block for a log's details object,
+   * including AI source, parse status, input goals, the suggested tasks, and an
+   * optional raw model-response preview.
+   * @param {object} details
+   * @returns {string} HTML markup
+   */
   renderSuggestionDetails(details) {
     const parseFailed = Boolean(details.parseFailed);
     const suggestions = details.suggestions || [];
@@ -76,6 +99,13 @@ export class AILogView extends BaseView {
     `;
   }
 
+  /**
+   * Renders the detail panel for a selected log entry (or a placeholder when
+   * none is selected), including metadata, any suggestion block, and a
+   * "Mark as reviewed" button for pending suggestions.
+   * @param {object|null} log
+   * @returns {string} HTML markup
+   */
   renderDetail(log) {
     if (!log) {
       return '<p style="font-size: 0.875rem; color: var(--text-muted);">Select a log entry to view details.</p>';
@@ -116,6 +146,11 @@ export class AILogView extends BaseView {
     `;
   }
 
+  /**
+   * Renders the full AI Log view: search/filter controls, the list of filtered
+   * log cards, and the detail panel for the selected entry.
+   * @returns {string} HTML markup
+   */
   render() {
     const logs = this.getFilteredLogs();
     const types = ['All', ...new Set(this.store.getAiLogs().map((l) => l.type).filter(Boolean))];
@@ -169,6 +204,11 @@ export class AILogView extends BaseView {
     `;
   }
 
+  /**
+   * Wires the view's interactivity after render: search input, type filter,
+   * log-card selection, and the approve button (each re-rendering the view).
+   * @param {HTMLElement} container
+   */
   mount(container) {
     const rerender = () => {
       container.innerHTML = this.render();

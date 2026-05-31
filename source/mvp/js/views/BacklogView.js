@@ -5,16 +5,32 @@
 
 import { BaseView } from './BaseView.js';
 
+/**
+ * Escapes a value for safe insertion into HTML by replacing `&`, `<`, `>`, and `"`.
+ * @param {*} s - Any value; coerced to a string (nullish becomes an empty string).
+ * @returns {string} The HTML-escaped string.
+ */
 function esc(s) {
   return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/**
+ * Derives uppercase initials from a name: first + last initial when two or more
+ * name parts are present, otherwise the first character of the only part.
+ * @param {string} name - The full name to derive initials from.
+ * @returns {string} The uppercase initials, or `'?'` when no name is given.
+ */
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   return (parts[0] || '?')[0].toUpperCase();
 }
 
+/**
+ * Picks a stable avatar color for a name by hashing its characters into a fixed palette.
+ * @param {string} name - The name used to deterministically select a color.
+ * @returns {string} A hex color string from the palette.
+ */
 function avatarColor(name) {
   const palette = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#14b8a6'];
   let hash = 0;
@@ -22,6 +38,13 @@ function avatarColor(name) {
   return palette[hash % palette.length];
 }
 
+/**
+ * Builds a circular avatar span showing a name's initials on a stable
+ * background color.
+ * @param {string} name - The name whose initials and color the avatar shows.
+ * @param {number} [size] - The avatar diameter in pixels.
+ * @returns {string} HTML markup for the avatar span.
+ */
 function avatarHTML(name, size = 28) {
   const bg = avatarColor(name);
   return `<span style="
@@ -32,7 +55,17 @@ function avatarHTML(name, size = 28) {
   " title="${esc(name)}">${esc(initials(name))}</span>`;
 }
 
+/**
+ * Backlog view: a filterable, searchable, paginated task table with avatar
+ * assignees, expandable sub-tasks, and task split/complete/detail actions.
+ * @extends BaseView
+ */
 export class BacklogView extends BaseView {
+  /**
+   * Initializes the view's filter, search, sprint/status filters, and
+   * pagination state.
+   * @param {import('../core/store.js').Store} store
+   */
   constructor(store) {
     super(store);
     this.filter = 'All';
@@ -43,18 +76,32 @@ export class BacklogView extends BaseView {
     this.pageSize = 7;
   }
 
+  /**
+   * Returns the top-level (non-sub-task) tasks from the store.
+   * @returns {object[]}
+   */
   _rootTasks() {
     return this.store.getState().tasks.filter(
       (t) => !t.parentTaskId && t.parentTaskId !== 0,
     );
   }
 
+  /**
+   * Returns the sub-tasks belonging to the given parent task id.
+   * @param {number} parentId
+   * @returns {object[]}
+   */
   _subtasksOf(parentId) {
     return this.store.getState().tasks.filter(
       (t) => Number(t.parentTaskId) === Number(parentId),
     );
   }
 
+  /**
+   * Returns the root tasks narrowed by the active chip filter, sprint filter,
+   * status filter, and search query.
+   * @returns {object[]}
+   */
   getFilteredTasks() {
     const activeId = this.store.getSelectedSprint()?.id;
     const me = this.store.currentAuthUser?.name;
@@ -105,6 +152,11 @@ export class BacklogView extends BaseView {
     return tasks;
   }
 
+  /**
+   * Renders a colored priority badge for a task's priority value.
+   * @param {string} priority
+   * @returns {string} HTML markup
+   */
   _priorityBadge(priority) {
     const map = {
       critical: { bg: '#fee2e2', color: '#dc2626', label: 'Critical' },
@@ -121,6 +173,11 @@ export class BacklogView extends BaseView {
     ">${s.label}</span>`;
   }
 
+  /**
+   * Renders a colored status badge for a task's status value.
+   * @param {string} status
+   * @returns {string} HTML markup
+   */
   _statusBadge(status) {
     const map = {
       blocked:  { bg: '#fee2e2', color: '#dc2626', label: 'Blocked' },
@@ -138,6 +195,12 @@ export class BacklogView extends BaseView {
     ">${s.label}</span>`;
   }
 
+  /**
+   * Renders the assignee cell for a task, showing the primary assignee's avatar
+   * and name plus a "+N" overflow count, or a dash when unassigned.
+   * @param {object} task
+   * @returns {string} HTML markup
+   */
   _assigneeCell(task) {
     const assignees = task.assignees?.length ? task.assignees : (task.owner ? [task.owner] : []);
     if (!assignees.length) return '<span style="color:var(--text-muted);">—</span>';
@@ -151,6 +214,11 @@ export class BacklogView extends BaseView {
       </div>`;
   }
 
+  /**
+   * Renders the full backlog view: header with online users, search/filter
+   * controls, the paginated task table, and pagination controls.
+   * @returns {string} HTML markup
+   */
   render() {
     const allFiltered = this.getFilteredTasks().slice().reverse();
     const total = allFiltered.length;
@@ -284,6 +352,12 @@ export class BacklogView extends BaseView {
     `;
   }
 
+  /**
+   * Renders a single task table row (with expand toggle, review/sub-task
+   * badges, and split action) followed by its sub-task rows when present.
+   * @param {object} task
+   * @returns {string} HTML markup
+   */
   _taskRow(task) {
     const subs = this._subtasksOf(task.id);
     const hasSubs = subs.length > 0;
@@ -319,6 +393,13 @@ export class BacklogView extends BaseView {
     `;
   }
 
+  /**
+   * Renders a single sub-task table row (initially hidden) with its assignees,
+   * status, due date, and a complete action when not yet resolved.
+   * @param {object} sub
+   * @param {number} parentId
+   * @returns {string} HTML markup
+   */
   _subtaskRow(sub, parentId) {
     const subAssignees = sub.assignees?.length ? sub.assignees : (sub.owner ? [sub.owner] : []);
     const done = sub.status === 'resolved';
@@ -346,6 +427,12 @@ export class BacklogView extends BaseView {
     `;
   }
 
+  /**
+   * Wires the view's interactivity after render: add-task, search, chip/sprint/
+   * status filters, pagination, sub-task expand/collapse, sub-task completion,
+   * task splitting, and row hover/click-to-open behavior (re-rendering as needed).
+   * @param {HTMLElement} container
+   */
   mount(container) {
     const rerender = () => {
       container.innerHTML = this.render();
