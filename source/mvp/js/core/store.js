@@ -19,6 +19,9 @@ const STORAGE_KEY = 'se-sitrep-mvp-state';
  */
 export class Store {
   /**
+   * Loads persisted state (falling back to a deep clone of the seed),
+   * initializes subscribers and auth/selection fields, and sets the
+   * data-mode label based on whether remote data is in use.
    * @param {object} [seed] - optional seed instead of INITIAL_DATA
    */
   constructor(seed = INITIAL_DATA) {
@@ -35,6 +38,7 @@ export class Store {
   }
 
   /**
+   * Sets the currently authenticated user.
    * @param {import('../services/authService.js').AuthUser|null} authUser
    */
   setCurrentAuthUser(authUser) {
@@ -42,6 +46,8 @@ export class Store {
   }
 
   /**
+   * Resolves the profile user id used for reports/issues, preferring the
+   * authenticated user's profile id and falling back to the first user.
    * @returns {number|null} profile user id for reports/issues
    */
   getCurrentUserId() {
@@ -52,6 +58,7 @@ export class Store {
   }
 
   /**
+   * Registers a callback to be invoked when the given event is published.
    * @param {string} event
    * @param {Function} callback
    */
@@ -61,6 +68,8 @@ export class Store {
   }
 
   /**
+   * Invokes all callbacks subscribed to the event with the given data, then
+   * persists state.
    * @param {string} event
    * @param {*} data
    */
@@ -76,12 +85,18 @@ export class Store {
     saveState(STORAGE_KEY, this.state);
   }
 
-  /** @returns {object} */
+  /**
+   * Returns the full application state object.
+   * @returns {object}
+   */
   getState() {
     return this.state;
   }
 
-  /** @returns {object|undefined} */
+  /**
+   * Returns the sprint currently marked as active, if any.
+   * @returns {object|undefined}
+   */
   getActiveSprint() {
     return this.state.sprints.find((s) => s.status === 'active');
   }
@@ -111,6 +126,8 @@ export class Store {
   }
 
   /**
+   * Sets the manually selected sprint id (or null to follow the active sprint)
+   * and publishes a sprint-changed event.
    * @param {number|null} sprintId
    */
   setSelectedSprintId(sprintId) {
@@ -119,6 +136,8 @@ export class Store {
   }
 
   /**
+   * Creates a new sprint with a generated id, appends it, reconciles sprint
+   * statuses, selects it, and publishes a sprint-changed event.
    * @param {{ name: string, start: string, end: string, status?: string }} input
    * @returns {object}
    */
@@ -139,12 +158,16 @@ export class Store {
     return this.state.sprints.find((s) => Number(s.id) === id) || sprint;
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns the cached Google Calendar events.
+   * @returns {object[]}
+   */
   getGoogleEvents() {
     return this.googleEvents;
   }
 
   /**
+   * Replaces the cached Google Calendar events.
    * @param {object[]} events
    */
   setGoogleEvents(events) {
@@ -152,6 +175,8 @@ export class Store {
   }
 
   /**
+   * Adds a meeting (assigning an id and sprint id when absent) and publishes a
+   * meetings-changed event.
    * @param {object} meeting
    * @returns {object}
    */
@@ -168,6 +193,8 @@ export class Store {
   }
 
   /**
+   * Updates the status of the AI log with the given id, publishing an
+   * AI-logs-changed event when a matching log is found.
    * @param {number} logId
    * @param {string} status
    */
@@ -180,6 +207,7 @@ export class Store {
   }
 
   /**
+   * Returns the tasks belonging to the given sprint.
    * @param {number} sprintId
    * @returns {object[]}
    */
@@ -187,32 +215,50 @@ export class Store {
     return this.state.tasks.filter((t) => t.sprintId === sprintId);
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns all issues.
+   * @returns {object[]}
+   */
   getIssues() {
     return this.state.issues;
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns all reports.
+   * @returns {object[]}
+   */
   getReports() {
     return this.state.reports;
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns all AI logs.
+   * @returns {object[]}
+   */
   getAiLogs() {
     return this.state.aiLogs;
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns all users.
+   * @returns {object[]}
+   */
   getUsers() {
     return this.state.users;
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns all meetings (an empty array when none exist).
+   * @returns {object[]}
+   */
   getMeetings() {
     return this.state.meetings || [];
   }
 
   /**
+   * Adds a report (filling in id, user, date, timestamp, status, and sprint
+   * defaults), publishes a reports-changed event, and creates a linked blocker
+   * issue when the report records a non-"None" blocker.
    * @param {object} report
    * @returns {object}
    */
@@ -248,6 +294,8 @@ export class Store {
   }
 
   /**
+   * Adds an issue (filling in id, created date, due date, and assignee
+   * defaults) to the front of the list and publishes an issues-changed event.
    * @param {object} issue
    * @returns {object}
    */
@@ -269,6 +317,8 @@ export class Store {
   }
 
   /**
+   * Adds an AI log to the front of the list and publishes an AI-logs-changed
+   * event.
    * @param {object} log
    * @returns {object}
    */
@@ -279,6 +329,8 @@ export class Store {
   }
 
   /**
+   * Applies a patch to the issue with the given id, publishing an
+   * issues-changed event; returns the updated issue or null if not found.
    * @param {number} issueId
    * @param {object} patch
    * @returns {object|null}
@@ -292,6 +344,8 @@ export class Store {
   }
 
   /**
+   * Applies a patch to the task with the given id, publishing a tasks-changed
+   * event; returns the updated task or null if not found.
    * @param {number} taskId
    * @param {object} patch
    * @returns {object|null}
@@ -305,6 +359,8 @@ export class Store {
   }
 
   /**
+   * Applies a patch to the report with the given id, publishing a
+   * reports-changed event; returns the updated report or null if not found.
    * @param {number} reportId
    * @param {object} patch
    * @returns {object|null}
@@ -318,6 +374,8 @@ export class Store {
   }
 
   /**
+   * Applies a patch to the AI log with the given id, publishing an
+   * AI-logs-changed event; returns the updated log or null if not found.
    * @param {number} logId
    * @param {object} patch
    * @returns {object|null}
@@ -331,6 +389,8 @@ export class Store {
   }
 
   /**
+   * Marks the issue with the given id as resolved, publishing an
+   * issues-changed event when a matching issue is found.
    * @param {number} issueId
    */
   resolveIssue(issueId) {
@@ -342,6 +402,8 @@ export class Store {
   }
 
   /**
+   * Adds a task (filling in id, sprint, status, owner, and due-date defaults)
+   * and publishes a tasks-changed event.
    * @param {object} task
    * @returns {object}
    */

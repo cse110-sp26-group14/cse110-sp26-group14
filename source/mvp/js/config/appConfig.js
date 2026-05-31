@@ -16,7 +16,9 @@ const defaults = {
 };
 
 /**
- * @returns {typeof defaults}
+ * Reads the effective configuration by cloning the defaults and applying any
+ * non-empty overrides from `window.SITREP_CONFIG` (when present).
+ * @returns {typeof defaults} The merged configuration object.
  */
 function readConfig() {
   const result = { ...defaults };
@@ -29,7 +31,11 @@ function readConfig() {
   return result;
 }
 
-/** @type {typeof defaults} */
+/**
+ * Live configuration accessor: each property read re-evaluates `readConfig()`,
+ * so it always reflects the current `window.SITREP_CONFIG` overrides.
+ * @type {typeof defaults}
+ */
 export const appConfig = new Proxy(
   {},
   {
@@ -41,7 +47,9 @@ export const appConfig = new Proxy(
 );
 
 /**
- * @returns {typeof defaults}
+ * Returns a plain snapshot of the runtime configuration, merging defaults with
+ * `window.SITREP_CONFIG` when available; otherwise returns the live `appConfig`.
+ * @returns {typeof defaults} The resolved configuration.
  */
 export function getRuntimeConfig() {
   if (typeof window !== 'undefined' && window.SITREP_CONFIG) {
@@ -51,7 +59,9 @@ export function getRuntimeConfig() {
 }
 
 /**
- * @returns {boolean}
+ * Indicates whether remote data should be used, i.e. data mode is `'api'` and
+ * an API base URL is configured.
+ * @returns {boolean} `true` when remote data is enabled.
  */
 export function useRemoteData() {
   const cfg = readConfig();
@@ -59,7 +69,9 @@ export function useRemoteData() {
 }
 
 /**
- * @returns {boolean}
+ * Indicates whether Google Calendar integration is enabled, i.e. a Google
+ * client ID is configured.
+ * @returns {boolean} `true` when a Google client ID is present.
  */
 export function useGoogleCalendar() {
   return Boolean(readConfig().googleClientId);
