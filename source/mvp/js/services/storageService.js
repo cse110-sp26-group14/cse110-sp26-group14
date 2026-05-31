@@ -4,6 +4,8 @@
  */
 
 /**
+ * Reads and JSON-parses a value from localStorage, returning the fallback when
+ * the key is absent or parsing fails.
  * @param {string} key
  * @param {*} fallback
  * @returns {*}
@@ -19,6 +21,7 @@ export function loadState(key, fallback) {
 }
 
 /**
+ * JSON-stringifies a value and writes it to localStorage under the given key.
  * @param {string} key
  * @param {*} state
  */

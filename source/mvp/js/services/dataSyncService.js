@@ -30,6 +30,8 @@ import { enrichNewTask, normalizeTasksInStore } from '../utils/taskHelpers.js';
 import { enrichNewIssue } from '../utils/issueHelpers.js';
 
 /**
+ * Refreshes the store's state from the API (remote mode only), reconciling
+ * sprints and normalizing tasks, then publishing or saving as appropriate.
  * @param {import('../core/store.js').Store} store
  * @returns {Promise<void>}
  */
@@ -46,6 +48,7 @@ export async function refreshStoreFromApi(store) {
 }
 
 /**
+ * Hydrates the store from the API on initial load (delegates to refreshStoreFromApi).
  * @param {import('../core/store.js').Store} store
  * @returns {Promise<void>}
  */
@@ -54,6 +57,8 @@ export async function hydrateStoreFromApi(store) {
 }
 
 /**
+ * Creates an issue locally or via the API (enriching it first), then publishes
+ * an issues-changed event.
  * @param {import('../core/store.js').Store} store
  * @param {object} issue
  * @returns {Promise<object>}
@@ -71,6 +76,8 @@ export async function createIssueRemote(store, issue) {
 }
 
 /**
+ * Marks an issue resolved locally or via the API, publishing an issues-changed
+ * event when the API path updates a matching issue.
  * @param {import('../core/store.js').Store} store
  * @param {number} issueId
  */
@@ -88,6 +95,7 @@ export async function resolveIssueRemote(store, issueId) {
 }
 
 /**
+ * Applies a patch to an issue locally or via the API.
  * @param {import('../core/store.js').Store} store
  * @param {number} issueId
  * @param {object} patch
@@ -102,6 +110,8 @@ export async function updateIssueRemote(store, issueId, patch) {
 }
 
 /**
+ * Creates a report locally or via the API (filling in user/date defaults) and,
+ * when the report records a non-"None" blocker, also creates a linked issue.
  * @param {import('../core/store.js').Store} store
  * @param {object} reportInput
  * @returns {Promise<object>}
@@ -136,6 +146,7 @@ export async function createReportRemote(store, reportInput) {
 }
 
 /**
+ * Applies a patch to a report locally or via the API.
  * @param {import('../core/store.js').Store} store
  * @param {number} reportId
  * @param {object} patch
@@ -150,10 +161,8 @@ export async function updateReportRemote(store, reportId, patch) {
 }
 
 /**
- * @param {import('../core/store.js').Store} store
- * @param {object} taskInput
- */
-/**
+ * Creates a meeting locally or via the API (defaulting the sprint id) and
+ * publishes a meetings-changed event.
  * @param {import('../core/store.js').Store} store
  * @param {object} meetingInput
  */
@@ -171,6 +180,7 @@ export async function createMeetingRemote(store, meetingInput) {
 }
 
 /**
+ * Updates an AI log's status (delegates to updateAiLogRemote).
  * @param {import('../core/store.js').Store} store
  * @param {number} logId
  * @param {string} status
@@ -179,6 +189,14 @@ export async function updateAiLogStatusRemote(store, logId, status) {
   return updateAiLogRemote(store, logId, { status });
 }
 
+/**
+ * Creates a task locally or via the API (enriching it first) and publishes a
+ * tasks-changed event.
+ * @param {import('../core/store.js').Store} store
+ * @param {object} taskInput
+ * @param {object} [opts]
+ * @returns {Promise<object>}
+ */
 export async function createTaskRemote(store, taskInput, opts = {}) {
   const payload = enrichNewTask(store, taskInput, opts);
   if (!useRemoteData()) {
@@ -191,6 +209,7 @@ export async function createTaskRemote(store, taskInput, opts = {}) {
 }
 
 /**
+ * Applies an inline patch to a task locally or via the API.
  * @param {import('../core/store.js').Store} store
  * @param {number} taskId
  * @param {object} patch
@@ -205,6 +224,7 @@ export async function updateInlineTaskRemote(store, taskId, patch) {
 }
 
 /**
+ * Applies a patch to an AI log locally or via the API.
  * @param {import('../core/store.js').Store} store
  * @param {number} logId
  * @param {object} patch
@@ -219,6 +239,8 @@ export async function updateAiLogRemote(store, logId, patch) {
 }
 
 /**
+ * Saves a user's availability for a date locally or via the API, updating the
+ * stored availability map (and the local user record in local mode).
  * @param {import('../core/store.js').Store} store
  * @param {string} date
  * @param {object} slots
@@ -247,6 +269,8 @@ export async function saveAvailabilityRemote(store, date, slots) {
 }
 
 /**
+ * Updates the current user's profile fields locally or via the API, refreshing
+ * the store from the API afterward in remote mode.
  * @param {import('../core/store.js').Store} store
  * @param {{ name?: string, role?: string }} fields
  */
@@ -264,6 +288,8 @@ export async function updateProfileRemote(store, fields) {
 }
 
 /**
+ * Inserts an AI log from the API into the store if not already present,
+ * publishing an AI-logs-changed event when added.
  * @param {import('../core/store.js').Store} store
  * @param {object} log
  */
@@ -276,10 +302,8 @@ export function mergeAiLogFromApi(store, log) {
 }
 
 /**
- * @param {import('../core/store.js').Store} store
- * @param {object[]} tasks
- */
-/**
+ * Creates a team note locally or via the API, merging the returned log into the
+ * store in remote mode.
  * @param {import('../core/store.js').Store} store
  * @param {{ title: string, content: string }} note
  */
@@ -302,6 +326,8 @@ export async function createNoteRemote(store, note) {
 }
 
 /**
+ * Validates and creates a sprint locally or via the API, refreshing the store
+ * and selecting the new sprint in remote mode.
  * @param {import('../core/store.js').Store} store
  * @param {{ name: string, start: string, end: string, status?: string }} input
  * @returns {Promise<object>}
@@ -327,6 +353,12 @@ export async function createSprintRemote(store, input) {
   return created;
 }
 
+/**
+ * Merges tasks from the API into the store, appending any not already present,
+ * then publishes a tasks-changed event.
+ * @param {import('../core/store.js').Store} store
+ * @param {object[]} tasks
+ */
 export function mergeTasksFromApi(store, tasks) {
   if (!tasks?.length) return;
   tasks.forEach((t) => {
@@ -407,14 +439,31 @@ let _pollTimer = null;
 let _lastTasksHash = '';
 let _lastUsersHash = '';
 
+/**
+ * Builds a change-detection hash for a task list from each task's id, status,
+ * and updatedAt.
+ * @param {object[]} tasks
+ * @returns {string}
+ */
 function _hashTasks(tasks) {
   return JSON.stringify((tasks || []).map((t) => `${t.id}:${t.status}:${t.updatedAt}`));
 }
 
+/**
+ * Builds a change-detection hash for a user list from each user's id and
+ * online status.
+ * @param {object[]} users
+ * @returns {string}
+ */
 function _hashUsers(users) {
   return JSON.stringify((users || []).map((u) => `${u.id}:${u.isOnline}`));
 }
 
+/**
+ * Shows a transient sync banner at the bottom of the screen, replacing any
+ * existing one and auto-removing it after a few seconds.
+ * @param {string} msg
+ */
 function _showSyncBanner(msg) {
   const existing = document.getElementById('sitrep-sync-banner');
   if (existing) existing.remove();
