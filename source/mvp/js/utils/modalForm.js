@@ -7,6 +7,9 @@
 import { showToast } from './toast.js';
 
 /**
+ * Binds a one-time submit handler to a modal form (guarded against duplicate
+ * binding) that closes the modal, shows pending/success/error toasts, disables
+ * the submit button while saving, and invokes the provided submit callback.
  * @param {string} formId
  * @param {(formData: FormData, form: HTMLFormElement) => Promise<void>|void} onSubmit
  * @param {{

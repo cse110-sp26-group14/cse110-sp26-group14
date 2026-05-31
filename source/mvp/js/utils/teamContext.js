@@ -40,6 +40,9 @@ const NEGATIVE_SLOTS = ['unavailable', 'needs_coverage'];
  */
 
 /**
+ * Summarizes a user's availability slots into a free-ratio score and a label,
+ * treating absent data as fully available (positive slots count as free,
+ * negative as unavailable, others as half).
  * @param {Record<string, string>} [slots]
  * @returns {MemberAvailabilitySummary}
  */
@@ -88,6 +91,9 @@ export function getLatestAvailabilityForUser(user, availabilityMap, dates = []) 
 }
 
 /**
+ * Builds the AI context for a single member: their latest sprint check-in,
+ * availability summary, and a derived capacity rating ("high"/"medium"/"low"),
+ * assuming availability when no check-in exists.
  * @param {object} user
  * @param {object[]} reports
  * @param {Record<string, Record<string|number, Record<string, string>>>} availabilityMap
@@ -142,6 +148,9 @@ export function buildMemberContext(user, reports, availabilityMap, sprintId, rec
 }
 
 /**
+ * Builds the full team context for AI assignment: resolves the target sprint,
+ * gathers recent availability dates, and assembles per-member contexts along
+ * with the assignment principles.
  * @param {object} state App state (users, reports, availability, sprints)
  * @param {number} [sprintId]
  * @returns {TeamContext}

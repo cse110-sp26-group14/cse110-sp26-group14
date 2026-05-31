@@ -10,6 +10,10 @@ export function todayISO() {
   return new Date().toISOString().split('T')[0];
 }
 
+/**
+ * Returns the current timestamp as a full ISO 8601 string.
+ * @returns {string}
+ */
 export function currentTimestamp() {
     return new Date().toISOString();
 }

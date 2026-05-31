@@ -12,6 +12,9 @@
  */
 
 /**
+ * Gathers the team context for a single day: the reports, tasks, and notable
+ * issues for that date (optionally filtered by sprint), plus a per-user
+ * breakdown pairing each user with their report and owned tasks.
  * @param {import('../core/store.js').Store} store
  * @param {string} iso - YYYY-MM-DD
  * @param {number} [sprintId]
