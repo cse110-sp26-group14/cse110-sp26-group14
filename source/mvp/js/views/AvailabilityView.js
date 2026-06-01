@@ -234,10 +234,13 @@ export class AvailabilityView extends BaseView {
     container
       .querySelector("#avail-add-meeting-btn")
       ?.addEventListener("click", () => {
-        if (!this._bestKey) return;
-        const [, time] = this._bestKey.split("_");
+        const detail = {};
+        if (this._bestKey) {
+          const [, time] = this._bestKey.split("_");
+          detail.time = time;
+        }
         window.dispatchEvent(
-          new CustomEvent("sitrep:open-meeting-modal", { detail: { time } }),
+          new CustomEvent("sitrep:open-meeting-modal", { detail }),
         );
       });
 
