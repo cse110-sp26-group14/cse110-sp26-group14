@@ -267,7 +267,7 @@
   align-items: start;
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .avail-page-layout {
     grid-template-columns: 1fr;
   }
@@ -366,6 +366,7 @@
 /* CSS Grid for the time table */
 .avail-grid {
   display: grid;
+
   /* columns set inline per grid: 52px + 7 day columns */
   min-width: 460px;
   user-select: none;
