@@ -365,9 +365,11 @@ export function mountTaskForm(container, store, onCancel) {
 
   // Formatting toolbar
   container.querySelectorAll('.fmt-btn').forEach((btn) => {
+    btn.addEventListener('mousedown', (e) => e.preventDefault()); // keep textarea focus + selection
     btn.addEventListener('click', () => {
       const textarea = container.querySelector('#task-description');
       if (!textarea) return;
+      textarea.focus();
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const selected = textarea.value.slice(start, end);
