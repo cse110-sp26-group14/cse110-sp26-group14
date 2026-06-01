@@ -23,6 +23,7 @@ import {
   postSubtask,
   completeSubtask,
   fetchActiveUsers,
+  deleteTask,
 } from './apiClient.js';
 import { createNoteLog } from './aiLogService.js';
 import { todayISO } from '../utils/dates.js';
@@ -187,6 +188,13 @@ export async function createMeetingRemote(store, meetingInput) {
  */
 export async function updateAiLogStatusRemote(store, logId, status) {
   return updateAiLogRemote(store, logId, { status });
+}
+
+export async function deleteTaskRemote(store, taskId) {
+  if (useRemoteData()) {
+    await deleteTask(taskId);
+  }
+  store.deleteTask(taskId);
 }
 
 /**
