@@ -328,6 +328,46 @@ export function mountTaskForm(container, store, onCancel) {
   renderChips();
   syncHiddenSelect();
 
+  // Formatting toolbar
+  container.querySelectorAll('.fmt-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const textarea = container.querySelector('#task-description');
+      if (!textarea) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = textarea.value.slice(start, end);
+      const before = textarea.value.slice(0, start);
+      const after = textarea.value.slice(end);
+      const cmd = btn.dataset.cmd;
+      let replacement = selected;
+      let cursorOffset = 0;
+
+      if (cmd === 'bold') {
+        replacement = `**${selected}**`;
+        cursorOffset = selected ? replacement.length : 2;
+      } else if (cmd === 'italic') {
+        replacement = `_${selected}_`;
+        cursorOffset = selected ? replacement.length : 1;
+      } else if (cmd === 'code') {
+        replacement = `\`${selected}\``;
+        cursorOffset = selected ? replacement.length : 1;
+      } else if (cmd === 'link') {
+        replacement = `[${selected || 'link text'}](url)`;
+        cursorOffset = replacement.length - 1;
+      } else if (cmd === 'ul') {
+        replacement = (selected ? selected.split('\n') : ['']).map((l) => `- ${l}`).join('\n');
+        cursorOffset = replacement.length;
+      } else if (cmd === 'ol') {
+        replacement = (selected ? selected.split('\n') : ['']).map((l, i) => `${i + 1}. ${l}`).join('\n');
+        cursorOffset = replacement.length;
+      }
+
+      textarea.value = before + replacement + after;
+      textarea.focus();
+      textarea.setSelectionRange(start + cursorOffset, start + cursorOffset);
+    });
+  });
+
   // Auto-fill description (placeholder — triggers AI if wired)
   container.querySelector('#task-autofill-btn')?.addEventListener('click', () => {
     const title = container.querySelector('#task-title')?.value?.trim();
