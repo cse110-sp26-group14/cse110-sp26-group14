@@ -327,6 +327,10 @@ export async function updateTask(db, id, patch, expectedUpdatedAt = null) {
  * @param {number} parentId
  * @param {object} input
  */
+export async function deleteTask(db, id) {
+  await db.prepare('DELETE FROM tasks WHERE id = ? OR parent_task_id = ?').bind(id, id).run();
+}
+
 export async function createSubtask(db, parentId, input) {
   const parent = await db.prepare('SELECT * FROM tasks WHERE id = ?').bind(parentId).first();
   if (!parent) return null;
