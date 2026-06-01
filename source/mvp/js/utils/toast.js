@@ -7,6 +7,8 @@
 let host = null;
 
 /**
+ * Returns the shared toast host element, creating and appending it to the
+ * document body (with ARIA live-region attributes) on first use.
  * @returns {HTMLElement}
  */
 function getHost() {
@@ -22,6 +24,8 @@ function getHost() {
 }
 
 /**
+ * Shows a toast of the given type and message, auto-dismissing after the
+ * duration (when positive); returns a function that removes the toast early.
  * @param {string} message
  * @param {'info'|'success'|'warning'|'error'} [type]
  * @param {number} [durationMs]
@@ -43,6 +47,9 @@ export function showToast(message, type = 'info', durationMs = 4000) {
 }
 
 /**
+ * Toggles a button's busy state: when busy, stores and replaces its label,
+ * disables it, and adds the busy class; when not busy, restores the label and
+ * re-enables it.
  * @param {HTMLButtonElement|null|undefined} btn
  * @param {boolean} busy
  * @param {string} [busyLabel]

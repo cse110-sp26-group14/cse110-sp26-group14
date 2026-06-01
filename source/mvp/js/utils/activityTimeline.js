@@ -15,6 +15,10 @@
  */
 
 /**
+ * Builds a unified, reverse-chronological activity timeline for a sprint by
+ * collecting reports, issues, tasks, and AI logs into normalized items (each
+ * filtered to the given/selected sprint where applicable) and sorting them by
+ * timestamp descending.
  * @param {import('../core/store.js').Store} store
  * @param {number} [sprintId]
  * @returns {ActivityItem[]}

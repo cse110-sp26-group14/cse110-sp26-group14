@@ -71,6 +71,8 @@ function toggleShell(authed) {
 }
 
 /**
+ * Updates the header (and user-menu) avatar, name, and role elements to reflect
+ * the given user.
  * @param {import('./services/authService.js').AuthUser} user
  */
 function updateHeaderUser(user) {
@@ -91,6 +93,10 @@ function updateHeaderUser(user) {
   });
 }
 
+/**
+ * Closes the user menu, collapsing its trigger and hiding its panel.
+ * @returns {void}
+ */
 function closeUserMenu() {
   const menu = document.getElementById('user-menu');
   const trigger = document.getElementById('user-menu-trigger');
@@ -100,6 +106,11 @@ function closeUserMenu() {
   panel?.classList.add('hidden');
 }
 
+/**
+ * Wires the user menu: toggling on trigger click, and closing on outside click
+ * or Escape, plus closing when the Settings link is followed.
+ * @returns {void}
+ */
 function wireUserMenu() {
   const menu = document.getElementById('user-menu');
   const trigger = document.getElementById('user-menu-trigger');
@@ -126,10 +137,19 @@ function wireUserMenu() {
   });
 }
 
+/**
+ * Syncs the header sprint badge/selector from the store.
+ * @returns {void}
+ */
 function syncHeaderFromStore() {
   syncHeader(store);
 }
 
+/**
+ * Handles a change to the header sprint selector: updates the selected sprint,
+ * re-syncs the header, and re-renders the current route when relevant.
+ * @returns {void}
+ */
 function onSprintSelectChange() {
   const select = document.getElementById('header-sprint-select');
   if (!select) return;
@@ -141,12 +161,19 @@ function onSprintSelectChange() {
   ]);
 }
 
+/**
+ * Placeholder for sprint-selector wiring; the selector is handled via
+ * document-level change delegation (see bottom of file).
+ * @returns {void}
+ */
 function wireSprintSelector() {
   /* Sprint select is wired via document-level change delegation (see bottom of file). */
 }
 
 /**
  * Start authenticated app (router, modals, actions).
+ * @param {import('./services/authService.js').AuthUser} authUser
+ * @returns {Promise<void>}
  */
 async function startApp(authUser) {
   store.setCurrentAuthUser(authUser);
@@ -212,6 +239,7 @@ async function startApp(authUser) {
 
 /**
  * Show login screen.
+ * @returns {void}
  */
 function showLogin() {
   toggleShell(false);
@@ -220,6 +248,12 @@ function showLogin() {
   });
 }
 
+/**
+ * Re-renders the current route via the router when its hash is in the provided
+ * list (and the router exists).
+ * @param {string[]} routeHashes
+ * @returns {void}
+ */
 function rerenderIfCurrentRoute(routeHashes) {
   const hash = window.location.hash || '#dashboard';
   if (routeHashes.includes(hash) && router) {
@@ -227,6 +261,11 @@ function rerenderIfCurrentRoute(routeHashes) {
   }
 }
 
+/**
+ * Wires the daily check-in button to open the check-in modal and submit a new
+ * report (also creating a local AI summary log in local mode).
+ * @returns {void}
+ */
 function wireDailyCheckIn() {
   bindOnce(document.getElementById('btn-daily-checkin'), 'click', () => {
     modal.show('Daily Check-In', DailyCheckInForm());
@@ -254,6 +293,11 @@ function wireDailyCheckIn() {
   });
 }
 
+/**
+ * Wires the availability button to open the availability modal (pre-filled with
+ * the user's existing slots) and save the updated slots.
+ * @returns {void}
+ */
 function wireAvailability() {
   bindOnce(document.getElementById('btn-availability'), 'click', () => {
     const date = new Date().toISOString().slice(0, 10);
@@ -278,6 +322,11 @@ function wireAvailability() {
   });
 }
 
+/**
+ * Wires the add-note button to open the note modal and save a new team note to
+ * the AI Log.
+ * @returns {void}
+ */
 function wireAddNote() {
   bindOnce(document.getElementById('btn-add-note'), 'click', () => {
     modal.show('Add Note', NoteForm());
@@ -295,6 +344,11 @@ function wireAddNote() {
   });
 }
 
+/**
+ * Wires the open-task-modal event (once) to show the task form and create a new
+ * task, auto-creating one sub-task per assignee when two or more are assigned.
+ * @returns {void}
+ */
 function wireTaskModal() {
   if (window.__sitrepTaskModalWired) return;
   window.__sitrepTaskModalWired = true;
@@ -511,6 +565,11 @@ function wireSubtaskEvents() {
 
 let meetingModalWired = false;
 
+/**
+ * Wires the open-meeting-modal event (once) to show the meeting form (pre-filled
+ * with date/time) and create a new meeting.
+ * @returns {void}
+ */
 function wireMeetingModal() {
   if (meetingModalWired) return;
   meetingModalWired = true;
@@ -537,6 +596,11 @@ function wireMeetingModal() {
   });
 }
 
+/**
+ * Wires the create-issue button to open the issue modal and create a new issue,
+ * optionally also creating a tracking task.
+ * @returns {void}
+ */
 function wireCreateIssue() {
   bindOnce(document.getElementById('btn-create-issue'), 'click', () => {
     modal.show('Create Issue', IssueForm(store));
@@ -578,6 +642,10 @@ function wireCreateIssue() {
   });
 }
 
+/**
+ * Closes the mobile navigation drawer and clears its open state.
+ * @returns {void}
+ */
 function closeMobileNav() {
   const root = document.getElementById('root');
   const menuBtn = document.getElementById('btn-mobile-menu');
@@ -586,6 +654,10 @@ function closeMobileNav() {
   document.body.classList.remove('mobile-nav-open');
 }
 
+/**
+ * Opens the mobile navigation drawer and sets its open state.
+ * @returns {void}
+ */
 function openMobileNav() {
   const root = document.getElementById('root');
   const menuBtn = document.getElementById('btn-mobile-menu');
@@ -623,6 +695,11 @@ function wireMobileNavDocument() {
   });
 }
 
+/**
+ * Wires the header search box (Enter searches issues) and the notifications
+ * button (jumps to open issues).
+ * @returns {void}
+ */
 function wireHeader() {
   const search = document.getElementById('header-search');
   bindOnce(search, 'keydown', (e) => {
@@ -640,8 +717,12 @@ function wireHeader() {
 }
 
 /**
+ * Requests AI task suggestions for the given goals, then shows a review dialog
+ * where the user can pick suggestions to add as tasks (and optionally tracking
+ * issues), updating the AI log status accordingly.
  * @param {string} goals
  * @param {HTMLButtonElement|null} aiBtn
+ * @returns {Promise<void>}
  */
 async function runAiTaskSuggestions(goals, aiBtn) {
   const authUser = store.currentAuthUser;
@@ -724,6 +805,12 @@ async function runAiTaskSuggestions(goals, aiBtn) {
   });
 }
 
+/**
+ * Wires the AI action buttons: the suggest-tasks button (opens the goals modal,
+ * then runs suggestions) and the team-summary button (generates and saves a
+ * summary, handling expired sessions).
+ * @returns {void}
+ */
 function wireAiActions() {
   const aiBtn = document.getElementById('btn-ai-suggest');
   bindOnce(aiBtn, 'click', () => {
@@ -774,10 +861,20 @@ function wireAiActions() {
   });
 }
 
+/**
+ * Placeholder for logout wiring; logout is handled via document-level click
+ * delegation (see bottom of file).
+ * @returns {void}
+ */
 function wireLogout() {
   /* Log out is wired via document-level click delegation (see bottom of file). */
 }
 
+/**
+ * Subscribes (once) to store events, re-rendering the relevant routes and
+ * syncing the header when sprints change.
+ * @returns {void}
+ */
 function subscribeToStoreEvents() {
   if (storeEventsWired) return;
   storeEventsWired = true;

@@ -6,6 +6,7 @@
 import { todayISO } from './dates.js';
 
 /**
+ * Returns the current user's check-in report for today, if one exists.
  * @param {import('../core/store.js').Store} store
  * @returns {object|undefined}
  */
@@ -18,6 +19,8 @@ export function getMyReportToday(store) {
 }
 
 /**
+ * Computes check-in stats for a date: how many reports were submitted, how many
+ * users are still missing, and how many reported a blocker.
  * @param {object[]} reports
  * @param {object[]} users
  * @param {string} [date]
@@ -31,6 +34,9 @@ export function getCheckInStats(reports, users, date = todayISO()) {
 }
 
 /**
+ * Suggests the best meeting hour by scoring each hour across the team's
+ * availability slots (available/preferred = 2, tentative = 1) and returning the
+ * highest-scoring hour with a summary label.
  * @param {Record<string, Record<string, string>>} daySlots
  * @param {string[]} hours
  */

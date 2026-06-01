@@ -12,6 +12,12 @@ import { todayISO } from '../utils/dates.js';
  * @extends BaseView
  */
 export class AvailabilityView extends BaseView {
+  /**
+   * Renders the team availability view: a per-user hourly availability grid for
+   * today plus a sidebar suggesting the best meeting time with scheduling
+   * shortcuts.
+   * @returns {string} HTML markup
+   */
   render() {
     const users = this.store.getUsers();
     const date = todayISO();
@@ -86,6 +92,12 @@ export class AvailabilityView extends BaseView {
         `;
   }
 
+  /**
+   * Wires the view's buttons after render: the "update my availability" button
+   * (which triggers the availability modal) and the "add meeting" button (which
+   * dispatches an open-meeting-modal event prefilled with the best time).
+   * @param {HTMLElement} container
+   */
   mount(container) {
     container.querySelector('#avail-update-btn')?.addEventListener('click', () => {
       document.getElementById('btn-availability')?.click();
@@ -101,6 +113,12 @@ export class AvailabilityView extends BaseView {
   }
 }
 
+/**
+ * Extracts the time portion from a best-meeting-slot label (the text after the
+ * "•" separator), defaulting to "10:00 AM" when no match is found.
+ * @param {string} label
+ * @returns {string}
+ */
 function bestTimeFromLabel(label) {
   const m = label.match(/•\s*(.+)$/);
   return m ? m[1].trim() : '10:00 AM';

@@ -28,18 +28,60 @@ const REPORT_STATUSES = ['Completed', 'In Progress', 'Blocked', 'Not Started'];
 const REPORT_MOODS = ['Good', 'Neutral', 'Stressed'];
 const AI_STATUSES = ['pending', 'approved', 'applied', 'rejected'];
 
+/**
+ * Builds the shared `data-*` attribute string used to wire an inline-editable
+ * field to its record (kind, id, field name, and original value).
+ * @param {string} kind
+ * @param {number|string} id
+ * @param {string} field
+ * @param {*} value
+ * @returns {string}
+ */
 function editableAttrs(kind, id, field, value) {
   return `data-kind="${kind}" data-id="${id}" data-field="${field}" data-original="${escapeHtml(value ?? '')}"`;
 }
 
+/**
+ * Renders an inline-editable `<input>` bound to a record field.
+ * @param {string} kind
+ * @param {number|string} id
+ * @param {string} field
+ * @param {*} value
+ * @param {string} label - Accessible label for the input.
+ * @param {string} [type] - Input type.
+ * @param {string} [className] - Extra class names.
+ * @returns {string} HTML markup
+ */
 function editableInput(kind, id, field, value, label, type = 'text', className = '') {
   return `<input class="inline-edit ${className}" type="${type}" value="${escapeHtml(value ?? '')}" aria-label="${escapeHtml(label)}" ${editableAttrs(kind, id, field, value)} />`;
 }
 
+/**
+ * Renders an inline-editable `<textarea>` bound to a record field.
+ * @param {string} kind
+ * @param {number|string} id
+ * @param {string} field
+ * @param {*} value
+ * @param {string} label - Accessible label for the textarea.
+ * @param {string} [className] - Extra class names.
+ * @returns {string} HTML markup
+ */
 function editableTextarea(kind, id, field, value, label, className = '') {
   return `<textarea class="inline-edit ${className}" aria-label="${escapeHtml(label)}" ${editableAttrs(kind, id, field, value)}>${escapeHtml(value ?? '')}</textarea>`;
 }
 
+/**
+ * Renders an inline-editable `<select>` bound to a record field, pre-selecting
+ * the current value. Options may be strings or `{ value, label }` objects.
+ * @param {string} kind
+ * @param {number|string} id
+ * @param {string} field
+ * @param {*} value
+ * @param {string} label - Accessible label for the select.
+ * @param {Array<string|{value: string, label: string}>} options
+ * @param {string} [className] - Extra class names.
+ * @returns {string} HTML markup
+ */
 function editableSelect(kind, id, field, value, label, options, className = '') {
   const current = String(value ?? '');
   return `
@@ -53,10 +95,27 @@ function editableSelect(kind, id, field, value, label, options, className = '') 
   `;
 }
 
+/**
+ * Renders the live-region span used to show inline-edit save status for a record.
+ * @param {string} kind
+ * @param {number|string} id
+ * @returns {string} HTML markup
+ */
 function saveStatus(kind, id) {
   return `<span class="inline-save-status" data-save-status="${kind}:${id}" aria-live="polite"></span>`;
 }
 
+/**
+ * Renders an inline-editable title heading (with a screen-reader copy of the
+ * value) bound to a record field.
+ * @param {string} kind
+ * @param {number|string} id
+ * @param {string} field
+ * @param {*} value
+ * @param {string} label - Accessible label for the title input.
+ * @param {string} [className] - Extra class names.
+ * @returns {string} HTML markup
+ */
 function editableTitle(kind, id, field, value, label, className = '') {
   return `
     <h3 class="issue-title inline-edit-title-wrap">
@@ -71,6 +130,7 @@ function editableTitle(kind, id, field, value, label, className = '') {
  */
 export class IssuesView extends BaseView {
   /**
+   * Initializes the issue filter ("All") and the active panel ("issues").
    * @param {import('../core/store.js').Store} store
    */
   constructor(store) {
@@ -82,6 +142,7 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Returns the issues narrowed by the active filter chip.
    * @returns {object[]}
    */
   getFilteredIssues() {
@@ -105,6 +166,8 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Renders the reports panel: the selected sprint's check-in reports, newest
+   * first, or an empty hint when there are none.
    * @returns {string}
    */
   renderReportsPanel() {
@@ -124,6 +187,8 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Renders the activity panel: the unified activity timeline (capped at 40
+   * items) for the selected sprint, or an empty hint when there is none.
    * @returns {string}
    */
   renderActivityPanel() {
@@ -135,6 +200,8 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Renders the tasks panel: the selected sprint's tasks sorted by due date then
+   * title, or an empty hint when there are none.
    * @returns {string}
    */
   renderTasksPanel() {
@@ -151,6 +218,8 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Renders an inline-editable issue card (title, severity, status, tags,
+   * description, assignee, due date) with a resolve action when unresolved.
    * @param {object} issue
    * @returns {string}
    */
@@ -189,6 +258,8 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Renders an inline-editable task card (title, priority, status, owner, due
+   * date) with an AI-suggested badge when applicable.
    * @param {object} task
    * @returns {string}
    */
@@ -221,6 +292,8 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Renders an inline-editable daily report card (status, mood, progress,
+   * blockers, notes) for a given user.
    * @param {object} report
    * @param {string} userName
    * @returns {string}
@@ -246,6 +319,8 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Renders an inline-editable AI log activity card (title, content, status)
+   * with the activity item's timestamp.
    * @param {object} log
    * @param {object} item
    * @returns {string}
@@ -269,6 +344,9 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Renders the appropriate card for a timeline item by resolving its source
+   * record (issue, task, report, or AI log); returns an empty string when the
+   * record cannot be found.
    * @param {object} item
    * @returns {string}
    */
@@ -294,6 +372,8 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Renders the issues panel: a search box, the filter chips, and the filtered
+   * list of issue cards (or an empty hint).
    * @returns {string}
    */
   renderIssuesPanel() {
@@ -318,6 +398,8 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Renders the full Issues & Reports view: the header, the panel tabs, and the
+   * currently active panel (issues, tasks, reports, or activity).
    * @returns {string}
    */
   render() {
@@ -345,6 +427,9 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Wires the view's interactivity after render: restores saved filter/search
+   * state, and binds the panel tabs, filter chips, search box, resolve buttons,
+   * and inline-edit fields.
    * @param {HTMLElement} container
    */
   mount(container) {
@@ -409,6 +494,9 @@ export class IssuesView extends BaseView {
   }
 
   /**
+   * Persists a single inline-edit field change to the appropriate record via
+   * the remote update services, showing transient save status and reverting the
+   * field's value on failure. No-ops when the value is unchanged.
    * @param {HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement} field
    * @param {HTMLElement} container
    */

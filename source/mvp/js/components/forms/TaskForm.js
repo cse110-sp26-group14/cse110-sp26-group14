@@ -5,16 +5,32 @@
 
 import { defaultDueForSprint } from '../../utils/taskHelpers.js';
 
+/**
+ * Escapes a value for safe insertion into HTML by replacing `&`, `<`, `>`, and `"`.
+ * @param {*} s - Any value; coerced to a string (nullish becomes an empty string).
+ * @returns {string} The HTML-escaped string.
+ */
 function esc(s) {
   return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/**
+ * Derives uppercase initials from a name: first + last initial when two or more
+ * name parts are present, otherwise the first character of the only part.
+ * @param {string} name - The full name to derive initials from.
+ * @returns {string} The uppercase initials, or `'?'` when no name is given.
+ */
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   return (parts[0] || '?')[0].toUpperCase();
 }
 
+/**
+ * Picks a stable avatar color for a name by hashing its characters into a fixed palette.
+ * @param {string} name - The name used to deterministically select a color.
+ * @returns {string} A hex color string from the palette.
+ */
 function avatarColor(name) {
   const palette = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#14b8a6'];
   let hash = 0;
@@ -23,8 +39,11 @@ function avatarColor(name) {
 }
 
 /**
- * @param {import('../../core/store.js').Store} store
- * @returns {string}
+ * Builds the create-sprint-task form markup, including the type selector,
+ * assignee dropdown/multi-select, rich-description toolbar, and the
+ * sprint/priority/due-date row, with defaults derived from the store.
+ * @param {import('../../core/store.js').Store} store - Application store used to resolve the active/selected sprint, the user list, all sprints, and the current user.
+ * @returns {string} HTML form markup
  */
 export function TaskForm(store) {
   const sprint = store.getSelectedSprint() || store.getActiveSprint();
@@ -250,6 +269,11 @@ export function mountTaskForm(container, store, onCancel) {
   const dropdownEl = container.querySelector('#assignee-dropdown');
   const hiddenSelect = container.querySelector('#task-assignees');
 
+  /**
+   * Re-renders the selected-assignee chips into the chips container and
+   * wires each chip's remove button to deselect that assignee.
+   * @returns {void}
+   */
   function renderChips() {
     if (!chipsEl) return;
     chipsEl.innerHTML = [...selectedAssignees].map((name) => `
@@ -274,6 +298,11 @@ export function mountTaskForm(container, store, onCancel) {
     });
   }
 
+  /**
+   * Syncs the hidden multi-select's option `selected` flags to match the
+   * current set of selected assignees, so the values submit with the form.
+   * @returns {void}
+   */
   function syncHiddenSelect() {
     if (!hiddenSelect) return;
     [...hiddenSelect.options].forEach((o) => {
@@ -281,6 +310,12 @@ export function mountTaskForm(container, store, onCancel) {
     });
   }
 
+  /**
+   * Shows or hides each assignee option in the dropdown based on whether its
+   * name contains the (case-insensitive) query.
+   * @param {string} q - The search query to filter assignee options by.
+   * @returns {void}
+   */
   function filterDropdown(q) {
     if (!dropdownEl) return;
     const query = q.toLowerCase();

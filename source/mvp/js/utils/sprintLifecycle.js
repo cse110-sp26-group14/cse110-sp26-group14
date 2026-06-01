@@ -6,6 +6,7 @@
 import { todayISO } from './dates.js';
 
 /**
+ * Returns whether the given day falls within the inclusive [start, end] sprint window.
  * @param {string} today YYYY-MM-DD
  * @param {string} start
  * @param {string} end
@@ -15,6 +16,7 @@ export function isInSprintWindow(today, start, end) {
 }
 
 /**
+ * Returns whether the given day is after the sprint's end date.
  * @param {string} today
  * @param {string} end
  */
@@ -23,6 +25,7 @@ export function isPastSprintEnd(today, end) {
 }
 
 /**
+ * Returns whether the given day is before the sprint's start date.
  * @param {string} today
  * @param {string} start
  */
@@ -44,6 +47,8 @@ export function deriveSprintStatus(sprint, today, activeId) {
 }
 
 /**
+ * Recomputes each sprint's status from the given day, designating the
+ * lowest-id in-window sprint as active, and reports whether any status changed.
  * @param {Array<{ id: number|string, start: string, end: string, status?: string }>} sprints
  * @param {string} [today]
  * @returns {boolean} whether any status changed

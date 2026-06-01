@@ -44,6 +44,8 @@ export async function initGoogleCalendar() {
 }
 
 /**
+ * Reports whether Google Calendar is connected (an access token is held and the
+ * gapi client is initialized).
  * @returns {boolean}
  */
 export function isGoogleCalendarConnected() {
@@ -126,6 +128,8 @@ export function formatGoogleEvent(ev) {
 }
 
 /**
+ * Resolves once the named global (e.g. `gapi`, `google`) is available on
+ * `window`, polling every 50ms until it appears.
  * @param {string} name
  * @returns {Promise<void>}
  */
