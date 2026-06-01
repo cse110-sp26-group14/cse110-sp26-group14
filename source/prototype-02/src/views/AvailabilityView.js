@@ -262,17 +262,18 @@ export class AvailabilityView extends BaseView {
         const syncStatus = log.calendarSync?.status || "skipped";
         const syncLabel =
           syncStatus === "fallback"
-            ? "Local busy blocks"
+            ? "Local busy blocks were applied"
             : syncStatus === "ok"
               ? "Google Calendar synced"
               : "No calendar sync";
         const date = log.submittedAt
           ? new Date(log.submittedAt).toLocaleString()
           : "";
+        const submittedLine = `${log.userName || "Unknown"} submitted ${log.weekKey || ""}`;
         return `
         <div class="activity-card" style="margin-bottom:0.75rem">
           <div class="activity-card-top">
-            <span class="activity-card-title">${log.userName || "Unknown"}</span>
+            <span class="activity-card-title">${submittedLine}</span>
             <span class="activity-card-time">${date}</span>
           </div>
           <div class="activity-card-body">${log.sprintName || ""}</div>
