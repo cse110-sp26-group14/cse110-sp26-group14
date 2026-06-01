@@ -257,18 +257,19 @@ export class AvailabilityView extends BaseView {
       list.innerHTML = `<p style="color:var(--text-muted);font-size:0.875rem">No submissions yet.</p>`;
       return;
     }
-    list.innerHTML = logs.map((log) => {
-      const syncStatus = log.calendarSync?.status || "skipped";
-      const syncLabel =
-        syncStatus === "fallback"
-          ? "Local busy blocks"
-          : syncStatus === "ok"
-            ? "Google Calendar synced"
-            : "No calendar sync";
-      const date = log.submittedAt
-        ? new Date(log.submittedAt).toLocaleString()
-        : "";
-      return `
+    list.innerHTML = logs
+      .map((log) => {
+        const syncStatus = log.calendarSync?.status || "skipped";
+        const syncLabel =
+          syncStatus === "fallback"
+            ? "Local busy blocks"
+            : syncStatus === "ok"
+              ? "Google Calendar synced"
+              : "No calendar sync";
+        const date = log.submittedAt
+          ? new Date(log.submittedAt).toLocaleString()
+          : "";
+        return `
         <div class="activity-card" style="margin-bottom:0.75rem">
           <div class="activity-card-top">
             <span class="activity-card-title">${log.userName || "Unknown"}</span>
@@ -277,7 +278,8 @@ export class AvailabilityView extends BaseView {
           <div class="activity-card-body">${log.sprintName || ""}</div>
           <div class="activity-card-meta">${syncLabel}</div>
         </div>`;
-    }).join("");
+      })
+      .join("");
   }
 
   _paintMyGrid() {
