@@ -485,7 +485,7 @@ function wireTaskDetail() {
         <div>
           <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.5rem;">Description</div>
           <div style="background:#f9fafb;border-radius:8px;padding:0.875rem;font-size:0.875rem;color:#374151;min-height:60px;line-height:1.6;">
-            ${task.description ? task.description.replace(/\n/g, '<br>') : '<span style="color:#9ca3af;">No description provided.</span>'}
+            ${task.description && task.description.trim() ? task.description.trim().replace(/\n/g, '<br>') : '<span style="color:#9ca3af;">No description provided.</span>'}
           </div>
         </div>
 

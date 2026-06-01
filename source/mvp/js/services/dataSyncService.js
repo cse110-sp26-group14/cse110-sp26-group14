@@ -203,9 +203,10 @@ export async function createTaskRemote(store, taskInput, opts = {}) {
     return store.addTask(payload);
   }
   const created = await postTask(payload);
-  store.state.tasks.push(created);
+  const merged = { ...payload, ...created };
+  store.state.tasks.push(merged);
   store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);
-  return created;
+  return merged;
 }
 
 /**
