@@ -404,6 +404,7 @@ export function mountTaskForm(container, store, onCancel) {
   }
 
   container.querySelector('#task-description')?.addEventListener('input', syncDescription);
+  container.querySelector('#task-form')?.addEventListener('submit', syncDescription, { capture: true });
 
   // Auto-fill description
   container.querySelector('#task-autofill-btn')?.addEventListener('click', () => {
