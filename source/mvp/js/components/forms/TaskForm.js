@@ -72,6 +72,9 @@ export function TaskForm(store) {
       #task-form input:focus, #task-form select:focus { border-color:#6366f1 !important; }
       #task-description:empty:before { content:attr(data-placeholder);color:#9ca3af;pointer-events:none; }
       #task-description:focus { outline:none; }
+      #task-description ul, #task-description ol { padding-left:1.5rem;margin:0.25rem 0; }
+      #task-description li { margin:0.1rem 0; }
+      #task-description p { margin:0.2rem 0; }
     </style>
 
     <form id="task-form">
