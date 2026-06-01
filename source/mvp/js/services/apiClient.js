@@ -264,6 +264,10 @@ export async function postTask(task) {
   return res.json();
 }
 
+export async function deleteTask(taskId) {
+  await request(`/api/tasks/${taskId}`, { method: 'DELETE' });
+}
+
 /**
  * Creates a new sprint.
  * @param {{ name: string, start: string, end: string, status?: string }} sprint

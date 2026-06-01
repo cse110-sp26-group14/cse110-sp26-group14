@@ -407,6 +407,12 @@ export class Store {
    * @param {object} task
    * @returns {object}
    */
+  deleteTask(taskId) {
+    this.state.tasks = this.state.tasks.filter((t) => Number(t.id) !== Number(taskId));
+    this.publish(EVENTS.TASKS_CHANGED, this.state.tasks);
+    this.save();
+  }
+
   addTask(task) {
     const sprint = this.state.sprints.find((s) => s.id === task.sprintId)
       || this.getSelectedSprint()

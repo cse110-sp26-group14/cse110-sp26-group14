@@ -41,6 +41,7 @@ import {
   completeSubtaskRemote,
   startLiveSync,
   stopLiveSync,
+  deleteTaskRemote,
 } from './services/dataSyncService.js';
 import { initGoogleCalendar } from './services/googleCalendarService.js';
 import { useRemoteData } from './config/appConfig.js';
@@ -509,10 +510,29 @@ function wireTaskDetail() {
           </div>
         </div>` : ''}
 
+        <!-- Delete button -->
+        <div style="display:flex;justify-content:flex-end;padding-top:0.5rem;border-top:1px solid #f3f4f6;">
+          <button id="task-detail-delete" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:0.5rem 1.25rem;font-size:0.875rem;font-weight:600;cursor:pointer;">
+            Delete Task
+          </button>
+        </div>
+
       </div>
     `;
 
     modal.show(task.title, html);
+
+    document.getElementById('task-detail-delete')?.addEventListener('click', async () => {
+      if (!confirm(`Delete "${task.title}"? This cannot be undone.`)) return;
+      try {
+        await deleteTaskRemote(store, task.id);
+        modal.close();
+        showToast('Task deleted.', 'success', 3000);
+        rerenderIfCurrentRoute(['#backlog', '#dashboard']);
+      } catch (err) {
+        showToast(err?.message || 'Could not delete task.', 'error', 5000);
+      }
+    });
   });
 }
 
