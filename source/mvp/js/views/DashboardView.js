@@ -11,6 +11,13 @@ import { renderTemplate } from '../utils/templateEngine.js';
  * @extends BaseView
  */
 export class DashboardView extends BaseView {
+  /**
+   * Renders the dashboard for the selected sprint: a check-in reminder when
+   * needed, sprint progress, the user's daily check-in, the week's meetings,
+   * priority tasks, the latest AI summary with check-in stats, the upcoming
+   * meeting, and urgent issues.
+   * @returns {string} HTML markup
+   */
   render() {
     const activeSprint = this.store.getSelectedSprint();
     const sprintTasks = this.store.getTasksBySprint(activeSprint?.id ?? 2);
@@ -168,6 +175,11 @@ export class DashboardView extends BaseView {
         `;
   }
 
+  /**
+   * Wires the dashboard's check-in buttons after render so they open the daily
+   * check-in modal.
+   * @param {HTMLElement} container
+   */
   mount(container) {
     const openCheckin = () => document.getElementById('btn-daily-checkin')?.click();
     container.querySelector('#dashboard-edit-checkin')?.addEventListener('click', openCheckin);

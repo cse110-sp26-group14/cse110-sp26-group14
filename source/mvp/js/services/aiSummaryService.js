@@ -45,6 +45,7 @@ export function buildTeamSummary(reports, users, activeSprintId) {
 }
 
 /**
+ * Wraps a team-summary payload into an "approved" Summary-type AI log entry.
  * @param {object} summaryPayload
  * @returns {object} AI log entry
  */

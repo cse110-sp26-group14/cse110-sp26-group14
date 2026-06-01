@@ -16,6 +16,9 @@ const ROLE_HINTS = [
 ];
 
 /**
+ * Picks the best-fit team member for a task title by scoring each member on
+ * availability, capacity, free ratio, and role-keyword matches, falling back to
+ * the first member when no positive match is found.
  * @param {string} title
  * @param {import('./teamContext.js').TeamMemberContext[]} members
  * @returns {string|null} member name
@@ -42,6 +45,9 @@ export function pickOwnerForTaskTitle(title, members) {
 }
 
 /**
+ * Resolves an owner name against the roster, matching exactly first, then by
+ * partial (substring) match, and otherwise returning the trimmed input (or the
+ * first member when the input is empty).
  * @param {string} ownerName
  * @param {import('./teamContext.js').TeamMemberContext[]} members
  * @returns {string}

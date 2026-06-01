@@ -4,6 +4,8 @@
  */
 
 /**
+ * Updates the header's sprint badge and sprint selector to reflect the store's
+ * currently selected sprint and available sprint list.
  * @param {import('../core/store.js').Store} store
  */
 export function syncHeaderFromStore(store) {

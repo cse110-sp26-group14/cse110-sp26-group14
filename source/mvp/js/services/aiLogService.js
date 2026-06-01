@@ -7,10 +7,7 @@ import { createId } from '../utils/ids.js';
 import { currentTimestamp } from '../utils/dates.js';
 
 /**
- * @param {object} report - daily check-in report
- * @returns {object|null}
- */
-/**
+ * Builds an "approved" Note-type AI log entry from a manual team note.
  * @param {string} title
  * @param {string} content
  * @param {string} author
@@ -28,6 +25,12 @@ export function createNoteLog(title, content, author) {
   };
 }
 
+/**
+ * Builds an AI summary log entry when the report records a blocker; returns
+ * null when there is no blocker (or it is "None").
+ * @param {object} report - daily check-in report
+ * @returns {object|null}
+ */
 export function createSummaryLogForReport(report) {
   if (!report.blockers || report.blockers === 'None') {
     return null;

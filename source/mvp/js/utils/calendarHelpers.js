@@ -40,6 +40,8 @@ export function buildMonthGrid(year, month) {
 }
 
 /**
+ * Returns whether an ISO date falls within the inclusive [start, end] range;
+ * false when either bound is missing.
  * @param {string} iso YYYY-MM-DD
  * @param {string} start
  * @param {string} end
@@ -50,6 +52,8 @@ export function isDateInRange(iso, start, end) {
 }
 
 /**
+ * Formats an ISO date as a short sidebar label (e.g. "Mon, May 12"), anchored
+ * at midday to avoid timezone shifts.
  * @param {string} iso
  */
 export function formatSidebarDate(iso) {

@@ -19,6 +19,7 @@ const USERS_KEY = 'se-sitrep-auth-users';
 const SESSION_KEY = 'se-sitrep-session';
 
 /**
+ * Derives up to two uppercase initials from a name for use as an avatar label.
  * @param {string} name
  * @returns {string}
  */
@@ -32,6 +33,7 @@ function avatarFromName(name) {
 }
 
 /**
+ * Loads the locally stored auth users (empty array when none).
  * @returns {AuthUser[]}
  */
 function loadUsers() {
@@ -39,6 +41,7 @@ function loadUsers() {
 }
 
 /**
+ * Persists the local auth users list.
  * @param {AuthUser[]} users
  */
 function saveUsers(users) {
@@ -46,6 +49,7 @@ function saveUsers(users) {
 }
 
 /**
+ * Stores the API token and saves an API-mode session for the given user.
  * @param {object} apiUser
  * @param {string} token
  */
@@ -105,6 +109,7 @@ export async function signUp(payload) {
 }
 
 /**
+ * Log in with email and password (API mode or local users).
  * @param {{ email: string, password: string }} payload
  * @returns {Promise<{ ok: boolean, error?: string, user?: object }>}
  */
@@ -146,6 +151,9 @@ export async function logout() {
 }
 
 /**
+ * Resolves the current session user (validating the token against the API in
+ * remote mode, or looking up the local user by id), clearing the session when
+ * it is missing or invalid.
  * @returns {Promise<object|null>}
  */
 export async function getSessionUser() {

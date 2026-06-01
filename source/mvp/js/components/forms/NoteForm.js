@@ -2,9 +2,9 @@
  * Quick team note (saved to AI log).
  * @module components/forms/NoteForm
  */
-
 /**
- * @returns {string}
+ * Builds the quick team-note form markup, with title and content fields.
+ * @returns {string} HTML form markup
  */
 export function NoteForm() {
   return `

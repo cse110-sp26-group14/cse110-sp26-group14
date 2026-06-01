@@ -8,6 +8,7 @@ import { appConfig } from "../config/appConfig.js";
 const TOKEN_KEY = "se-sitrep-api-token";
 
 /**
+ * Reads the stored API auth token from localStorage.
  * @returns {string|null}
  */
 export function getApiToken() {
@@ -15,6 +16,7 @@ export function getApiToken() {
 }
 
 /**
+ * Stores the API auth token in localStorage, or removes it when falsy.
  * @param {string|null} token
  */
 export function setApiToken(token) {
@@ -23,6 +25,8 @@ export function setApiToken(token) {
 }
 
 /**
+ * Performs a fetch against the configured API base, attaching JSON headers and
+ * (optionally) a bearer token, and throwing on non-OK responses.
  * @param {string} path
  * @param {RequestInit} [init]
  * @param {boolean} [auth]
@@ -123,6 +127,7 @@ async function postAuthJson(path, body) {
 }
 
 /**
+ * Logs in with email/password via the auth endpoint.
  * @param {{ email: string, password: string }} payload
  * @returns {Promise<{ ok: boolean, error?: string, user?: object, token?: string }>}
  */
@@ -131,6 +136,7 @@ export async function apiLogin(payload) {
 }
 
 /**
+ * Signs up a new account via the auth endpoint.
  * @param {object} payload
  * @returns {Promise<{ ok: boolean, error?: string, user?: object, token?: string }>}
  */
@@ -138,6 +144,10 @@ export async function apiSignUp(payload) {
   return postAuthJson("/api/auth/signup", payload);
 }
 
+/**
+ * Logs out via the auth endpoint (ignoring errors) and clears the stored token.
+ * @returns {Promise<void>}
+ */
 export async function apiLogout() {
   try {
     await request("/api/auth/logout", { method: "POST" });
@@ -148,6 +158,7 @@ export async function apiLogout() {
 }
 
 /**
+ * Fetches the current user when a token is present, otherwise returns null.
  * @returns {Promise<object|null>}
  */
 export async function apiMe() {
@@ -159,6 +170,7 @@ export async function apiMe() {
 }
 
 /**
+ * Fetches all issues.
  * @returns {Promise<object[]>}
  */
 export async function fetchIssues() {
@@ -167,6 +179,7 @@ export async function fetchIssues() {
 }
 
 /**
+ * Creates a new issue.
  * @param {object} issue
  * @returns {Promise<object>}
  */
@@ -179,6 +192,7 @@ export async function postIssue(issue) {
 }
 
 /**
+ * Applies a patch to the issue with the given id.
  * @param {number} id
  * @param {object} patch
  */
@@ -191,6 +205,7 @@ export async function patchIssue(id, patch) {
 }
 
 /**
+ * Applies an inline patch to the task with the given id.
  * @param {number} id
  * @param {object} patch
  */
@@ -203,6 +218,7 @@ export async function patchInlineTask(id, patch) {
 }
 
 /**
+ * Fetches the full application state.
  * @returns {Promise<object>}
  */
 export async function fetchAppState() {
@@ -211,6 +227,7 @@ export async function fetchAppState() {
 }
 
 /**
+ * Creates a new report.
  * @param {object} report
  * @returns {Promise<object>}
  */
@@ -223,6 +240,7 @@ export async function postReport(report) {
 }
 
 /**
+ * Applies a patch to the report with the given id.
  * @param {number} id
  * @param {object} patch
  */
@@ -235,6 +253,7 @@ export async function patchReport(id, patch) {
 }
 
 /**
+ * Creates a new task.
  * @param {object} task
  */
 export async function postTask(task) {
@@ -246,6 +265,7 @@ export async function postTask(task) {
 }
 
 /**
+ * Creates a new sprint.
  * @param {{ name: string, start: string, end: string, status?: string }} sprint
  */
 export async function postSprint(sprint) {
@@ -257,6 +277,7 @@ export async function postSprint(sprint) {
 }
 
 /**
+ * Creates a new meeting.
  * @param {object} meeting
  */
 export async function postMeeting(meeting) {
@@ -268,6 +289,7 @@ export async function postMeeting(meeting) {
 }
 
 /**
+ * Applies a status patch to the AI log with the given id.
  * @param {number} id
  * @param {{ status: string }} patch
  */
@@ -280,7 +302,8 @@ export async function patchAiLog(id, patch) {
 }
 
 /**
- * @param {object} payload
+ * Requests an AI-generated team summary.
+ * @returns {Promise<object>}
  */
 export async function postAiTeamSummary() {
   const res = await request("/api/ai/team-summary", {
@@ -309,6 +332,7 @@ export async function postAiSuggestTasks(
 }
 
 /**
+ * Creates an AI log entry.
  * @param {{ title: string, content: string, type?: string }} payload
  */
 export async function postAiLog(payload) {
@@ -320,6 +344,7 @@ export async function postAiLog(payload) {
 }
 
 /**
+ * Replaces the current user's availability.
  * @param {object} payload
  */
 export async function putAvailability(payload) {
@@ -331,6 +356,7 @@ export async function putAvailability(payload) {
 }
 
 /**
+ * Updates the current user's profile fields.
  * @param {{ name?: string, role?: string }} payload
  */
 export async function putUserProfile(payload) {

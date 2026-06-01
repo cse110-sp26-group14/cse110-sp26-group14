@@ -1,3 +1,10 @@
+/**
+ * Builds a search-box markup with a magnifier icon and a text input.
+ * @param {string} [placeholder] - Placeholder text for the input; defaults to `'Search...'`.
+ * @param {object} [options] - Optional configuration.
+ * @param {string} [options.style] - Inline CSS; when non-empty, rendered as a `style` attribute on the wrapper div.
+ * @returns {string} HTML markup for the search box.
+ */
 export function SearchBox(placeholder = 'Search...', options = {}) {
     const { style = '' } = options;
     const styleAttribute = style ? ` style="${style}"` : '';

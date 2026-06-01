@@ -212,6 +212,12 @@ export class AvailabilityView extends BaseView {
     `;
   }
 
+  /**
+   * Wires the view's buttons after render: the "update my availability" button
+   * (which triggers the availability modal) and the "add meeting" button (which
+   * dispatches an open-meeting-modal event prefilled with the best time).
+   * @param {HTMLElement} container
+   */
   mount(container) {
     this._container = container;
 

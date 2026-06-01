@@ -11,7 +11,7 @@ import { Modal } from './components/Modal.js';
 import { DailyCheckInForm } from './components/forms/DailyCheckInForm.js';
 import { IssueForm } from './components/forms/IssueForm.js';
 import { AvailabilityForm } from './components/forms/AvailabilityForm.js';
-import { TaskForm } from './components/forms/TaskForm.js';
+import { TaskForm, mountTaskForm } from './components/forms/TaskForm.js';
 import { NoteForm } from './components/forms/NoteForm.js';
 import { MeetingForm } from './components/forms/MeetingForm.js';
 import { AiGoalsForm } from './components/forms/AiGoalsForm.js';
@@ -71,6 +71,8 @@ function toggleShell(authed) {
 }
 
 /**
+ * Updates the header (and user-menu) avatar, name, and role elements to reflect
+ * the given user.
  * @param {import('./services/authService.js').AuthUser} user
  */
 function updateHeaderUser(user) {
@@ -91,6 +93,10 @@ function updateHeaderUser(user) {
   });
 }
 
+/**
+ * Closes the user menu, collapsing its trigger and hiding its panel.
+ * @returns {void}
+ */
 function closeUserMenu() {
   const menu = document.getElementById('user-menu');
   const trigger = document.getElementById('user-menu-trigger');
@@ -100,6 +106,11 @@ function closeUserMenu() {
   panel?.classList.add('hidden');
 }
 
+/**
+ * Wires the user menu: toggling on trigger click, and closing on outside click
+ * or Escape, plus closing when the Settings link is followed.
+ * @returns {void}
+ */
 function wireUserMenu() {
   const menu = document.getElementById('user-menu');
   const trigger = document.getElementById('user-menu-trigger');
@@ -126,10 +137,19 @@ function wireUserMenu() {
   });
 }
 
+/**
+ * Syncs the header sprint badge/selector from the store.
+ * @returns {void}
+ */
 function syncHeaderFromStore() {
   syncHeader(store);
 }
 
+/**
+ * Handles a change to the header sprint selector: updates the selected sprint,
+ * re-syncs the header, and re-renders the current route when relevant.
+ * @returns {void}
+ */
 function onSprintSelectChange() {
   const select = document.getElementById('header-sprint-select');
   if (!select) return;
@@ -141,12 +161,19 @@ function onSprintSelectChange() {
   ]);
 }
 
+/**
+ * Placeholder for sprint-selector wiring; the selector is handled via
+ * document-level change delegation (see bottom of file).
+ * @returns {void}
+ */
 function wireSprintSelector() {
   /* Sprint select is wired via document-level change delegation (see bottom of file). */
 }
 
 /**
  * Start authenticated app (router, modals, actions).
+ * @param {import('./services/authService.js').AuthUser} authUser
+ * @returns {Promise<void>}
  */
 async function startApp(authUser) {
   store.setCurrentAuthUser(authUser);
@@ -194,6 +221,7 @@ async function startApp(authUser) {
     wireAddNote();
     wireTaskModal();
     wireSubtaskEvents();
+    wireTaskDetail();
     wireAiActions();
     wireHeader();
     wireUserMenu();
@@ -211,6 +239,7 @@ async function startApp(authUser) {
 
 /**
  * Show login screen.
+ * @returns {void}
  */
 function showLogin() {
   toggleShell(false);
@@ -219,6 +248,12 @@ function showLogin() {
   });
 }
 
+/**
+ * Re-renders the current route via the router when its hash is in the provided
+ * list (and the router exists).
+ * @param {string[]} routeHashes
+ * @returns {void}
+ */
 function rerenderIfCurrentRoute(routeHashes) {
   const hash = window.location.hash || '#dashboard';
   if (routeHashes.includes(hash) && router) {
@@ -226,6 +261,11 @@ function rerenderIfCurrentRoute(routeHashes) {
   }
 }
 
+/**
+ * Wires the daily check-in button to open the check-in modal and submit a new
+ * report (also creating a local AI summary log in local mode).
+ * @returns {void}
+ */
 function wireDailyCheckIn() {
   bindOnce(document.getElementById('btn-daily-checkin'), 'click', () => {
     modal.show('Daily Check-In', DailyCheckInForm());
@@ -253,6 +293,11 @@ function wireDailyCheckIn() {
   });
 }
 
+/**
+ * Wires the availability button to open the availability modal (pre-filled with
+ * the user's existing slots) and save the updated slots.
+ * @returns {void}
+ */
 function wireAvailability() {
   bindOnce(document.getElementById('btn-availability'), 'click', () => {
     const date = new Date().toISOString().slice(0, 10);
@@ -277,6 +322,11 @@ function wireAvailability() {
   });
 }
 
+/**
+ * Wires the add-note button to open the note modal and save a new team note to
+ * the AI Log.
+ * @returns {void}
+ */
 function wireAddNote() {
   bindOnce(document.getElementById('btn-add-note'), 'click', () => {
     modal.show('Add Note', NoteForm());
@@ -294,18 +344,27 @@ function wireAddNote() {
   });
 }
 
+/**
+ * Wires the open-task-modal event (once) to show the task form and create a new
+ * task, auto-creating one sub-task per assignee when two or more are assigned.
+ * @returns {void}
+ */
 function wireTaskModal() {
   if (window.__sitrepTaskModalWired) return;
   window.__sitrepTaskModalWired = true;
   window.addEventListener('sitrep:open-task-modal', () => {
-    modal.show('Add Task', TaskForm(store));
+    modal.show('Add New Task', TaskForm(store));
+    const modalContainer = document.querySelector('.modal-body') || document.querySelector('#modal-content') || document.body;
+    mountTaskForm(modalContainer, store, () => modal.close());
     bindModalForm('task-form', async (formData) => {
       const assignees = formData.getAll('assignees').filter(Boolean);
-      const sprintId = store.getSelectedSprint()?.id ?? 2;
+      const sprintId = Number(formData.get('sprintId')) || store.getSelectedSprint()?.id || 2;
       const task = await createTaskRemote(store, {
         title: formData.get('title'),
         priority: formData.get('priority'),
         due: formData.get('due'),
+        description: formData.get('description') || '',
+        type: formData.get('type') || 'feature',
         assignees,
         owner: assignees[0] || store.currentAuthUser?.name || 'Team Member',
         sprintId,
@@ -333,6 +392,127 @@ function wireTaskModal() {
       pendingToast: 'Task submitted — saving…',
       successToast: assignees => assignees?.length >= 2 ? false : 'Task added to sprint.',
     });
+  });
+}
+
+/** Wire task detail modal (click on a backlog row). */
+function wireTaskDetail() {
+  if (window.__sitrepTaskDetailWired) return;
+  window.__sitrepTaskDetailWired = true;
+
+  window.addEventListener('sitrep:open-task-detail', (e) => {
+    const { taskId } = e.detail || {};
+    const task = store.getState().tasks.find((t) => Number(t.id) === Number(taskId));
+    if (!task) return;
+
+    const sprints = store.getState().sprints || [];
+    const sprintName = sprints.find((s) => s.id === task.sprintId)?.name || `Sprint ${task.sprintId}`;
+    const assignees = task.assignees?.length ? task.assignees : (task.owner ? [task.owner] : []);
+
+    const priorityColors = {
+      critical: { bg: '#fee2e2', color: '#dc2626' },
+      high:     { bg: '#fef9c3', color: '#ca8a04' },
+      medium:   { bg: '#dbeafe', color: '#2563eb' },
+      low:      { bg: '#f3f4f6', color: '#6b7280' },
+    };
+    const statusColors = {
+      blocked:  { bg: '#fee2e2', color: '#dc2626' },
+      progress: { bg: '#ede9fe', color: '#7c3aed' },
+      open:     { bg: '#f3f4f6', color: '#374151' },
+      resolved: { bg: '#dcfce7', color: '#15803d' },
+      done:     { bg: '#dcfce7', color: '#15803d' },
+    };
+    const pStyle = priorityColors[task.priority] || priorityColors.low;
+    const sStyle = statusColors[task.status] || statusColors.open;
+
+    const subtasks = store.getState().tasks.filter((t) => Number(t.parentTaskId) === Number(taskId));
+
+    const avatarColor = (name) => {
+      const palette = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6'];
+      let hash = 0;
+      for (const c of (name || '')) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+      return palette[hash % palette.length];
+    };
+    const initials = (name) => {
+      const p = (name || '').trim().split(/\s+/);
+      return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : (p[0]||'?')[0].toUpperCase();
+    };
+
+    const html = `
+      <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+        <!-- Badges row -->
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <span style="background:${pStyle.bg};color:${pStyle.color};font-size:0.75rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:999px;">
+            ${(task.priority || 'medium').charAt(0).toUpperCase() + (task.priority || 'medium').slice(1)}
+          </span>
+          <span style="background:${sStyle.bg};color:${sStyle.color};font-size:0.75rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:6px;">
+            ${task.status === 'progress' ? 'In Progress' : (task.status || 'open').charAt(0).toUpperCase() + (task.status || 'open').slice(1)}
+          </span>
+          ${task.type ? `<span style="background:#f3f4f6;color:#374151;font-size:0.75rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:6px;">${task.type}</span>` : ''}
+        </div>
+
+        <!-- Meta grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div style="background:#f9fafb;border-radius:8px;padding:0.75rem;">
+            <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.3rem;">Sprint</div>
+            <div style="font-size:0.875rem;font-weight:500;">${sprintName}</div>
+          </div>
+          <div style="background:#f9fafb;border-radius:8px;padding:0.75rem;">
+            <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.3rem;">Due Date</div>
+            <div style="font-size:0.875rem;font-weight:500;">${task.due || '—'}</div>
+          </div>
+        </div>
+
+        <!-- Assignees -->
+        <div>
+          <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.5rem;">Assignees</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+            ${assignees.length
+              ? assignees.map((a) => `
+                <div style="display:flex;align-items:center;gap:0.5rem;background:#f3f4f6;border-radius:999px;padding:0.25rem 0.75rem 0.25rem 0.3rem;">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;
+                    width:24px;height:24px;border-radius:50%;background:${avatarColor(a)};color:#fff;font-size:0.65rem;font-weight:700;">
+                    ${initials(a)}
+                  </span>
+                  <span style="font-size:0.85rem;font-weight:500;">${a}</span>
+                </div>`).join('')
+              : '<span style="color:#9ca3af;font-size:0.875rem;">Unassigned</span>'}
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.5rem;">Description</div>
+          <div style="background:#f9fafb;border-radius:8px;padding:0.875rem;font-size:0.875rem;color:#374151;min-height:60px;line-height:1.6;">
+            ${task.description && task.description.trim() ? task.description.trim().replace(/\n/g, '<br>') : '<span style="color:#9ca3af;">No description provided.</span>'}
+          </div>
+        </div>
+
+        <!-- Sub-tasks -->
+        ${subtasks.length ? `
+        <div>
+          <div style="font-size:0.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;margin-bottom:0.5rem;">
+            Sub-tasks (${subtasks.filter(s=>s.status==='resolved').length}/${subtasks.length} done)
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;">
+            ${subtasks.map((sub) => {
+              const done = sub.status === 'resolved';
+              const subA = sub.assignees?.length ? sub.assignees : (sub.owner ? [sub.owner] : []);
+              return `
+                <div style="display:flex;align-items:center;gap:0.75rem;background:#f9fafb;border-radius:8px;padding:0.6rem 0.875rem;">
+                  <span style="font-size:1rem;${done ? 'color:#15803d;' : 'color:#d1d5db;'}">${done ? '✓' : '○'}</span>
+                  <span style="font-size:0.85rem;flex:1;${done ? 'text-decoration:line-through;color:#9ca3af;' : ''}">${sub.title}</span>
+                  ${subA.length ? `<span style="font-size:0.75rem;color:#6b7280;">${subA[0]}</span>` : ''}
+                </div>`;
+            }).join('')}
+          </div>
+        </div>` : ''}
+
+      </div>
+    `;
+
+    modal.show(task.title, html);
   });
 }
 
@@ -385,6 +565,11 @@ function wireSubtaskEvents() {
 
 let meetingModalWired = false;
 
+/**
+ * Wires the open-meeting-modal event (once) to show the meeting form (pre-filled
+ * with date/time) and create a new meeting.
+ * @returns {void}
+ */
 function wireMeetingModal() {
   if (meetingModalWired) return;
   meetingModalWired = true;
@@ -411,6 +596,11 @@ function wireMeetingModal() {
   });
 }
 
+/**
+ * Wires the create-issue button to open the issue modal and create a new issue,
+ * optionally also creating a tracking task.
+ * @returns {void}
+ */
 function wireCreateIssue() {
   bindOnce(document.getElementById('btn-create-issue'), 'click', () => {
     modal.show('Create Issue', IssueForm(store));
@@ -452,6 +642,10 @@ function wireCreateIssue() {
   });
 }
 
+/**
+ * Closes the mobile navigation drawer and clears its open state.
+ * @returns {void}
+ */
 function closeMobileNav() {
   const root = document.getElementById('root');
   const menuBtn = document.getElementById('btn-mobile-menu');
@@ -460,6 +654,10 @@ function closeMobileNav() {
   document.body.classList.remove('mobile-nav-open');
 }
 
+/**
+ * Opens the mobile navigation drawer and sets its open state.
+ * @returns {void}
+ */
 function openMobileNav() {
   const root = document.getElementById('root');
   const menuBtn = document.getElementById('btn-mobile-menu');
@@ -497,6 +695,11 @@ function wireMobileNavDocument() {
   });
 }
 
+/**
+ * Wires the header search box (Enter searches issues) and the notifications
+ * button (jumps to open issues).
+ * @returns {void}
+ */
 function wireHeader() {
   const search = document.getElementById('header-search');
   bindOnce(search, 'keydown', (e) => {
@@ -514,8 +717,12 @@ function wireHeader() {
 }
 
 /**
+ * Requests AI task suggestions for the given goals, then shows a review dialog
+ * where the user can pick suggestions to add as tasks (and optionally tracking
+ * issues), updating the AI log status accordingly.
  * @param {string} goals
  * @param {HTMLButtonElement|null} aiBtn
+ * @returns {Promise<void>}
  */
 async function runAiTaskSuggestions(goals, aiBtn) {
   const authUser = store.currentAuthUser;
@@ -598,6 +805,12 @@ async function runAiTaskSuggestions(goals, aiBtn) {
   });
 }
 
+/**
+ * Wires the AI action buttons: the suggest-tasks button (opens the goals modal,
+ * then runs suggestions) and the team-summary button (generates and saves a
+ * summary, handling expired sessions).
+ * @returns {void}
+ */
 function wireAiActions() {
   const aiBtn = document.getElementById('btn-ai-suggest');
   bindOnce(aiBtn, 'click', () => {
@@ -648,10 +861,20 @@ function wireAiActions() {
   });
 }
 
+/**
+ * Placeholder for logout wiring; logout is handled via document-level click
+ * delegation (see bottom of file).
+ * @returns {void}
+ */
 function wireLogout() {
   /* Log out is wired via document-level click delegation (see bottom of file). */
 }
 
+/**
+ * Subscribes (once) to store events, re-rendering the relevant routes and
+ * syncing the header when sprints change.
+ * @returns {void}
+ */
 function subscribeToStoreEvents() {
   if (storeEventsWired) return;
   storeEventsWired = true;
