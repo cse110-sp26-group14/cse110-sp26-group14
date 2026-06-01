@@ -134,6 +134,7 @@ export async function handleApi(request, env) {
           parentTaskId: r.parent_task_id ?? null,
           updatedAt: r.updated_at ?? null,
           subtaskReviewStatus: r.subtask_review_status ?? null,
+          description: r.description ?? '',
         })),
       );
     }
