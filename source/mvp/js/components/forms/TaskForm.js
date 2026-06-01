@@ -68,8 +68,10 @@ export function TaskForm(store) {
       #task-form .assignee-chip button:hover { color:#374151; }
       #task-form .fmt-btn { background:none;border:none;cursor:pointer;padding:0.25rem 0.4rem;border-radius:4px;font-size:0.85rem;color:#6b7280;font-weight:600; }
       #task-form .fmt-btn:hover { background:#f3f4f6; }
-      #task-form input, #task-form select, #task-form textarea { outline:none; }
-      #task-form input:focus, #task-form select:focus, #task-form textarea:focus { border-color:#6366f1 !important; }
+      #task-form input, #task-form select { outline:none; }
+      #task-form input:focus, #task-form select:focus { border-color:#6366f1 !important; }
+      #task-description:empty:before { content:attr(data-placeholder);color:#9ca3af;pointer-events:none; }
+      #task-description:focus { outline:none; }
     </style>
 
     <form id="task-form">
@@ -181,9 +183,10 @@ export function TaskForm(store) {
               </svg>
             </button>
           </div>
-          <textarea id="task-description" name="description"
-            placeholder="Add more details or use AI to scaffold a description..."
-            style="width:100%;border:none;padding:0.75rem;font-size:0.875rem;resize:vertical;min-height:100px;box-sizing:border-box;font-family:inherit;"></textarea>
+          <div id="task-description" contenteditable="true"
+            data-placeholder="Add more details or use AI to scaffold a description..."
+            style="width:100%;border:none;padding:0.75rem;font-size:0.875rem;min-height:100px;box-sizing:border-box;font-family:inherit;outline:none;line-height:1.6;"></div>
+          <input type="hidden" id="task-description-hidden" name="description">
         </div>
       </div>
 
@@ -365,56 +368,54 @@ export function mountTaskForm(container, store, onCancel) {
 
   // Formatting toolbar
   container.querySelectorAll('.fmt-btn').forEach((btn) => {
-    btn.addEventListener('mousedown', (e) => e.preventDefault()); // keep textarea focus + selection
+    btn.addEventListener('mousedown', (e) => e.preventDefault()); // keep editor focus + selection
     btn.addEventListener('click', () => {
-      const textarea = container.querySelector('#task-description');
-      if (!textarea) return;
-      textarea.focus();
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selected = textarea.value.slice(start, end);
-      const before = textarea.value.slice(0, start);
-      const after = textarea.value.slice(end);
+      const editor = container.querySelector('#task-description');
+      if (!editor) return;
+      editor.focus();
       const cmd = btn.dataset.cmd;
-      let replacement = selected;
-      let cursorOffset = 0;
-
       if (cmd === 'bold') {
-        replacement = `**${selected}**`;
-        cursorOffset = selected ? replacement.length : 2;
+        document.execCommand('bold', false, null);
       } else if (cmd === 'italic') {
-        replacement = `_${selected}_`;
-        cursorOffset = selected ? replacement.length : 1;
+        document.execCommand('italic', false, null);
       } else if (cmd === 'code') {
-        replacement = `\`${selected}\``;
-        cursorOffset = selected ? replacement.length : 1;
+        const sel = window.getSelection();
+        const text = sel?.toString() || '';
+        document.execCommand('insertHTML', false, `<code style="background:#f3f4f6;padding:0.1em 0.3em;border-radius:3px;font-family:monospace;">${text || '&nbsp;'}</code>`);
       } else if (cmd === 'link') {
-        replacement = `[${selected || 'link text'}](url)`;
-        cursorOffset = replacement.length - 1;
+        const url = prompt('Enter URL:');
+        if (url) document.execCommand('createLink', false, url);
       } else if (cmd === 'ul') {
-        replacement = (selected ? selected.split('\n') : ['']).map((l) => `- ${l}`).join('\n');
-        cursorOffset = replacement.length;
+        document.execCommand('insertUnorderedList', false, null);
       } else if (cmd === 'ol') {
-        replacement = (selected ? selected.split('\n') : ['']).map((l, i) => `${i + 1}. ${l}`).join('\n');
-        cursorOffset = replacement.length;
+        document.execCommand('insertOrderedList', false, null);
       }
-
-      textarea.value = before + replacement + after;
-      textarea.focus();
-      textarea.setSelectionRange(start + cursorOffset, start + cursorOffset);
+      syncDescription();
     });
   });
 
-  // Auto-fill description (placeholder — triggers AI if wired)
+  function syncDescription() {
+    const editor = container.querySelector('#task-description');
+    const hidden = container.querySelector('#task-description-hidden');
+    if (editor && hidden) hidden.value = editor.innerText.trim();
+  }
+
+  container.querySelector('#task-description')?.addEventListener('input', syncDescription);
+
+  // Auto-fill description
   container.querySelector('#task-autofill-btn')?.addEventListener('click', () => {
     const title = container.querySelector('#task-title')?.value?.trim();
     if (!title) {
       container.querySelector('#task-title')?.focus();
       return;
     }
-    const desc = container.querySelector('#task-description');
-    if (desc && !desc.value) {
-      desc.value = `Task: ${title}\n\nAcceptance criteria:\n- [ ] \n\nNotes:\n`;
+    const editor = container.querySelector('#task-description');
+    if (editor && !editor.innerText.trim()) {
+      editor.innerHTML = `<p><strong>${title}</strong></p><p>Acceptance criteria:</p><ul><li></li></ul><p>Notes:</p><ul><li></li></ul>`;
+      syncDescription();
+      const range = document.createRange();
+      const ul = editor.querySelector('ul li');
+      if (ul) { range.setStart(ul, 0); range.collapse(true); window.getSelection().removeAllRanges(); window.getSelection().addRange(range); }
     }
   });
 
