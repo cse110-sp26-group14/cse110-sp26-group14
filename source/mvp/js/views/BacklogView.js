@@ -348,8 +348,18 @@ export class BacklogView extends BaseView {
 
   mount(container) {
     const rerender = () => {
+      const activeId = document.activeElement?.id;
+      const selStart = document.activeElement?.selectionStart;
+      const selEnd = document.activeElement?.selectionEnd;
       container.innerHTML = this.render();
       this.mount(container);
+      if (activeId) {
+        const el = container.querySelector(`#${activeId}`);
+        if (el) {
+          el.focus();
+          if (selStart != null) el.setSelectionRange(selStart, selEnd);
+        }
+      }
     };
 
     container.querySelector('#backlog-add-task')?.addEventListener('click', () => {
