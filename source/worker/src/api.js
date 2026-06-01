@@ -144,6 +144,11 @@ export async function handleApi(request, env) {
     }
 
     const taskMatch = pathname.match(/^\/api\/tasks\/(\d+)$/);
+    if (method === "DELETE" && taskMatch) {
+      const id = Number(taskMatch[1]);
+      await db.deleteTask(env.DB, id);
+      return json({ success: true });
+    }
     if (method === "PATCH" && taskMatch) {
       const id = Number(taskMatch[1]);
       const result = await db.updateTask(
