@@ -665,3 +665,15 @@
 .avail-heatmap-card {
   position: relative;
 }
+
+/* Re-open issue button - shown when issue status is resolved */
+.unresolve-issue-btn {
+  background: var(--warning-light);
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.unresolve-issue-btn:hover {
+  background: var(--warning);
+  color: var(--white);
+}
