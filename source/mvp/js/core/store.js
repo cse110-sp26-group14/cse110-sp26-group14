@@ -3,16 +3,19 @@
  * @module core/store
  */
 
-import { EVENTS } from './events.js';
-import { INITIAL_DATA } from '../data/initialData.js';
-import { useRemoteData } from '../config/appConfig.js';
-import { loadState, saveState } from '../services/storageService.js';
-import { createId } from '../utils/ids.js';
-import { currentTimestamp, todayISO } from '../utils/dates.js';
-import { defaultDueForSprint } from '../utils/taskHelpers.js';
-import { applySprintLifecycle, pickDefaultSprint } from '../utils/sprintLifecycle.js';
+import { EVENTS } from "./events.js";
+import { INITIAL_DATA } from "../data/initialData.js";
+import { useRemoteData } from "../config/appConfig.js";
+import { loadState, saveState } from "../services/storageService.js";
+import { createId } from "../utils/ids.js";
+import { currentTimestamp, todayISO } from "../utils/dates.js";
+import { defaultDueForSprint } from "../utils/taskHelpers.js";
+import {
+  applySprintLifecycle,
+  pickDefaultSprint,
+} from "../utils/sprintLifecycle.js";
 
-const STORAGE_KEY = 'se-sitrep-mvp-state';
+const STORAGE_KEY = "se-sitrep-mvp-state";
 
 /**
  * Application store: sprint data, issues, reports, and AI logs.
@@ -33,8 +36,8 @@ export class Store {
     /** @type {object[]} cached Google Calendar events */
     this.googleEvents = [];
     this.dataModeLabel = useRemoteData()
-      ? '(shared via API)'
-      : '(local only — other teammates will not see your issues)';
+      ? "(shared via API)"
+      : "(local only — other teammates will not see your issues)";
   }
 
   /**
@@ -98,7 +101,7 @@ export class Store {
    * @returns {object|undefined}
    */
   getActiveSprint() {
-    return this.state.sprints.find((s) => s.status === 'active');
+    return this.state.sprints.find((s) => s.status === "active");
   }
 
   /**
@@ -142,14 +145,17 @@ export class Store {
    * @returns {object}
    */
   addSprint(input) {
-    const maxId = this.state.sprints.reduce((m, s) => Math.max(m, Number(s.id)), 0);
+    const maxId = this.state.sprints.reduce(
+      (m, s) => Math.max(m, Number(s.id)),
+      0,
+    );
     const id = maxId + 1;
     const sprint = {
       id,
-      name: String(input.name || '').trim() || `Sprint ${id}`,
+      name: String(input.name || "").trim() || `Sprint ${id}`,
       start: input.start,
       end: input.end,
-      status: input.status || 'planned',
+      status: input.status || "planned",
     };
     this.state.sprints.push(sprint);
     this.reconcileSprints();
@@ -269,24 +275,27 @@ export class Store {
       userId: report.userId ?? this.getCurrentUserId(),
       date: report.date ?? todayISO(),
       timestamp: currentTimestamp(),
-      status: report.status || 'In Progress',
-      notes: report.notes || '',
-      sprintId: report.sprintId ?? this.getSelectedSprint()?.id ?? this.getActiveSprint()?.id,
+      status: report.status || "In Progress",
+      notes: report.notes || "",
+      sprintId:
+        report.sprintId ??
+        this.getSelectedSprint()?.id ??
+        this.getActiveSprint()?.id,
     };
 
     this.state.reports.push(newReport);
     this.publish(EVENTS.REPORTS_CHANGED, this.state.reports);
 
-    if (newReport.blockers && newReport.blockers !== 'None') {
+    if (newReport.blockers && newReport.blockers !== "None") {
       this.addIssue({
         title: `Blocker: ${newReport.blockers}`,
-        severity: 'high',
-        status: 'open',
-        tags: ['Check-In Blocker'],
-        author: this.currentAuthUser?.name || 'Team Member',
+        severity: "high",
+        status: "open",
+        tags: ["Check-In Blocker"],
+        author: this.currentAuthUser?.name || "Team Member",
         assignee: null,
         sprintId: this.getActiveSprint()?.id ?? 2,
-        description: newReport.progress || '',
+        description: newReport.progress || "",
       });
     }
 
@@ -300,9 +309,10 @@ export class Store {
    * @returns {object}
    */
   addIssue(issue) {
-    const sprint = this.state.sprints.find((s) => s.id === issue.sprintId)
-      || this.getSelectedSprint()
-      || this.getActiveSprint();
+    const sprint =
+      this.state.sprints.find((s) => s.id === issue.sprintId) ||
+      this.getSelectedSprint() ||
+      this.getActiveSprint();
     const newIssue = {
       ...issue,
       id: createId(),
@@ -336,7 +346,9 @@ export class Store {
    * @returns {object|null}
    */
   updateIssue(issueId, patch) {
-    const issue = this.state.issues.find((i) => Number(i.id) === Number(issueId));
+    const issue = this.state.issues.find(
+      (i) => Number(i.id) === Number(issueId),
+    );
     if (!issue) return null;
     Object.assign(issue, patch);
     this.publish(EVENTS.ISSUES_CHANGED, this.state.issues);
@@ -366,7 +378,9 @@ export class Store {
    * @returns {object|null}
    */
   updateReport(reportId, patch) {
-    const report = this.state.reports.find((r) => Number(r.id) === Number(reportId));
+    const report = this.state.reports.find(
+      (r) => Number(r.id) === Number(reportId),
+    );
     if (!report) return null;
     Object.assign(report, patch);
     this.publish(EVENTS.REPORTS_CHANGED, this.state.reports);
@@ -396,32 +410,49 @@ export class Store {
   resolveIssue(issueId) {
     const issue = this.state.issues.find((i) => i.id === issueId);
     if (issue) {
-      issue.status = 'resolved';
+      issue.status = "resolved";
       this.publish(EVENTS.ISSUES_CHANGED, this.state.issues);
     }
   }
 
   /**
-   * Adds a task (filling in id, sprint, status, owner, and due-date defaults)
-   * and publishes a tasks-changed event.
-   * @param {object} task
+   * Re-opens a previously-resolved issue by setting its status back to 'open', publishing an issues-changed event when a matching issue is found.
+   * @param {*} issueId
+   */
+
+  unresolveIssue(issueId) {
+    const issue = this.state.issues.find(
+      (i) => Number(i.id) === Number(issueId),
+    );
+    if (issue) {
+      issue.status = "open";
+      this.publish(EVENTS.ISSUES_CHANGED, this.state.issues);
+    }
+  }
+
+  /**
+   * Deletes the task with the given id and publishes a tasks-changed event.
+   * @param {number} taskId
    * @returns {object}
    */
   deleteTask(taskId) {
-    this.state.tasks = this.state.tasks.filter((t) => Number(t.id) !== Number(taskId));
+    this.state.tasks = this.state.tasks.filter(
+      (t) => Number(t.id) !== Number(taskId),
+    );
     this.publish(EVENTS.TASKS_CHANGED, this.state.tasks);
     this.save();
   }
 
   addTask(task) {
-    const sprint = this.state.sprints.find((s) => s.id === task.sprintId)
-      || this.getSelectedSprint()
-      || this.getActiveSprint();
+    const sprint =
+      this.state.sprints.find((s) => s.id === task.sprintId) ||
+      this.getSelectedSprint() ||
+      this.getActiveSprint();
     const newTask = {
       ...task,
       id: createId(),
       sprintId: task.sprintId ?? sprint?.id,
-      status: task.status || 'open',
+      status: task.status || "open",
       owner: task.owner || this.currentAuthUser?.name || null,
       due: task.due || defaultDueForSprint(sprint),
     };
@@ -435,7 +466,9 @@ export class Store {
    * @param {object} updatedTask
    */
   patchTask(updatedTask) {
-    const idx = this.state.tasks.findIndex((t) => Number(t.id) === Number(updatedTask.id));
+    const idx = this.state.tasks.findIndex(
+      (t) => Number(t.id) === Number(updatedTask.id),
+    );
     if (idx >= 0) {
       this.state.tasks[idx] = { ...this.state.tasks[idx], ...updatedTask };
     } else {

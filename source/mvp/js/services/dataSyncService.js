@@ -3,8 +3,8 @@
  * @module services/dataSyncService
  */
 
-import { EVENTS } from '../core/events.js';
-import { useRemoteData } from '../config/appConfig.js';
+import { EVENTS } from "../core/events.js";
+import { useRemoteData } from "../config/appConfig.js";
 import {
   fetchAppState,
   postIssue,
@@ -24,11 +24,11 @@ import {
   completeSubtask,
   fetchActiveUsers,
   deleteTask,
-} from './apiClient.js';
-import { createNoteLog } from './aiLogService.js';
-import { todayISO } from '../utils/dates.js';
-import { enrichNewTask, normalizeTasksInStore } from '../utils/taskHelpers.js';
-import { enrichNewIssue } from '../utils/issueHelpers.js';
+} from "./apiClient.js";
+import { createNoteLog } from "./aiLogService.js";
+import { todayISO } from "../utils/dates.js";
+import { enrichNewTask, normalizeTasksInStore } from "../utils/taskHelpers.js";
+import { enrichNewIssue } from "../utils/issueHelpers.js";
 
 /**
  * Refreshes the store's state from the API (remote mode only), reconciling
@@ -87,8 +87,28 @@ export async function resolveIssueRemote(store, issueId) {
     store.resolveIssue(issueId);
     return;
   }
-  const updated = await patchIssue(issueId, { status: 'resolved' });
+  const updated = await patchIssue(issueId, { status: "resolved" });
   const issue = store.state.issues.find((i) => i.id === issueId);
+  if (issue) {
+    issue.status = updated.status;
+    store.publish(EVENTS.ISSUES_CHANGED, store.state.issues);
+  }
+}
+
+/**
+ * Re-opens a resolved issue locally or via the API, publishing an issues-changed event when the API path updates a matching issue.
+ * @param {import('../core/store.js').Store} store
+ * @param {number} issueId
+ */
+export async function unresolveIssueRemote(store, issueId) {
+  if (!useRemoteData()) {
+    store.unresolveIssue(issueId);
+    return;
+  }
+  const updated = await patchIssue(issueId, { status: "open" });
+  const issue = store.state.issues.find(
+    (i) => Number(i.id) === Number(issueId),
+  );
   if (issue) {
     issue.status = updated.status;
     store.publish(EVENTS.ISSUES_CHANGED, store.state.issues);
@@ -131,16 +151,16 @@ export async function createReportRemote(store, reportInput) {
   store.state.reports.push(created);
   store.publish(EVENTS.REPORTS_CHANGED, store.state.reports);
 
-  if (payload.blockers && payload.blockers !== 'None') {
+  if (payload.blockers && payload.blockers !== "None") {
     await createIssueRemote(store, {
       title: `Blocker: ${payload.blockers}`,
-      severity: 'high',
-      status: 'open',
-      tags: ['Check-In Blocker'],
-      author: store.currentAuthUser?.name || 'Team Member',
+      severity: "high",
+      status: "open",
+      tags: ["Check-In Blocker"],
+      author: store.currentAuthUser?.name || "Team Member",
       assignee: null,
       sprintId: store.getSelectedSprint()?.id ?? 2,
-      description: payload.progress || '',
+      description: payload.progress || "",
     });
   }
   return created;
@@ -317,7 +337,7 @@ export function mergeAiLogFromApi(store, log) {
  * @param {{ title: string, content: string }} note
  */
 export async function createNoteRemote(store, note) {
-  const author = store.currentAuthUser?.name || 'Team';
+  const author = store.currentAuthUser?.name || "Team";
   if (!useRemoteData()) {
     const log = createNoteLog(note.title, note.content, author);
     store.addAiLog(log);
@@ -325,10 +345,10 @@ export async function createNoteRemote(store, note) {
   }
 
   const { log } = await postAiLog({
-    type: 'Note',
+    type: "Note",
     title: note.title,
     content: note.content,
-    details: { input: 'Manual note', reviewer: author },
+    details: { input: "Manual note", reviewer: author },
   });
   mergeAiLogFromApi(store, log);
   return log;
@@ -343,10 +363,10 @@ export async function createNoteRemote(store, note) {
  */
 export async function createSprintRemote(store, input) {
   if (!input.name?.trim() || !input.start || !input.end) {
-    throw new Error('Sprint name, start date, and end date are required.');
+    throw new Error("Sprint name, start date, and end date are required.");
   }
   if (input.end < input.start) {
-    throw new Error('End date must be on or after start date.');
+    throw new Error("End date must be on or after start date.");
   }
   if (!useRemoteData()) {
     return store.addSprint(input);
@@ -355,7 +375,7 @@ export async function createSprintRemote(store, input) {
     name: input.name.trim(),
     start: input.start,
     end: input.end,
-    status: input.status || 'planned',
+    status: input.status || "planned",
   });
   await refreshStoreFromApi(store);
   store.setSelectedSprintId(created.id);
@@ -387,7 +407,12 @@ export function mergeTasksFromApi(store, tasks) {
  * @param {string|null} [expectedUpdatedAt]
  * @returns {Promise<{ ok: boolean, task?: object, conflict?: boolean, serverTask?: object }>}
  */
-export async function updateTaskRemote(store, taskId, patch, expectedUpdatedAt = null) {
+export async function updateTaskRemote(
+  store,
+  taskId,
+  patch,
+  expectedUpdatedAt = null,
+) {
   if (!useRemoteData()) {
     store.patchTask({ id: taskId, ...patch });
     return { ok: true, task: patch };
@@ -398,7 +423,11 @@ export async function updateTaskRemote(store, taskId, patch, expectedUpdatedAt =
     return { ok: true, task: updated };
   } catch (err) {
     if (err.conflict) {
-      return { ok: false, conflict: true, serverTask: err.body?.serverTask || null };
+      return {
+        ok: false,
+        conflict: true,
+        serverTask: err.body?.serverTask || null,
+      };
     }
     throw err;
   }
@@ -414,7 +443,11 @@ export async function updateTaskRemote(store, taskId, patch, expectedUpdatedAt =
  */
 export async function createSubtaskRemote(store, parentId, input) {
   if (!useRemoteData()) {
-    const sub = store.addTask({ ...input, parentTaskId: parentId, source: 'subtask' });
+    const sub = store.addTask({
+      ...input,
+      parentTaskId: parentId,
+      source: "subtask",
+    });
     return sub;
   }
   const sub = await postSubtask(parentId, input);
@@ -432,7 +465,7 @@ export async function createSubtaskRemote(store, parentId, input) {
  */
 export async function completeSubtaskRemote(store, subtaskId) {
   if (!useRemoteData()) {
-    store.patchTask({ id: subtaskId, status: 'resolved' });
+    store.patchTask({ id: subtaskId, status: "resolved" });
     return store.state.tasks.find((t) => t.id === subtaskId);
   }
   const updated = await completeSubtask(subtaskId);
@@ -445,8 +478,8 @@ export async function completeSubtaskRemote(store, subtaskId) {
 
 const POLL_MS = 10_000;
 let _pollTimer = null;
-let _lastTasksHash = '';
-let _lastUsersHash = '';
+let _lastTasksHash = "";
+let _lastUsersHash = "";
 
 /**
  * Builds a change-detection hash for a task list from each task's id, status,
@@ -455,7 +488,9 @@ let _lastUsersHash = '';
  * @returns {string}
  */
 function _hashTasks(tasks) {
-  return JSON.stringify((tasks || []).map((t) => `${t.id}:${t.status}:${t.updatedAt}`));
+  return JSON.stringify(
+    (tasks || []).map((t) => `${t.id}:${t.status}:${t.updatedAt}`),
+  );
 }
 
 /**
@@ -474,17 +509,25 @@ function _hashUsers(users) {
  * @param {string} msg
  */
 function _showSyncBanner(msg) {
-  const existing = document.getElementById('sitrep-sync-banner');
+  const existing = document.getElementById("sitrep-sync-banner");
   if (existing) existing.remove();
-  const el = document.createElement('div');
-  el.id = 'sitrep-sync-banner';
+  const el = document.createElement("div");
+  el.id = "sitrep-sync-banner";
   el.textContent = `🔄 ${msg}`;
   el.style.cssText = [
-    'position:fixed', 'bottom:1.5rem', 'left:50%', 'transform:translateX(-50%)',
-    'background:#1d4ed8', 'color:white', 'padding:0.6rem 1.4rem',
-    'border-radius:999px', 'font-size:0.875rem', 'font-weight:500',
-    'z-index:9999', 'box-shadow:0 4px 12px rgba(0,0,0,0.2)',
-  ].join(';');
+    "position:fixed",
+    "bottom:1.5rem",
+    "left:50%",
+    "transform:translateX(-50%)",
+    "background:#1d4ed8",
+    "color:white",
+    "padding:0.6rem 1.4rem",
+    "border-radius:999px",
+    "font-size:0.875rem",
+    "font-weight:500",
+    "z-index:9999",
+    "box-shadow:0 4px 12px rgba(0,0,0,0.2)",
+  ].join(";");
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 4500);
 }
@@ -510,7 +553,7 @@ export function startLiveSync(store, router) {
       const newTasksHash = _hashTasks(state.tasks);
       if (newTasksHash !== _lastTasksHash) {
         store.setTasks(state.tasks || []);
-        _showSyncBanner('Tasks updated by a team member.');
+        _showSyncBanner("Tasks updated by a team member.");
         changed = true;
       }
       _lastTasksHash = newTasksHash;
@@ -523,13 +566,13 @@ export function startLiveSync(store, router) {
       _lastUsersHash = newUsersHash;
 
       if (changed && router) {
-        const hash = window.location.hash || '#dashboard';
-        if (['#backlog', '#dashboard', '#team-availability'].includes(hash)) {
+        const hash = window.location.hash || "#dashboard";
+        if (["#backlog", "#dashboard", "#team-availability"].includes(hash)) {
           router.handleRoute();
         }
       }
     } catch (err) {
-      console.warn('[LiveSync] Poll failed:', err.message);
+      console.warn("[LiveSync] Poll failed:", err.message);
     }
   }, POLL_MS);
 }
