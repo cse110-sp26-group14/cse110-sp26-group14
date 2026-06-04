@@ -425,15 +425,14 @@ export class Store {
       (i) => Number(i.id) === Number(issueId),
     );
     if (issue) {
-      issue.start = "open";
+      issue.status = "open";
       this.publish(EVENTS.ISSUES_CHANGED, this.state.issues);
     }
   }
 
   /**
-   * Adds a task (filling in id, sprint, status, owner, and due-date defaults)
-   * and publishes a tasks-changed event.
-   * @param {object} task
+   * Deletes the task with the given id and publishes a tasks-changed event.
+   * @param {number} taskId
    * @returns {object}
    */
   deleteTask(taskId) {

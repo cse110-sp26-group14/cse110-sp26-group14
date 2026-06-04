@@ -100,14 +100,15 @@ export async function resolveIssueRemote(store, issueId) {
  * @param {import('../core/store.js').Store} store
  * @param {number} issueId
  */
-
 export async function unresolveIssueRemote(store, issueId) {
   if (!useRemoteData()) {
     store.unresolveIssue(issueId);
     return;
   }
-  const update = await patchIssue(issueId, { status: "open" });
-  const issue = store.state.issues.find((i) => i.id === issueId);
+  const updated = await patchIssue(issueId, { status: "open" });
+  const issue = store.state.issues.find(
+    (i) => Number(i.id) === Number(issueId),
+  );
   if (issue) {
     issue.status = updated.status;
     store.publish(EVENTS.ISSUES_CHANGED, store.state.issues);
