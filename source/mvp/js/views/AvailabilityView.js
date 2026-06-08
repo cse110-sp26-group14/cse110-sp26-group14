@@ -25,17 +25,17 @@ const DAY_LABELS = {
   Sun: "Sunday",
 };
 
-/** Build every 30-min label from 00:00 to 23:30 */
+/** Build every 15-min label from 00:00 to 23:45 */
 function buildTimeSlots() {
   const slots = [];
   for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += 30) {
+    for (let m = 0; m < 60; m += 15) {
       slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }
   }
   return slots;
 }
-const TIME_SLOTS = buildTimeSlots(); // 48 entries
+const TIME_SLOTS = buildTimeSlots(); // 96 entries
 
 function slotKey(day, time) {
   return `${day}_${time}`;
@@ -91,7 +91,6 @@ export class AvailabilityView extends BaseView {
     this._paintMode = true;
     this._container = null;
     this._bestKey = null;
-    this._bestCount = 0;
     this._debouncedSave = debounce(() => this._saveAvailability(), 700);
   }
 
@@ -103,14 +102,8 @@ export class AvailabilityView extends BaseView {
     `;
     const bodyRows = TIME_SLOTS.map((time) => {
       const isHour = time.endsWith(":00");
-      const isHalf = time.endsWith(":30");
-      const labelClass = isHour
-        ? " avail-time-hour"
-        : isHalf
-          ? " avail-time-half"
-          : "";
       return `
-        <div class="avail-time-label${labelClass}">${isHour ? fmt12(time) : ""}</div>
+        <div class="avail-time-label${isHour ? " avail-time-hour" : ""}">${isHour ? time : ""}</div>
         ${DAYS.map(
           (day) => `
           <div class="avail-cell avail-cell-mine"
@@ -122,14 +115,8 @@ export class AvailabilityView extends BaseView {
     }).join("");
     const heatRows = TIME_SLOTS.map((time) => {
       const isHour = time.endsWith(":00");
-      const isHalf = time.endsWith(":30");
-      const labelClass = isHour
-        ? " avail-time-hour"
-        : isHalf
-          ? " avail-time-half"
-          : "";
       return `
-        <div class="avail-time-label${labelClass}">${isHour ? fmt12(time) : ""}</div>
+        <div class="avail-time-label${isHour ? " avail-time-hour" : ""}">${isHour ? time : ""}</div>
         ${DAYS.map(
           (day) => `
           <div class="avail-cell avail-cell-heat"
@@ -249,11 +236,8 @@ export class AvailabilityView extends BaseView {
       ?.addEventListener("click", () => {
         const detail = {};
         if (this._bestKey) {
-          const [day, time] = this._bestKey.split("_");
-          detail.date = this._dayKeyToDate(day);
-          detail.time = fmt12(time);
-          detail.teamCount = this._bestCount;
-          detail.teamSize = this._heatmapData.teamSize;
+          const [, time] = this._bestKey.split("_");
+          detail.time = time;
         }
         window.dispatchEvent(
           new CustomEvent("sitrep:open-meeting-modal", { detail }),
@@ -339,36 +323,22 @@ export class AvailabilityView extends BaseView {
     const { heatmap, teamSize } = this._heatmapData;
     let bestKey = null;
     let bestCount = 0;
-    // Sort keys so ties resolve to the earliest slot
-    const sortedKeys = Object.keys(heatmap || {}).sort();
-    for (const key of sortedKeys) {
-      const val = heatmap[key];
+    for (const [key, val] of Object.entries(heatmap || {})) {
       if (val.count > bestCount) {
         bestCount = val.count;
         bestKey = key;
       }
     }
     this._bestKey = bestKey;
-    this._bestCount = bestCount;
     const slotEl = this._container.querySelector("#avail-best-slot");
     const scoreEl = this._container.querySelector("#avail-best-score");
-    const btn = this._container.querySelector("#avail-add-meeting-btn");
     if (bestKey && slotEl) {
       const [day, time] = bestKey.split("_");
       slotEl.textContent = `${DAY_LABELS[day] || day} • ${fmt12(time)}`;
-      if (scoreEl)
-        scoreEl.textContent = `${bestCount}/${teamSize} team members available`;
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = "📅 Add meeting to calendar";
-      }
+      if (scoreEl) scoreEl.textContent = `${bestCount}/${teamSize} team score`;
     } else if (slotEl) {
-      slotEl.textContent = "No suitable team meeting time found.";
+      slotEl.textContent = "No availability data yet";
       if (scoreEl) scoreEl.textContent = "";
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = "📅 No suitable meeting time";
-      }
     }
   }
 
@@ -515,25 +485,11 @@ export class AvailabilityView extends BaseView {
     });
   }
 
-  // ─── Day key → ISO date ─────────────────────────────────────────────
-
-  _dayKeyToDate(dayKey) {
-    const dayIndex = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
-    const today = new Date();
-    // Find this week's Monday (ISO week: Mon=0 … Sun=6)
-    const dow = (today.getDay() + 6) % 7;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - dow);
-    const target = new Date(monday);
-    target.setDate(monday.getDate() + (dayIndex[dayKey] ?? 0));
-    return target.toISOString().slice(0, 10);
-  }
-
   // ─── Scroll to hour ────────────────────────────────────────────────────
 
   _scrollToHour(hour) {
-    // Cell height = 16px, header = 28px, each hour = 2 rows (30-min slots)
-    const scrollTop = 28 + hour * 2 * 16 - 40;
+    // Cell height = 16px, header = 28px, each hour = 4 rows
+    const scrollTop = 28 + hour * 4 * 16 - 40;
     ["#my-scroll", "#heat-scroll"].forEach((id) => {
       const el = this._container.querySelector(id);
       if (el) el.scrollTop = Math.max(0, scrollTop);
