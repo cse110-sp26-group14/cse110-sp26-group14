@@ -415,7 +415,7 @@ export function mountTaskForm(container, store, onCancel) {
     }
     const editor = container.querySelector('#task-description');
     if (editor && !editor.innerText.trim()) {
-      editor.innerHTML = `<p><strong>${title}</strong></p><p>Acceptance criteria:</p><ul><li></li></ul><p>Notes:</p><ul><li></li></ul>`;
+      editor.innerHTML = `<p><strong>${esc(title)}</strong></p><p>Acceptance criteria:</p><ul><li></li></ul><p>Notes:</p><ul><li></li></ul>`;
       syncDescription();
       const range = document.createRange();
       const ul = editor.querySelector('ul li');
