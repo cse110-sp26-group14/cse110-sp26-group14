@@ -3,8 +3,8 @@
  * @module services/dataSyncService
  */
 
-import { EVENTS } from '../core/events.js';
-import { useRemoteData } from '../config/appConfig.js';
+import { EVENTS } from "../core/events.js";
+import { useRemoteData } from "../config/appConfig.js";
 import {
   fetchAppState,
   postIssue,
@@ -23,13 +23,16 @@ import {
   postSubtask,
   completeSubtask,
   fetchActiveUsers,
-} from './apiClient.js';
-import { createNoteLog } from './aiLogService.js';
-import { todayISO } from '../utils/dates.js';
-import { enrichNewTask, normalizeTasksInStore } from '../utils/taskHelpers.js';
-import { enrichNewIssue } from '../utils/issueHelpers.js';
+  deleteTask,
+} from "./apiClient.js";
+import { createNoteLog } from "./aiLogService.js";
+import { todayISO } from "../utils/dates.js";
+import { enrichNewTask, normalizeTasksInStore } from "../utils/taskHelpers.js";
+import { enrichNewIssue } from "../utils/issueHelpers.js";
 
 /**
+ * Refreshes the store's state from the API (remote mode only), reconciling
+ * sprints and normalizing tasks, then publishing or saving as appropriate.
  * @param {import('../core/store.js').Store} store
  * @returns {Promise<void>}
  */
@@ -46,6 +49,7 @@ export async function refreshStoreFromApi(store) {
 }
 
 /**
+ * Hydrates the store from the API on initial load (delegates to refreshStoreFromApi).
  * @param {import('../core/store.js').Store} store
  * @returns {Promise<void>}
  */
@@ -54,6 +58,8 @@ export async function hydrateStoreFromApi(store) {
 }
 
 /**
+ * Creates an issue locally or via the API (enriching it first), then publishes
+ * an issues-changed event.
  * @param {import('../core/store.js').Store} store
  * @param {object} issue
  * @returns {Promise<object>}
@@ -71,6 +77,8 @@ export async function createIssueRemote(store, issue) {
 }
 
 /**
+ * Marks an issue resolved locally or via the API, publishing an issues-changed
+ * event when the API path updates a matching issue.
  * @param {import('../core/store.js').Store} store
  * @param {number} issueId
  */
@@ -79,7 +87,7 @@ export async function resolveIssueRemote(store, issueId) {
     store.resolveIssue(issueId);
     return;
   }
-  const updated = await patchIssue(issueId, { status: 'resolved' });
+  const updated = await patchIssue(issueId, { status: "resolved" });
   const issue = store.state.issues.find((i) => i.id === issueId);
   if (issue) {
     issue.status = updated.status;
@@ -88,6 +96,27 @@ export async function resolveIssueRemote(store, issueId) {
 }
 
 /**
+ * Re-opens a resolved issue locally or via the API, publishing an issues-changed event when the API path updates a matching issue.
+ * @param {import('../core/store.js').Store} store
+ * @param {number} issueId
+ */
+export async function unresolveIssueRemote(store, issueId) {
+  if (!useRemoteData()) {
+    store.unresolveIssue(issueId);
+    return;
+  }
+  const updated = await patchIssue(issueId, { status: "open" });
+  const issue = store.state.issues.find(
+    (i) => Number(i.id) === Number(issueId),
+  );
+  if (issue) {
+    issue.status = updated.status;
+    store.publish(EVENTS.ISSUES_CHANGED, store.state.issues);
+  }
+}
+
+/**
+ * Applies a patch to an issue locally or via the API.
  * @param {import('../core/store.js').Store} store
  * @param {number} issueId
  * @param {object} patch
@@ -102,6 +131,8 @@ export async function updateIssueRemote(store, issueId, patch) {
 }
 
 /**
+ * Creates a report locally or via the API (filling in user/date defaults) and,
+ * when the report records a non-"None" blocker, also creates a linked issue.
  * @param {import('../core/store.js').Store} store
  * @param {object} reportInput
  * @returns {Promise<object>}
@@ -120,22 +151,23 @@ export async function createReportRemote(store, reportInput) {
   store.state.reports.push(created);
   store.publish(EVENTS.REPORTS_CHANGED, store.state.reports);
 
-  if (payload.blockers && payload.blockers !== 'None') {
+  if (payload.blockers && payload.blockers !== "None") {
     await createIssueRemote(store, {
       title: `Blocker: ${payload.blockers}`,
-      severity: 'high',
-      status: 'open',
-      tags: ['Check-In Blocker'],
-      author: store.currentAuthUser?.name || 'Team Member',
+      severity: "high",
+      status: "open",
+      tags: ["Check-In Blocker"],
+      author: store.currentAuthUser?.name || "Team Member",
       assignee: null,
       sprintId: store.getSelectedSprint()?.id ?? 2,
-      description: payload.progress || '',
+      description: payload.progress || "",
     });
   }
   return created;
 }
 
 /**
+ * Applies a patch to a report locally or via the API.
  * @param {import('../core/store.js').Store} store
  * @param {number} reportId
  * @param {object} patch
@@ -150,10 +182,8 @@ export async function updateReportRemote(store, reportId, patch) {
 }
 
 /**
- * @param {import('../core/store.js').Store} store
- * @param {object} taskInput
- */
-/**
+ * Creates a meeting locally or via the API (defaulting the sprint id) and
+ * publishes a meetings-changed event.
  * @param {import('../core/store.js').Store} store
  * @param {object} meetingInput
  */
@@ -171,6 +201,7 @@ export async function createMeetingRemote(store, meetingInput) {
 }
 
 /**
+ * Updates an AI log's status (delegates to updateAiLogRemote).
  * @param {import('../core/store.js').Store} store
  * @param {number} logId
  * @param {string} status
@@ -179,18 +210,35 @@ export async function updateAiLogStatusRemote(store, logId, status) {
   return updateAiLogRemote(store, logId, { status });
 }
 
+export async function deleteTaskRemote(store, taskId) {
+  if (useRemoteData()) {
+    await deleteTask(taskId);
+  }
+  store.deleteTask(taskId);
+}
+
+/**
+ * Creates a task locally or via the API (enriching it first) and publishes a
+ * tasks-changed event.
+ * @param {import('../core/store.js').Store} store
+ * @param {object} taskInput
+ * @param {object} [opts]
+ * @returns {Promise<object>}
+ */
 export async function createTaskRemote(store, taskInput, opts = {}) {
   const payload = enrichNewTask(store, taskInput, opts);
   if (!useRemoteData()) {
     return store.addTask(payload);
   }
   const created = await postTask(payload);
-  store.state.tasks.push(created);
+  const merged = { ...payload, ...created };
+  store.state.tasks.push(merged);
   store.publish(EVENTS.TASKS_CHANGED, store.state.tasks);
-  return created;
+  return merged;
 }
 
 /**
+ * Applies an inline patch to a task locally or via the API.
  * @param {import('../core/store.js').Store} store
  * @param {number} taskId
  * @param {object} patch
@@ -205,6 +253,7 @@ export async function updateInlineTaskRemote(store, taskId, patch) {
 }
 
 /**
+ * Applies a patch to an AI log locally or via the API.
  * @param {import('../core/store.js').Store} store
  * @param {number} logId
  * @param {object} patch
@@ -219,6 +268,8 @@ export async function updateAiLogRemote(store, logId, patch) {
 }
 
 /**
+ * Saves a user's availability for a date locally or via the API, updating the
+ * stored availability map (and the local user record in local mode).
  * @param {import('../core/store.js').Store} store
  * @param {string} date
  * @param {object} slots
@@ -247,6 +298,8 @@ export async function saveAvailabilityRemote(store, date, slots) {
 }
 
 /**
+ * Updates the current user's profile fields locally or via the API, refreshing
+ * the store from the API afterward in remote mode.
  * @param {import('../core/store.js').Store} store
  * @param {{ name?: string, role?: string }} fields
  */
@@ -264,6 +317,8 @@ export async function updateProfileRemote(store, fields) {
 }
 
 /**
+ * Inserts an AI log from the API into the store if not already present,
+ * publishing an AI-logs-changed event when added.
  * @param {import('../core/store.js').Store} store
  * @param {object} log
  */
@@ -276,15 +331,13 @@ export function mergeAiLogFromApi(store, log) {
 }
 
 /**
- * @param {import('../core/store.js').Store} store
- * @param {object[]} tasks
- */
-/**
+ * Creates a team note locally or via the API, merging the returned log into the
+ * store in remote mode.
  * @param {import('../core/store.js').Store} store
  * @param {{ title: string, content: string }} note
  */
 export async function createNoteRemote(store, note) {
-  const author = store.currentAuthUser?.name || 'Team';
+  const author = store.currentAuthUser?.name || "Team";
   if (!useRemoteData()) {
     const log = createNoteLog(note.title, note.content, author);
     store.addAiLog(log);
@@ -292,26 +345,28 @@ export async function createNoteRemote(store, note) {
   }
 
   const { log } = await postAiLog({
-    type: 'Note',
+    type: "Note",
     title: note.title,
     content: note.content,
-    details: { input: 'Manual note', reviewer: author },
+    details: { input: "Manual note", reviewer: author },
   });
   mergeAiLogFromApi(store, log);
   return log;
 }
 
 /**
+ * Validates and creates a sprint locally or via the API, refreshing the store
+ * and selecting the new sprint in remote mode.
  * @param {import('../core/store.js').Store} store
  * @param {{ name: string, start: string, end: string, status?: string }} input
  * @returns {Promise<object>}
  */
 export async function createSprintRemote(store, input) {
   if (!input.name?.trim() || !input.start || !input.end) {
-    throw new Error('Sprint name, start date, and end date are required.');
+    throw new Error("Sprint name, start date, and end date are required.");
   }
   if (input.end < input.start) {
-    throw new Error('End date must be on or after start date.');
+    throw new Error("End date must be on or after start date.");
   }
   if (!useRemoteData()) {
     return store.addSprint(input);
@@ -320,13 +375,19 @@ export async function createSprintRemote(store, input) {
     name: input.name.trim(),
     start: input.start,
     end: input.end,
-    status: input.status || 'planned',
+    status: input.status || "planned",
   });
   await refreshStoreFromApi(store);
   store.setSelectedSprintId(created.id);
   return created;
 }
 
+/**
+ * Merges tasks from the API into the store, appending any not already present,
+ * then publishes a tasks-changed event.
+ * @param {import('../core/store.js').Store} store
+ * @param {object[]} tasks
+ */
 export function mergeTasksFromApi(store, tasks) {
   if (!tasks?.length) return;
   tasks.forEach((t) => {
@@ -346,7 +407,12 @@ export function mergeTasksFromApi(store, tasks) {
  * @param {string|null} [expectedUpdatedAt]
  * @returns {Promise<{ ok: boolean, task?: object, conflict?: boolean, serverTask?: object }>}
  */
-export async function updateTaskRemote(store, taskId, patch, expectedUpdatedAt = null) {
+export async function updateTaskRemote(
+  store,
+  taskId,
+  patch,
+  expectedUpdatedAt = null,
+) {
   if (!useRemoteData()) {
     store.patchTask({ id: taskId, ...patch });
     return { ok: true, task: patch };
@@ -357,7 +423,11 @@ export async function updateTaskRemote(store, taskId, patch, expectedUpdatedAt =
     return { ok: true, task: updated };
   } catch (err) {
     if (err.conflict) {
-      return { ok: false, conflict: true, serverTask: err.body?.serverTask || null };
+      return {
+        ok: false,
+        conflict: true,
+        serverTask: err.body?.serverTask || null,
+      };
     }
     throw err;
   }
@@ -373,7 +443,11 @@ export async function updateTaskRemote(store, taskId, patch, expectedUpdatedAt =
  */
 export async function createSubtaskRemote(store, parentId, input) {
   if (!useRemoteData()) {
-    const sub = store.addTask({ ...input, parentTaskId: parentId, source: 'subtask' });
+    const sub = store.addTask({
+      ...input,
+      parentTaskId: parentId,
+      source: "subtask",
+    });
     return sub;
   }
   const sub = await postSubtask(parentId, input);
@@ -391,7 +465,7 @@ export async function createSubtaskRemote(store, parentId, input) {
  */
 export async function completeSubtaskRemote(store, subtaskId) {
   if (!useRemoteData()) {
-    store.patchTask({ id: subtaskId, status: 'resolved' });
+    store.patchTask({ id: subtaskId, status: "resolved" });
     return store.state.tasks.find((t) => t.id === subtaskId);
   }
   const updated = await completeSubtask(subtaskId);
@@ -404,29 +478,56 @@ export async function completeSubtaskRemote(store, subtaskId) {
 
 const POLL_MS = 10_000;
 let _pollTimer = null;
-let _lastTasksHash = '';
-let _lastUsersHash = '';
+let _lastTasksHash = "";
+let _lastUsersHash = "";
 
+/**
+ * Builds a change-detection hash for a task list from each task's id, status,
+ * and updatedAt.
+ * @param {object[]} tasks
+ * @returns {string}
+ */
 function _hashTasks(tasks) {
-  return JSON.stringify((tasks || []).map((t) => `${t.id}:${t.status}:${t.updatedAt}`));
+  return JSON.stringify(
+    (tasks || []).map((t) => `${t.id}:${t.status}:${t.updatedAt}`),
+  );
 }
 
+/**
+ * Builds a change-detection hash for a user list from each user's id and
+ * online status.
+ * @param {object[]} users
+ * @returns {string}
+ */
 function _hashUsers(users) {
   return JSON.stringify((users || []).map((u) => `${u.id}:${u.isOnline}`));
 }
 
+/**
+ * Shows a transient sync banner at the bottom of the screen, replacing any
+ * existing one and auto-removing it after a few seconds.
+ * @param {string} msg
+ */
 function _showSyncBanner(msg) {
-  const existing = document.getElementById('sitrep-sync-banner');
+  const existing = document.getElementById("sitrep-sync-banner");
   if (existing) existing.remove();
-  const el = document.createElement('div');
-  el.id = 'sitrep-sync-banner';
+  const el = document.createElement("div");
+  el.id = "sitrep-sync-banner";
   el.textContent = `🔄 ${msg}`;
   el.style.cssText = [
-    'position:fixed', 'bottom:1.5rem', 'left:50%', 'transform:translateX(-50%)',
-    'background:#1d4ed8', 'color:white', 'padding:0.6rem 1.4rem',
-    'border-radius:999px', 'font-size:0.875rem', 'font-weight:500',
-    'z-index:9999', 'box-shadow:0 4px 12px rgba(0,0,0,0.2)',
-  ].join(';');
+    "position:fixed",
+    "bottom:1.5rem",
+    "left:50%",
+    "transform:translateX(-50%)",
+    "background:#1d4ed8",
+    "color:white",
+    "padding:0.6rem 1.4rem",
+    "border-radius:999px",
+    "font-size:0.875rem",
+    "font-weight:500",
+    "z-index:9999",
+    "box-shadow:0 4px 12px rgba(0,0,0,0.2)",
+  ].join(";");
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 4500);
 }
@@ -452,7 +553,7 @@ export function startLiveSync(store, router) {
       const newTasksHash = _hashTasks(state.tasks);
       if (newTasksHash !== _lastTasksHash) {
         store.setTasks(state.tasks || []);
-        _showSyncBanner('Tasks updated by a team member.');
+        _showSyncBanner("Tasks updated by a team member.");
         changed = true;
       }
       _lastTasksHash = newTasksHash;
@@ -465,13 +566,13 @@ export function startLiveSync(store, router) {
       _lastUsersHash = newUsersHash;
 
       if (changed && router) {
-        const hash = window.location.hash || '#dashboard';
-        if (['#backlog', '#dashboard', '#team-availability'].includes(hash)) {
+        const hash = window.location.hash || "#dashboard";
+        if (["#backlog", "#dashboard", "#team-availability"].includes(hash)) {
           router.handleRoute();
         }
       }
     } catch (err) {
-      console.warn('[LiveSync] Poll failed:', err.message);
+      console.warn("[LiveSync] Poll failed:", err.message);
     }
   }, POLL_MS);
 }

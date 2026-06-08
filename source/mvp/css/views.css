@@ -254,3 +254,426 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Team Availability – When2Meet Style
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Page layout: two columns on desktop, stack on tablet/mobile */
+.avail-page-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (width <= 900px) {
+  .avail-page-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cards */
+.avail-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.avail-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.25rem 1.25rem 0.75rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.avail-card-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.avail-card-desc {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin: 0.15rem 0 0;
+}
+
+/* Timezone badge */
+.avail-tz-badge {
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.6rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.avail-tz-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-light);
+  letter-spacing: 0.04em;
+}
+
+.avail-tz-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* Heatmap legend */
+.avail-heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.avail-legend-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 0 3px;
+}
+
+.avail-legend-swatch {
+  display: inline-block;
+  width: 18px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+/* Grid wrapper + scroll */
+.avail-grid-wrapper {
+  position: relative;
+  padding: 0 0.75rem 0.75rem;
+}
+
+.avail-grid-scroll {
+  overflow-y: auto;
+  overflow-x: auto;
+  max-height: 400px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* CSS Grid for the time table */
+.avail-grid {
+  display: grid;
+
+  /* columns set inline per grid: 52px + 7 day columns */
+  min-width: 460px;
+  user-select: none;
+}
+
+/* Header cells */
+.avail-header-time {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  background: var(--bg-main);
+  height: 28px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.avail-header-day {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-main);
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+/* Time labels column */
+.avail-time-label {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #ffffff;
+  width: 52px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  font-size: 0.6rem;
+  color: var(--text-light);
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.avail-time-hour {
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+
+/* Availability cells — My grid */
+.avail-cell {
+  height: 16px;
+  cursor: pointer;
+  border-right: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  transition: background-color 0.08s ease;
+  box-sizing: border-box;
+}
+
+/* Show a stronger top border at hour boundaries */
+.avail-time-hour ~ .avail-cell {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.avail-cell-mine {
+  background: #f9fafb;
+}
+
+.avail-cell-mine:hover {
+  background: #c7d2fe;
+}
+
+.avail-cell-mine.avail-cell-active {
+  background: #4f46e5;
+}
+
+.avail-cell-mine.avail-cell-active:hover {
+  background: #4338ca;
+}
+
+/* Heatmap cells */
+.avail-cell-heat {
+  background: #f3f4f6;
+  cursor: default;
+}
+
+.avail-cell-heat:hover {
+  opacity: 0.85;
+  outline: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Loading overlay */
+.avail-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.75);
+  z-index: 10;
+  border-radius: var(--radius-md);
+}
+
+.avail-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: avail-spin 0.7s linear infinite;
+}
+
+@keyframes avail-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tooltip */
+.avail-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 50;
+  background: #1f2937;
+  color: #f9fafb;
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.75rem;
+  min-width: 170px;
+  max-width: 220px;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
+}
+
+.avail-tooltip-header {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.avail-tooltip-label {
+  color: #9ca3af;
+  font-size: 0.7rem;
+  margin-bottom: 0.2rem;
+}
+
+.avail-tooltip-users {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.avail-tooltip-count {
+  font-size: 0.68rem;
+  color: #6ee7b7;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+/* Best Meeting Time card */
+.avail-best-card {
+  background: #059669 !important;
+  border-color: #047857 !important;
+  color: #ffffff;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.avail-best-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avail-best-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.avail-best-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.avail-best-slot {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 0.1rem;
+}
+
+.avail-best-score {
+  font-size: 0.8rem;
+  opacity: 0.85;
+  margin-top: 0.1rem;
+}
+
+.avail-add-meeting-btn {
+  background: #ffffff;
+  color: #059669;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.55rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.avail-add-meeting-btn:hover {
+  opacity: 0.85;
+}
+
+/* Current Active Team */
+.avail-team-section-title {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+  padding: 1rem 1.25rem 0.5rem;
+}
+
+.avail-team-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.avail-team-loading {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 0.5rem 0;
+}
+
+.avail-team-member {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.avail-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.avail-member-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.avail-member-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.avail-member-role {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+/* Right column stacks cards vertically */
+.avail-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.avail-heatmap-card {
+  position: relative;
+}
+
+/* Re-open issue button - shown when issue status is resolved */
+.unresolve-issue-btn {
+  background: var(--warning-light);
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.unresolve-issue-btn:hover {
+  background: var(--warning);
+  color: var(--white);
+}

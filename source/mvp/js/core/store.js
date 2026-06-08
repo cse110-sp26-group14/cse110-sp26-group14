@@ -3,22 +3,28 @@
  * @module core/store
  */
 
-import { EVENTS } from './events.js';
-import { INITIAL_DATA } from '../data/initialData.js';
-import { useRemoteData } from '../config/appConfig.js';
-import { loadState, saveState } from '../services/storageService.js';
-import { createId } from '../utils/ids.js';
-import { currentTimestamp, todayISO } from '../utils/dates.js';
-import { defaultDueForSprint } from '../utils/taskHelpers.js';
-import { applySprintLifecycle, pickDefaultSprint } from '../utils/sprintLifecycle.js';
+import { EVENTS } from "./events.js";
+import { INITIAL_DATA } from "../data/initialData.js";
+import { useRemoteData } from "../config/appConfig.js";
+import { loadState, saveState } from "../services/storageService.js";
+import { createId } from "../utils/ids.js";
+import { currentTimestamp, todayISO } from "../utils/dates.js";
+import { defaultDueForSprint } from "../utils/taskHelpers.js";
+import {
+  applySprintLifecycle,
+  pickDefaultSprint,
+} from "../utils/sprintLifecycle.js";
 
-const STORAGE_KEY = 'se-sitrep-mvp-state';
+const STORAGE_KEY = "se-sitrep-mvp-state";
 
 /**
  * Application store: sprint data, issues, reports, and AI logs.
  */
 export class Store {
   /**
+   * Loads persisted state (falling back to a deep clone of the seed),
+   * initializes subscribers and auth/selection fields, and sets the
+   * data-mode label based on whether remote data is in use.
    * @param {object} [seed] - optional seed instead of INITIAL_DATA
    */
   constructor(seed = INITIAL_DATA) {
@@ -30,11 +36,12 @@ export class Store {
     /** @type {object[]} cached Google Calendar events */
     this.googleEvents = [];
     this.dataModeLabel = useRemoteData()
-      ? '(shared via API)'
-      : '(local only — other teammates will not see your issues)';
+      ? "(shared via API)"
+      : "(local only — other teammates will not see your issues)";
   }
 
   /**
+   * Sets the currently authenticated user.
    * @param {import('../services/authService.js').AuthUser|null} authUser
    */
   setCurrentAuthUser(authUser) {
@@ -45,6 +52,8 @@ export class Store {
   }
 
   /**
+   * Resolves the profile user id used for reports/issues, preferring the
+   * authenticated user's profile id and falling back to the first user.
    * @returns {number|null} profile user id for reports/issues
    */
   getCurrentUserId() {
@@ -55,6 +64,7 @@ export class Store {
   }
 
   /**
+   * Registers a callback to be invoked when the given event is published.
    * @param {string} event
    * @param {Function} callback
    */
@@ -64,6 +74,8 @@ export class Store {
   }
 
   /**
+   * Invokes all callbacks subscribed to the event with the given data, then
+   * persists state.
    * @param {string} event
    * @param {*} data
    */
@@ -79,14 +91,20 @@ export class Store {
     saveState(STORAGE_KEY, this.state);
   }
 
-  /** @returns {object} */
+  /**
+   * Returns the full application state object.
+   * @returns {object}
+   */
   getState() {
     return this.state;
   }
 
-  /** @returns {object|undefined} */
+  /**
+   * Returns the sprint currently marked as active, if any.
+   * @returns {object|undefined}
+   */
   getActiveSprint() {
-    return this.state.sprints.find((s) => s.status === 'active');
+    return this.state.sprints.find((s) => s.status === "active");
   }
 
   /**
@@ -114,6 +132,8 @@ export class Store {
   }
 
   /**
+   * Sets the manually selected sprint id (or null to follow the active sprint)
+   * and publishes a sprint-changed event.
    * @param {number|null} sprintId
    */
   setSelectedSprintId(sprintId) {
@@ -122,18 +142,23 @@ export class Store {
   }
 
   /**
+   * Creates a new sprint with a generated id, appends it, reconciles sprint
+   * statuses, selects it, and publishes a sprint-changed event.
    * @param {{ name: string, start: string, end: string, status?: string }} input
    * @returns {object}
    */
   addSprint(input) {
-    const maxId = this.state.sprints.reduce((m, s) => Math.max(m, Number(s.id)), 0);
+    const maxId = this.state.sprints.reduce(
+      (m, s) => Math.max(m, Number(s.id)),
+      0,
+    );
     const id = maxId + 1;
     const sprint = {
       id,
-      name: String(input.name || '').trim() || `Sprint ${id}`,
+      name: String(input.name || "").trim() || `Sprint ${id}`,
       start: input.start,
       end: input.end,
-      status: input.status || 'planned',
+      status: input.status || "planned",
     };
     this.state.sprints.push(sprint);
     this.reconcileSprints();
@@ -142,12 +167,16 @@ export class Store {
     return this.state.sprints.find((s) => Number(s.id) === id) || sprint;
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns the cached Google Calendar events.
+   * @returns {object[]}
+   */
   getGoogleEvents() {
     return this.googleEvents;
   }
 
   /**
+   * Replaces the cached Google Calendar events.
    * @param {object[]} events
    */
   setGoogleEvents(events) {
@@ -155,6 +184,8 @@ export class Store {
   }
 
   /**
+   * Adds a meeting (assigning an id and sprint id when absent) and publishes a
+   * meetings-changed event.
    * @param {object} meeting
    * @returns {object}
    */
@@ -171,6 +202,8 @@ export class Store {
   }
 
   /**
+   * Updates the status of the AI log with the given id, publishing an
+   * AI-logs-changed event when a matching log is found.
    * @param {number} logId
    * @param {string} status
    */
@@ -183,6 +216,7 @@ export class Store {
   }
 
   /**
+   * Returns the tasks belonging to the given sprint.
    * @param {number} sprintId
    * @returns {object[]}
    */
@@ -190,32 +224,50 @@ export class Store {
     return this.state.tasks.filter((t) => t.sprintId === sprintId);
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns all issues.
+   * @returns {object[]}
+   */
   getIssues() {
     return this.state.issues;
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns all reports.
+   * @returns {object[]}
+   */
   getReports() {
     return this.state.reports;
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns all AI logs.
+   * @returns {object[]}
+   */
   getAiLogs() {
     return this.state.aiLogs;
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns all users.
+   * @returns {object[]}
+   */
   getUsers() {
     return this.state.users;
   }
 
-  /** @returns {object[]} */
+  /**
+   * Returns all meetings (an empty array when none exist).
+   * @returns {object[]}
+   */
   getMeetings() {
     return this.state.meetings || [];
   }
 
   /**
+   * Adds a report (filling in id, user, date, timestamp, status, and sprint
+   * defaults), publishes a reports-changed event, and creates a linked blocker
+   * issue when the report records a non-"None" blocker.
    * @param {object} report
    * @returns {object}
    */
@@ -226,24 +278,27 @@ export class Store {
       userId: report.userId ?? this.getCurrentUserId(),
       date: report.date ?? todayISO(),
       timestamp: currentTimestamp(),
-      status: report.status || 'In Progress',
-      notes: report.notes || '',
-      sprintId: report.sprintId ?? this.getSelectedSprint()?.id ?? this.getActiveSprint()?.id,
+      status: report.status || "In Progress",
+      notes: report.notes || "",
+      sprintId:
+        report.sprintId ??
+        this.getSelectedSprint()?.id ??
+        this.getActiveSprint()?.id,
     };
 
     this.state.reports.push(newReport);
     this.publish(EVENTS.REPORTS_CHANGED, this.state.reports);
 
-    if (newReport.blockers && newReport.blockers !== 'None') {
+    if (newReport.blockers && newReport.blockers !== "None") {
       this.addIssue({
         title: `Blocker: ${newReport.blockers}`,
-        severity: 'high',
-        status: 'open',
-        tags: ['Check-In Blocker'],
-        author: this.currentAuthUser?.name || 'Team Member',
+        severity: "high",
+        status: "open",
+        tags: ["Check-In Blocker"],
+        author: this.currentAuthUser?.name || "Team Member",
         assignee: null,
         sprintId: this.getActiveSprint()?.id ?? 2,
-        description: newReport.progress || '',
+        description: newReport.progress || "",
       });
     }
 
@@ -251,13 +306,16 @@ export class Store {
   }
 
   /**
+   * Adds an issue (filling in id, created date, due date, and assignee
+   * defaults) to the front of the list and publishes an issues-changed event.
    * @param {object} issue
    * @returns {object}
    */
   addIssue(issue) {
-    const sprint = this.state.sprints.find((s) => s.id === issue.sprintId)
-      || this.getSelectedSprint()
-      || this.getActiveSprint();
+    const sprint =
+      this.state.sprints.find((s) => s.id === issue.sprintId) ||
+      this.getSelectedSprint() ||
+      this.getActiveSprint();
     const newIssue = {
       ...issue,
       id: createId(),
@@ -272,6 +330,8 @@ export class Store {
   }
 
   /**
+   * Adds an AI log to the front of the list and publishes an AI-logs-changed
+   * event.
    * @param {object} log
    * @returns {object}
    */
@@ -282,12 +342,16 @@ export class Store {
   }
 
   /**
+   * Applies a patch to the issue with the given id, publishing an
+   * issues-changed event; returns the updated issue or null if not found.
    * @param {number} issueId
    * @param {object} patch
    * @returns {object|null}
    */
   updateIssue(issueId, patch) {
-    const issue = this.state.issues.find((i) => Number(i.id) === Number(issueId));
+    const issue = this.state.issues.find(
+      (i) => Number(i.id) === Number(issueId),
+    );
     if (!issue) return null;
     Object.assign(issue, patch);
     this.publish(EVENTS.ISSUES_CHANGED, this.state.issues);
@@ -295,6 +359,8 @@ export class Store {
   }
 
   /**
+   * Applies a patch to the task with the given id, publishing a tasks-changed
+   * event; returns the updated task or null if not found.
    * @param {number} taskId
    * @param {object} patch
    * @returns {object|null}
@@ -308,12 +374,16 @@ export class Store {
   }
 
   /**
+   * Applies a patch to the report with the given id, publishing a
+   * reports-changed event; returns the updated report or null if not found.
    * @param {number} reportId
    * @param {object} patch
    * @returns {object|null}
    */
   updateReport(reportId, patch) {
-    const report = this.state.reports.find((r) => Number(r.id) === Number(reportId));
+    const report = this.state.reports.find(
+      (r) => Number(r.id) === Number(reportId),
+    );
     if (!report) return null;
     Object.assign(report, patch);
     this.publish(EVENTS.REPORTS_CHANGED, this.state.reports);
@@ -321,6 +391,8 @@ export class Store {
   }
 
   /**
+   * Applies a patch to the AI log with the given id, publishing an
+   * AI-logs-changed event; returns the updated log or null if not found.
    * @param {number} logId
    * @param {object} patch
    * @returns {object|null}
@@ -334,29 +406,56 @@ export class Store {
   }
 
   /**
+   * Marks the issue with the given id as resolved, publishing an
+   * issues-changed event when a matching issue is found.
    * @param {number} issueId
    */
   resolveIssue(issueId) {
     const issue = this.state.issues.find((i) => i.id === issueId);
     if (issue) {
-      issue.status = 'resolved';
+      issue.status = "resolved";
       this.publish(EVENTS.ISSUES_CHANGED, this.state.issues);
     }
   }
 
   /**
-   * @param {object} task
+   * Re-opens a previously-resolved issue by setting its status back to 'open', publishing an issues-changed event when a matching issue is found.
+   * @param {*} issueId
+   */
+
+  unresolveIssue(issueId) {
+    const issue = this.state.issues.find(
+      (i) => Number(i.id) === Number(issueId),
+    );
+    if (issue) {
+      issue.status = "open";
+      this.publish(EVENTS.ISSUES_CHANGED, this.state.issues);
+    }
+  }
+
+  /**
+   * Deletes the task with the given id and publishes a tasks-changed event.
+   * @param {number} taskId
    * @returns {object}
    */
+  deleteTask(taskId) {
+    this.state.tasks = this.state.tasks.filter(
+      (t) => Number(t.id) !== Number(taskId),
+    );
+    this.publish(EVENTS.TASKS_CHANGED, this.state.tasks);
+    this.save();
+  }
+
   addTask(task) {
-    const sprint = this.state.sprints.find((s) => s.id === task.sprintId)
-      || this.getSelectedSprint()
-      || this.getActiveSprint();
+    const sprint =
+      this.state.sprints.find((s) => s.id === task.sprintId) ||
+      this.getSelectedSprint() ||
+      this.getActiveSprint();
     const newTask = {
       ...task,
       id: createId(),
       sprintId: task.sprintId ?? sprint?.id,
-      status: task.status || 'open',
+      status: task.status || "open",
       owner: task.owner || this.currentAuthUser?.name || null,
       due: task.due || defaultDueForSprint(sprint),
     };
@@ -370,7 +469,9 @@ export class Store {
    * @param {object} updatedTask
    */
   patchTask(updatedTask) {
-    const idx = this.state.tasks.findIndex((t) => Number(t.id) === Number(updatedTask.id));
+    const idx = this.state.tasks.findIndex(
+      (t) => Number(t.id) === Number(updatedTask.id),
+    );
     if (idx >= 0) {
       this.state.tasks[idx] = { ...this.state.tasks[idx], ...updatedTask };
     } else {

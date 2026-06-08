@@ -2,11 +2,12 @@
  * Create issue form with assignee and due date.
  * @module components/forms/IssueForm
  */
-
 import { defaultDueForSprint } from '../../utils/taskHelpers.js';
-
 /**
- * @param {import('../../core/store.js').Store} store
+ * Builds the issue-creation form markup, pre-filling the assignee with the
+ * current user, defaulting the due date to the active/selected sprint's
+ * default, and offering an option to also create a tracking task.
+ * @param {import('../../core/store.js').Store} store - Application store used to resolve the active/selected sprint, the available user list, and the current user.
  * @returns {string} HTML form markup
  */
 export function IssueForm(store) {
@@ -14,7 +15,6 @@ export function IssueForm(store) {
   const defaultDue = defaultDueForSprint(sprint);
   const users = store.getUsers();
   const me = store.currentAuthUser?.name || '';
-
   return `
     <form id="issue-form" class="form-stack">
       <div class="form-field">

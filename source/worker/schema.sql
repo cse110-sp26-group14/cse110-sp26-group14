@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   assignees_json TEXT DEFAULT '[]',
   parent_task_id INTEGER DEFAULT NULL,
   updated_at TEXT,
-  subtask_review_status TEXT DEFAULT NULL
+  subtask_review_status TEXT DEFAULT NULL,
+  description TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS task_reviews (

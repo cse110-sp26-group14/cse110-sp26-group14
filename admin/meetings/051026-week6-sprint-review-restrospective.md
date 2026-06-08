@@ -1,11 +1,11 @@
 # 051026-week6-sprint-review.md
 
-# Meeting Notes: Week 6 Sprint Review
+# Meeting Notes: Week 6 Sprint Review & Retrospective
 
 ## Team information
 
 - **Team number / name:** CSE 110 — **Group 14** / **CS Stress 14**
-- **Meeting type:** Sprint Review
+- **Meeting type:** Sprint Review + Sprint Retrospective (combined)
 - **Date:** May 10, 2026
 - **Duration:** ~35 minutes (within a combined meeting)
 - **Participants:** Virtual (Zoom)
@@ -21,21 +21,19 @@
 
 ---
 
-## What went well
+## Sprint Retrospective
+
+### What went well
 
 - UI/Design group delivered substantial early work (feature list + layout concepts + mockups), giving the team a concrete starting point.
 - Team is actively tying work back to course expectations (Agile process + documentation).
 
----
-
-## What to improve
+### What to improve
 
 - Ensure **all research outputs** are consistently stored in the repo (not only in chat/links).
 - Improve task breakdown so progress is easier to track sprint-to-sprint.
 
----
-
-## Action items
+### Action items
 
 - [ ] Upload/organize remaining research artifacts into the repo (target location mentioned: `specs/research`).
 - [ ] When planning next sprint tasks, break down large items into smaller trackable tasks (e.g., split “persona” into sub-tasks if needed).

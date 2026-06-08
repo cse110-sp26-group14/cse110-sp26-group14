@@ -6,7 +6,17 @@ import { syncHeaderFromStore } from '../services/headerSync.js';
 import { appConfig } from '../config/appConfig.js';
 import { escapeHtml } from '../utils/templateEngine.js';
 
+/**
+ * Settings view: edit the current user's profile, manage sprints, and reset the
+ * local UI cache.
+ * @extends BaseView
+ */
 export class SettingsView extends BaseView {
+  /**
+   * Renders the sprint list (sorted by id, each with a status badge), or an
+   * empty hint when there are no sprints.
+   * @returns {string} HTML markup
+   */
   renderSprintRows() {
     const sprints = [...(this.store.state.sprints || [])].sort(
       (a, b) => Number(a.id) - Number(b.id),
@@ -29,6 +39,11 @@ export class SettingsView extends BaseView {
     `;
   }
 
+  /**
+   * Renders the settings view: the profile form, the sprint list with an
+   * add-sprint form, and the reset-local-cache card.
+   * @returns {string} HTML markup
+   */
   render() {
     const user = this.store.currentAuthUser;
     const mode = useRemoteData() ? `API (${appConfig.apiBaseUrl})` : 'Local storage';
@@ -100,6 +115,12 @@ export class SettingsView extends BaseView {
         `;
   }
 
+  /**
+   * Wires the settings view after render: the profile-save form (updating the
+   * header on success), the add-sprint form (re-rendering on success), and the
+   * reset-local-cache button.
+   * @param {HTMLElement} container
+   */
   mount(container) {
     container.querySelector('#settings-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();

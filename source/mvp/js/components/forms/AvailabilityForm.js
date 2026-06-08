@@ -2,16 +2,15 @@
  * Update personal availability slots for one day.
  * @module components/forms/AvailabilityForm
  */
-
 import { todayISO } from '../../utils/dates.js';
-
 const HOURS = ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
 const STATUSES = ['available', 'preferred', 'tentative', 'unavailable', 'needs_coverage'];
-
 /**
- * @param {object} [existing] - hour → status
- * @param {string} [date]
- * @returns {string}
+ * Builds the availability form markup for a single day, rendering one status
+ * selector per working hour and pre-selecting any previously saved status.
+ * @param {object} [existing] - Map of hour → status used to pre-select each slot; hours absent from the map default to `'available'`.
+ * @param {string} [date] - ISO date string for the day being edited; defaults to today.
+ * @returns {string} HTML form markup
  */
 export function AvailabilityForm(existing = {}, date = todayISO()) {
   const rows = HOURS.map((h) => {
@@ -25,7 +24,6 @@ export function AvailabilityForm(existing = {}, date = todayISO()) {
         <select id="slot-${h}" name="slot-${h}">${options}</select>
       </div>`;
   }).join('');
-
   return `
     <form id="availability-form" class="form-stack">
       <div class="form-field">
@@ -39,5 +37,4 @@ export function AvailabilityForm(existing = {}, date = todayISO()) {
     </form>
   `;
 }
-
-export { HOURS };
+export { HOURS }; 

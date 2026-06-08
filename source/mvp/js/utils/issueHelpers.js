@@ -8,6 +8,9 @@ import { pickOwnerForTaskTitle, resolveOwnerFromRoster } from './aiAssignment.js
 import { buildTeamContextForAi } from './teamContext.js';
 
 /**
+ * Fills in defaults for a new issue: resolves the sprint, derives an assignee
+ * (explicit value, else a role-based pick from the roster, else the current
+ * user), and defaults the due date, status, severity, and author.
  * @param {import('../core/store.js').Store} store
  * @param {object} input
  * @returns {object}
