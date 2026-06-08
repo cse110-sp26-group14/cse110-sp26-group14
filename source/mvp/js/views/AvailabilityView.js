@@ -256,8 +256,9 @@ export class AvailabilityView extends BaseView {
       ?.addEventListener("click", () => {
         const detail = {};
         if (this._bestKey) {
-          const [, time] = this._bestKey.split("_");
+          const [day, time] = this._bestKey.split("_");
           detail.time = time;
+          detail.date = nextDateForDay(day);
         }
         window.dispatchEvent(
           new CustomEvent("sitrep:open-meeting-modal", { detail }),
