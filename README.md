@@ -29,6 +29,7 @@ Team **14** course repository: planning docs, meeting notes, branding, and appli
 | `source/worker/` | **API** — Cloudflare Worker + D1 ([worker README](source/worker/README.md)) |
 | `source/prototype-02/` | Earlier prototype baseline + CI |
 | `docs/DEPLOY.md` | **GitHub Pages** (frontend) + **Cloudflare Worker** (API) |
+| `docs/GENAI_USAGE.md` | **GenAI policy** — how we use, disclose, and review AI-assisted work |
 
 ## Project
 
