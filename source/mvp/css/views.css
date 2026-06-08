@@ -665,6 +665,7 @@
 .avail-heatmap-card {
   position: relative;
 }
+
 /* ─── Recommendation banner (inside meeting modal) ─────────────────────────── */
 .avail-recommendation-banner {
   display: flex;
