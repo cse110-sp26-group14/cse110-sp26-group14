@@ -15,6 +15,26 @@ import {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAY_INDEX = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+function nextDateForDay(dayAbbr) {
+  const target = DAY_INDEX[dayAbbr];
+  if (target === undefined) return new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  let diff = target - today.getDay();
+  if (diff < 0) diff += 7;
+  const nextDate = new Date(today);
+  nextDate.setDate(today.getDate() + diff);
+  return nextDate.toISOString().slice(0, 10);
+}
 const DAY_LABELS = {
   Mon: "Monday",
   Tue: "Tuesday",
