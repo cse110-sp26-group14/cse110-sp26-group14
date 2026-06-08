@@ -5,10 +5,7 @@ import { routes } from "./routes.js";
 import { Modal } from "./components/Modal.js";
 import { DailyCheckInForm } from "./components/forms/DailyCheckInForm.js";
 import { IssueForm } from "./components/forms/IssueForm.js";
-import {
-  AvailabilityCheckForm,
-  parseAvailabilityForm,
-} from "./components/forms/AvailabilityCheckForm.js";
+import { AvailabilityCheckForm, parseAvailabilityForm } from "./components/forms/AvailabilityCheckForm.js";
 import { createSummaryLogForReport } from "./services/aiLogService.js";
 import { syncAvailabilityWithGoogleCalendar } from "./services/googleCalendarService.js";
 import { api, isConfigured } from "./services/apiClient.js";
