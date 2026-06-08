@@ -5,7 +5,8 @@ Team **14** course repository: planning docs, meeting notes, branding, and appli
 ## Quick links
 
 - [Team page](admin/team.md) — roster, values, branding  
-- [Meeting notes](admin/meetings/) — kickoff and ongoing minutes
+- [Meeting notes](admin/meetings/) — kickoff and ongoing minutes  
+- [Design brief](docs/DESIGN_BRIEF.md) — problem, users, goals, and MVP scope
 
 ## Status video (course deliverable)
 
@@ -29,6 +30,8 @@ Team **14** course repository: planning docs, meeting notes, branding, and appli
 | `source/worker/` | **API** — Cloudflare Worker + D1 ([worker README](source/worker/README.md)) |
 | `source/prototype-02/` | Earlier prototype baseline + CI |
 | `docs/DEPLOY.md` | **GitHub Pages** (frontend) + **Cloudflare Worker** (API) |
+| `docs/GENAI_USAGE.md` | **GenAI policy** — how we use, disclose, and review AI-assisted work |
+| `docs/CHANGELOG.md` | **Release history** — versions, features, and fixes |
 
 ## Project
 

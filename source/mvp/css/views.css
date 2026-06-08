@@ -714,3 +714,15 @@
   box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
   transition: box-shadow 0.2s ease;
 }
+
+/* Re-open issue button - shown when issue status is resolved */
+.unresolve-issue-btn {
+  background: var(--warning-light);
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.unresolve-issue-btn:hover {
+  background: var(--warning);
+  color: var(--white);
+}

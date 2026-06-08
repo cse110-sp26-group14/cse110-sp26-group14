@@ -134,6 +134,7 @@ export async function handleApi(request, env) {
           parentTaskId: r.parent_task_id ?? null,
           updatedAt: r.updated_at ?? null,
           subtaskReviewStatus: r.subtask_review_status ?? null,
+          description: r.description ?? '',
         })),
       );
     }
@@ -144,6 +145,11 @@ export async function handleApi(request, env) {
     }
 
     const taskMatch = pathname.match(/^\/api\/tasks\/(\d+)$/);
+    if (method === "DELETE" && taskMatch) {
+      const id = Number(taskMatch[1]);
+      await db.deleteTask(env.DB, id);
+      return json({ success: true });
+    }
     if (method === "PATCH" && taskMatch) {
       const id = Number(taskMatch[1]);
       const result = await db.updateTask(

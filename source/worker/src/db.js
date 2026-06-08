@@ -259,6 +259,7 @@ export async function createTask(db, input) {
   const assignees = input.assignees ?? (input.owner ? [input.owner] : []);
   const owner = input.owner ?? assignees[0] ?? null;
   const now = new Date().toISOString();
+  const description = input.description ?? '';
   const task = {
     id,
     title: input.title,
@@ -272,14 +273,15 @@ export async function createTask(db, input) {
     parentTaskId: input.parentTaskId ?? null,
     updatedAt: now,
     subtaskReviewStatus: null,
+    description,
   };
   await db.prepare(`
     INSERT INTO tasks (id, title, owner, sprint_id, priority, status, due, source,
-      assignees_json, parent_task_id, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      assignees_json, parent_task_id, updated_at, description)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     id, task.title, task.owner, sprintId, task.priority, task.status, due, task.source,
-    JSON.stringify(assignees), task.parentTaskId, now,
+    JSON.stringify(assignees), task.parentTaskId, now, description,
   ).run();
   return task;
 }
@@ -327,6 +329,10 @@ export async function updateTask(db, id, patch, expectedUpdatedAt = null) {
  * @param {number} parentId
  * @param {object} input
  */
+export async function deleteTask(db, id) {
+  await db.prepare('DELETE FROM tasks WHERE id = ? OR parent_task_id = ?').bind(id, id).run();
+}
+
 export async function createSubtask(db, parentId, input) {
   const parent = await db.prepare('SELECT * FROM tasks WHERE id = ?').bind(parentId).first();
   if (!parent) return null;
