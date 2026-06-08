@@ -25,11 +25,20 @@
     </div>
     <div class="form-field">
       <label for="checkin-blockers">Any blockers?</label>
-      <input id="checkin-blockers" name="blockers" type="text" placeholder="None" />
+      <input
+        id="checkin-blockers"
+        name="blockers"
+        type="text"
+        placeholder="None"
+      />
     </div>
     <div class="form-field">
       <label for="checkin-notes">Notes (optional)</label>
-      <textarea id="checkin-notes" name="notes" placeholder="Links, follow-ups, context for the team…"></textarea>
+      <textarea
+        id="checkin-notes"
+        name="notes"
+        placeholder="Links, follow-ups, context for the team…"
+      ></textarea>
     </div>
     <div class="form-actions">
       <button type="submit" class="primary-btn">Submit Check-In</button>
@@ -39,17 +48,39 @@
 
 <template id="tpl-form-meeting">
   <form id="meeting-form" class="form-stack">
+    {{recommendationBanner}}
     <div class="form-field">
       <label for="meeting-title">Title</label>
-      <input id="meeting-title" name="title" type="text" required value="Team sync" />
+      <input
+        id="meeting-title"
+        name="title"
+        type="text"
+        required
+        value="Team Sync"
+      />
     </div>
     <div class="form-field">
       <label for="meeting-date">Date</label>
-      <input id="meeting-date" name="date" type="date" required value="{{defaultDate}}" />
+      <input
+        id="meeting-date"
+        name="date"
+        type="date"
+        required
+        value="{{defaultDate}}"
+        class="{{dateClass}}"
+      />
     </div>
     <div class="form-field">
       <label for="meeting-time">Time</label>
-      <input id="meeting-time" name="time" type="text" required value="{{defaultTime}}" placeholder="10:00 AM" />
+      <input
+        id="meeting-time"
+        name="time"
+        type="text"
+        required
+        value="{{defaultTime}}"
+        placeholder="10:00 AM"
+        class="{{timeClass}}"
+      />
     </div>
     <div class="form-field">
       <label for="meeting-format">Format</label>
@@ -61,7 +92,11 @@
     </div>
     <div class="form-field">
       <label for="meeting-goal">Goal (optional)</label>
-      <textarea id="meeting-goal" name="goal" placeholder="Sprint planning, retro, etc."></textarea>
+      <textarea
+        id="meeting-goal"
+        name="goal"
+        placeholder="Sprint planning, retro, etc."
+      ></textarea>
     </div>
     <div class="form-actions">
       <button type="submit" class="primary-btn">Add to sprint calendar</button>
@@ -102,13 +137,20 @@
 
 <template id="tpl-form-ai-goals">
   <form id="ai-goals-form" class="form-stack">
-    <p class="form-hint">Describe sprint goals or deadlines. AI will suggest tasks using team check-ins and availability.</p>
+    <p class="form-hint">
+      Describe sprint goals or deadlines. AI will suggest tasks using team
+      check-ins and availability.
+    </p>
     <div class="form-field">
       <label for="ai-goals-input">Sprint goals</label>
-      <textarea id="ai-goals-input" name="goals" rows="3" required>MVP delivery and bug fixes</textarea>
+      <textarea id="ai-goals-input" name="goals" rows="3" required>
+MVP delivery and bug fixes</textarea
+      >
     </div>
     <div class="form-actions form-actions-split">
-      <button type="button" class="action-btn" id="ai-goals-cancel">Cancel</button>
+      <button type="button" class="action-btn" id="ai-goals-cancel">
+        Cancel
+      </button>
       <button type="submit" class="primary-btn">Generate suggestions</button>
     </div>
   </form>
@@ -116,7 +158,10 @@
 
 <template id="tpl-form-ai-review-intro">
   <form id="ai-task-review-form" class="form-stack">
-    <p class="form-hint">Suggestions use team roles, check-ins, and availability (no check-in = assumed available). Edit assignee and due before accepting.</p>
+    <p class="form-hint">
+      Suggestions use team roles, check-ins, and availability (no check-in =
+      assumed available). Edit assignee and due before accepting.
+    </p>
     <div id="ai-review-rows">{{rows}}</div>
     <div class="form-field form-field-row">
       <label>
@@ -125,7 +170,9 @@
       </label>
     </div>
     <div class="form-actions form-actions-split">
-      <button type="button" class="action-btn" id="ai-review-reject-all">Reject all</button>
+      <button type="button" class="action-btn" id="ai-review-reject-all">
+        Reject all
+      </button>
       <button type="submit" class="primary-btn">Accept selected</button>
     </div>
   </form>
@@ -136,13 +183,17 @@
     <input type="checkbox" name="pick-{{index}}" value="1" checked />
     <div class="ai-review-row-fields">
       <input type="text" name="title-{{index}}" value="{{title}}" />
-      <select name="owner-{{index}}">{{ownerOptions}}</select>
+      <select name="owner-{{index}}">
+        {{ownerOptions}}
+      </select>
       <select name="priority-{{index}}">
         <option value="high" {{highSelected}}>High</option>
         <option value="medium" {{mediumSelected}}>Medium</option>
         <option value="low" {{lowSelected}}>Low</option>
       </select>
-      <label class="ai-review-due-label">Due <input type="date" name="due-{{index}}" value="{{defaultDue}}" /></label>
+      <label class="ai-review-due-label"
+        >Due <input type="date" name="due-{{index}}" value="{{defaultDue}}"
+      /></label>
     </div>
   </label>
 </template>
@@ -159,20 +210,37 @@
       <div class="cal-view-toolbar">
         {{gcalToolbar}}
         <div class="cal-controls">
-          <button type="button" class="action-btn cal-controls-btn" id="cal-prev-month" aria-label="Previous month">‹</button>
+          <button
+            type="button"
+            class="action-btn cal-controls-btn"
+            id="cal-prev-month"
+            aria-label="Previous month"
+          >
+            ‹
+          </button>
           <span class="cal-controls-label">{{monthLabel}}</span>
-          <button type="button" class="action-btn cal-controls-btn" id="cal-next-month" aria-label="Next month">›</button>
+          <button
+            type="button"
+            class="action-btn cal-controls-btn"
+            id="cal-next-month"
+            aria-label="Next month"
+          >
+            ›
+          </button>
           <span class="cal-controls-divider"></span>
-          <button type="button" class="action-btn cal-controls-btn" id="cal-goto-today">Today</button>
+          <button
+            type="button"
+            class="action-btn cal-controls-btn"
+            id="cal-goto-today"
+          >
+            Today
+          </button>
         </div>
       </div>
     </div>
     <div class="cal-layout">
       <div class="card cal-grid-card">
-        <div class="cal-grid">
-          {{weekdayHeaders}}
-          {{dayCells}}
-        </div>
+        <div class="cal-grid">{{weekdayHeaders}} {{dayCells}}</div>
         <div class="cal-legend">{{legend}}</div>
       </div>
       <div class="card cal-sidebar" id="calendar-sidebar">
@@ -188,7 +256,11 @@
 <template id="tpl-cal-weekday">MON</template>
 
 <template id="tpl-cal-day">
-  <button type="button" data-cal-date="{{iso}}" class="calendar-day {{dayClasses}}">
+  <button
+    type="button"
+    data-cal-date="{{iso}}"
+    class="calendar-day {{dayClasses}}"
+  >
     <span class="calendar-day-num {{dayNumClass}}">{{day}}</span>
     {{chips}}
   </button>
@@ -235,8 +307,7 @@
       {{badges}}
     </div>
     <p class="issue-description">{{progress}}</p>
-    {{blockers}}
-    {{notes}}
+    {{blockers}} {{notes}}
   </div>
 </template>
 
@@ -255,14 +326,20 @@
 <template id="tpl-dashboard-reminder">
   <div class="card dashboard-reminder">
     <span class="dashboard-reminder-text">{{text}}</span>
-    <button type="button" class="primary-btn" id="dashboard-reminder-checkin">Check in now</button>
+    <button type="button" class="primary-btn" id="dashboard-reminder-checkin">
+      Check in now
+    </button>
   </div>
 </template>
 
 <template id="tpl-gcal-connect-btn">
-  <button type="button" class="action-btn" id="btn-connect-gcal">{{label}}</button>
+  <button type="button" class="action-btn" id="btn-connect-gcal">
+    {{label}}
+  </button>
 </template>
 
 <template id="tpl-gcal-hint">
-  <span class="cal-gcal-hint">Add googleClientId in Settings to sync Google Calendar</span>
+  <span class="cal-gcal-hint"
+    >Add googleClientId in Settings to sync Google Calendar</span
+  >
 </template>
