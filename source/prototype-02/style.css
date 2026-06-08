@@ -710,15 +710,6 @@ tr:last-child td {
   border-top: 1px dashed rgba(0, 0, 0, 0.05);
 }
 
-/* Hour-boundary top border on cells */
-.avail-time-hour ~ .avail-cell {
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-/* Half-hour sub-division border */
-.avail-time-half ~ .avail-cell {
-  border-top: 1px dashed rgba(0, 0, 0, 0.05);
-}
-
 .avail-cell {
   height: 16px;
   cursor: pointer;
@@ -727,6 +718,17 @@ tr:last-child td {
   transition: background-color 0.08s ease;
   box-sizing: border-box;
 }
+
+/* Hour-boundary top border on cells */
+.avail-time-hour ~ .avail-cell {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Half-hour sub-division border */
+.avail-time-half ~ .avail-cell {
+  border-top: 1px dashed rgba(0, 0, 0, 0.05);
+}
+
 .avail-cell-mine {
   background: #f9fafb;
 }
