@@ -30,6 +30,7 @@ Team **14** course repository: planning docs, meeting notes, branding, and appli
 | `source/prototype-02/` | Earlier prototype baseline + CI |
 | `docs/DEPLOY.md` | **GitHub Pages** (frontend) + **Cloudflare Worker** (API) |
 | `docs/GENAI_USAGE.md` | **GenAI policy** — how we use, disclose, and review AI-assisted work |
+| `docs/CHANGELOG.md` | **Release history** — versions, features, and fixes |
 
 ## Project
 
