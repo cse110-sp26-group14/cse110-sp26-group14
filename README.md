@@ -5,7 +5,8 @@ Team **14** course repository: planning docs, meeting notes, branding, and appli
 ## Quick links
 
 - [Team page](admin/team.md) — roster, values, branding  
-- [Meeting notes](admin/meetings/) — kickoff and ongoing minutes
+- [Meeting notes](admin/meetings/) — kickoff and ongoing minutes  
+- [Design brief](docs/DESIGN_BRIEF.md) — problem, users, goals, and MVP scope
 
 ## Status video (course deliverable)
 
