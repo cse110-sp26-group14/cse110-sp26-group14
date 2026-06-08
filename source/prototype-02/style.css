@@ -706,6 +706,9 @@ tr:last-child td {
   color: var(--text-muted);
   font-size: 0.65rem;
 }
+.avail-time-half {
+  border-top: 1px dashed rgba(0, 0, 0, 0.05);
+}
 
 .avail-cell {
   height: 16px;
@@ -715,6 +718,17 @@ tr:last-child td {
   transition: background-color 0.08s ease;
   box-sizing: border-box;
 }
+
+/* Hour-boundary top border on cells */
+.avail-time-hour ~ .avail-cell {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Half-hour sub-division border */
+.avail-time-half ~ .avail-cell {
+  border-top: 1px dashed rgba(0, 0, 0, 0.05);
+}
+
 .avail-cell-mine {
   background: #f9fafb;
 }
@@ -841,6 +855,12 @@ tr:last-child td {
 .avail-add-meeting-btn:hover {
   opacity: 0.85;
 }
+.avail-add-meeting-btn:disabled {
+  background: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: not-allowed;
+  opacity: 1;
+}
 
 /* Active Team */
 .avail-team-section-title {
@@ -895,4 +915,38 @@ tr:last-child td {
 }
 .avail-heatmap-card {
   position: relative;
+}
+
+/* ─── Recommendation banner (inside meeting modal) ──────────────────────── */
+.avail-recommendation-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 0.75rem;
+}
+.avail-rec-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.avail-rec-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #065f46;
+}
+.avail-rec-sub {
+  font-size: 0.73rem;
+  color: #059669;
+  margin-top: 0.1rem;
+}
+
+/* ─── Auto-filled field highlight ───────────────────────────────────────── */
+.avail-autofill-highlight {
+  border-color: #059669 !important;
+  background: #f0fdf4 !important;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.15);
+  transition: box-shadow 0.2s ease;
 }

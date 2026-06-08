@@ -42,16 +42,16 @@ import {
   startLiveSync,
   stopLiveSync,
   deleteTaskRemote,
-} from './services/dataSyncService.js';
-import { initGoogleCalendar } from './services/googleCalendarService.js';
-import { useRemoteData } from './config/appConfig.js';
-import { mountLoginPage } from './views/LoginView.js';
-import { bindModalForm } from './utils/modalForm.js';
-import { bindOnce } from './utils/dom.js';
-import { showToast, runWithButtonFeedback } from './utils/toast.js';
-import { loadHtmlTemplates } from './utils/templateEngine.js';
-import { normalizeTasksInStore } from './utils/taskHelpers.js';
-import { syncHeaderFromStore as syncHeader } from './services/headerSync.js';
+} from "./services/dataSyncService.js";
+import { initGoogleCalendar } from "./services/googleCalendarService.js";
+import { useRemoteData } from "./config/appConfig.js";
+import { mountLoginPage } from "./views/LoginView.js";
+import { bindModalForm } from "./utils/modalForm.js";
+import { bindOnce } from "./utils/dom.js";
+import { showToast, runWithButtonFeedback } from "./utils/toast.js";
+import { loadHtmlTemplates } from "./utils/templateEngine.js";
+import { normalizeTasksInStore } from "./utils/taskHelpers.js";
+import { syncHeaderFromStore as syncHeader } from "./services/headerSync.js";
 
 const loginRoot = document.getElementById('login-root');
 const appShell = document.getElementById('app-shell');
