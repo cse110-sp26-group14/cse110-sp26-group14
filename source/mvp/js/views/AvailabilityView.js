@@ -27,13 +27,15 @@ const DAY_INDEX = {
 
 function nextDateForDay(dayAbbr) {
   const target = DAY_INDEX[dayAbbr];
-  if (target === undefined) return new Date().toISOString().slice(0, 10);
   const today = new Date();
+  const toLocalISO = (date) => 
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  if (target === undefined) return toLocalISO(today);
   let diff = target - today.getDay();
   if (diff < 0) diff += 7;
   const nextDate = new Date(today);
   nextDate.setDate(today.getDate() + diff);
-  return nextDate.toISOString().slice(0, 10);
+  return toLocalISO(nextDate);
 }
 const DAY_LABELS = {
   Mon: "Monday",
