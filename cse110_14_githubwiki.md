@@ -279,5 +279,50 @@ These constructors should be initialized before component verification assertion
 
 ---
 
+# Local Run Guide: SE SitRep
+
+Follow these steps to spin up the full-stack serverless environment and database sandbox locally.
+
+### 1. Prerequisites
+* **Node.js (v18+)** installed.
+
+### 2. Install Tools & Dependencies
+```bash
+npm install
+npm install -g wrangler
+```
+
+### 3. Initialize the Local Database
+```bash
+wrangler d1 execute se-sitrep-db --local --file=./schema.sql
+```
+
+### 4. Start the Backend Edge Server
+```bash
+wrangler dev
+```
+*Backend API runs at `http://localhost:8787` (keep terminal open).*
+
+### 5. Launch the Frontend UI
+* Open `index.html` directly in your browser or via VS Code **Live Server**.
+* Ensure frontend client points to your local backend URL: `http://localhost:8787/api/`.
+
+### 6. Verify Connection
+```bash
+curl http://localhost:8787/api/health
+```
+**Expected Response:**
+```json
+{ "ok": true, "provider": "deepseek", "configured": true }
+```
+
+---
+
+### Running Tests
+Run automated test suites sequentially to prevent state collisions:
+```bash
+npm test -- --runInBand
+```
+
 # End of Document
 **SE SitRep — Github Wiki**
