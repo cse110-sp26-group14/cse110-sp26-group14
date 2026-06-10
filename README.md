@@ -7,7 +7,9 @@ Team **14** course repository: planning docs, meeting notes, branding, and appli
 - [Team page](admin/team.md) — roster, values, branding  
 - [Meeting notes](admin/meetings/) — kickoff and ongoing minutes  
 - [Design brief](docs/DESIGN_BRIEF.md) — problem, users, goals, and MVP scope
+- [Local Run Guide](cse110_14_githubwiki.md) - How to set up and run project
 
+  
 ## Status video (course deliverable)
 
 | | Link |
